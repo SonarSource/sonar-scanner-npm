@@ -1,2 +1,4 @@
 reporter:
   - lcov
+exclude:
+  - specs
