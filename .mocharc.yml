@@ -1,4 +1,4 @@
-spec: specs/**/*-test.js
+spec: specs/**/*.test.js
 reporter:
   - 'mocha-sonarqube-reporter'
 watch-files:

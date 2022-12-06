@@ -1,10 +1,12 @@
 const assert = require('assert');
+const sinon = require('sinon');
 const path = require('path');
 const {
   prepareExecEnvironment,
   getInstallFolderPath,
   getSonarScannerExecutable,
 } = require('../src/sonar-scanner-executable');
+const platformUtils = require('../src/utils/platform');
 
 describe('sqScannerExecutable', function () {
   const exclusions = 'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
@@ -82,6 +84,14 @@ describe('sqScannerExecutable', function () {
       getSonarScannerExecutable(callback);
 
       assert.equal(executed, false);
+    });
+
+    it('run on Windows', function () {
+      const stub = sinon.stub(platformUtils, 'isWindows');
+      stub.returns(true);
+
+      getSonarScannerExecutable(() => {});
+
     });
   });
 });
