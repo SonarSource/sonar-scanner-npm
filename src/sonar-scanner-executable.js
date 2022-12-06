@@ -11,6 +11,7 @@ const ProgressBar = require('progress');
 const log = require('fancy-log');
 const logError = log.error;
 const sonarScannerParams = require('./sonar-scanner-params');
+const { isWindows, findTargetOS } = require('./utils/platform');
 
 module.exports.prepareExecEnvironment = prepareExecEnvironment;
 module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
@@ -176,39 +177,8 @@ function getLocalSonarScannerExecutable(passExecutableCallback) {
   }
 }
 
-/*
- * Get the target OS based on the platform name
- */
-function findTargetOS() {
-  if (isWindows()) {
-    return 'windows';
-  }
-  if (isLinux()) {
-    return 'linux';
-  }
-  if (isMac()) {
-    return 'macosx';
-  }
-  throw Error(`Your platform '${process.platform}' is currently not supported.`);
-}
-
 function getInstallFolderPath() {
   const basePath =
     process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();
   return path.join(basePath, '.sonar', 'native-sonar-scanner');
-}
-
-/*
- * Some util functions...
- */
-function isWindows() {
-  return /^win/.test(process.platform);
-}
-
-function isMac() {
-  return /^darwin/.test(process.platform);
-}
-
-function isLinux() {
-  return /^linux/.test(process.platform);
 }

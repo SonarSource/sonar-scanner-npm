@@ -1,8 +1,10 @@
 const exec = require('child_process').execFileSync;
 const log = require('fancy-log');
-const prepareExecEnvironment = require('./sonar-scanner-executable').prepareExecEnvironment;
-const scannerExecutable = require('./sonar-scanner-executable').getSonarScannerExecutable;
-const localscannerExecutable = require('./sonar-scanner-executable').getLocalSonarScannerExecutable;
+const {
+  prepareExecEnvironment,
+  scannerExecutable,
+  localscannerExecutable,
+} = require('./sonar-scanner-executable');
 
 module.exports = scan;
 module.exports.cli = scanCLI;
