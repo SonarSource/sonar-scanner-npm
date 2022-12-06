@@ -91,7 +91,7 @@ describe('sqScannerExecutable', function () {
       stub.returns(true);
 
       getSonarScannerExecutable(() => {});
-
+      stub.restore();
     });
   });
 });
