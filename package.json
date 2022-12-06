@@ -46,7 +46,8 @@
     "eslint-plugin-standard": "^4.1.0",
     "mocha": "^10.1.0",
     "mocha-sonarqube-reporter": "^1.0.2",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "sinon": "^15.0.0"
   },
   "keywords": [
     "sonarqube",
