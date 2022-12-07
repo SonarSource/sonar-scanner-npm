@@ -11,7 +11,7 @@ const ProgressBar = require('progress');
 const log = require('fancy-log');
 const logError = log.error;
 const sonarScannerParams = require('./sonar-scanner-params');
-const { isWindows, findTargetOS, buildExecutablePath, getInstallFolderPath } = require('./utils');
+const { isWindows, findTargetOS, buildExecutablePath, buildInstallFolderPath } = require('./utils');
 
 const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 const SONAR_SCANNER_VERSION = '4.7.0.2747';
@@ -69,7 +69,7 @@ function getSonarScannerExecutable(passExecutableCallback) {
     SONAR_SCANNER_VERSION;
   const targetOS = findTargetOS();
   const basePath = process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();
-  const installFolder = getInstallFolderPath(basePath);
+  const installFolder = buildInstallFolderPath(basePath);
   const platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
 
   // #1 - Try to execute the scanner

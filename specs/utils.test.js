@@ -1,5 +1,5 @@
 const { assert } = require('chai');
-const { findTargetOS, getInstallFolderPath } = require('../src/utils');
+const { findTargetOS, buildInstallFolderPath } = require('../src/utils');
 const sinon = require('sinon');
 
 describe('utils', function () {
@@ -33,10 +33,10 @@ describe('utils', function () {
     });
   });
 
-  describe('getInstallFolderPath()', function () {
+  describe('buildInstallFolderPath()', function () {
     it('should use SONAR_BINARY_CACHE env when exists', function () {
       const basePath = './test-cache';
-      assert.equal(getInstallFolderPath(basePath), 'test-cache/.sonar/native-sonar-scanner');
+      assert.equal(buildInstallFolderPath(basePath), 'test-cache/.sonar/native-sonar-scanner');
     });
   });
 });

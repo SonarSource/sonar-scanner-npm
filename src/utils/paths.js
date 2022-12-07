@@ -10,7 +10,7 @@ module.exports.buildExecutablePath = function (installFolder, platformBinariesVe
   );
 }
 
-module.exports.getInstallFolderPath = function (basePath) {
+module.exports.buildInstallFolderPath = function (basePath) {
   return path.join(basePath, '.sonar', 'native-sonar-scanner');
 }
 
