@@ -11,15 +11,15 @@ const ProgressBar = require('progress');
 const log = require('fancy-log');
 const logError = log.error;
 const sonarScannerParams = require('./sonar-scanner-params');
-const { isWindows, findTargetOS, buildExecutablePath } = require('./utils');
+const { isWindows, findTargetOS, buildExecutablePath, getInstallFolderPath, getBinaryExtension } = require('./utils');
+
+const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
+const SONAR_SCANNER_VERSION = '4.7.0.2747';
 
 module.exports.prepareExecEnvironment = prepareExecEnvironment;
 module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
 module.exports.getLocalSonarScannerExecutable = getLocalSonarScannerExecutable;
-module.exports.getInstallFolderPath = getInstallFolderPath;
-
-const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
-const SONAR_SCANNER_VERSION = '4.7.0.2747';
+module.exports.SONAR_SCANNER_VERSION = SONAR_SCANNER_VERSION;
 
 const bar = new ProgressBar('[:bar] :percent :etas', {
   complete: '=',
@@ -68,11 +68,9 @@ function getSonarScannerExecutable(passExecutableCallback) {
     process.env.npm_config_sonar_scanner_version ||
     SONAR_SCANNER_VERSION;
   const targetOS = findTargetOS();
-  const installFolder = getInstallFolderPath();
-  let binaryExtension = '';
-  if (isWindows()) {
-    binaryExtension = '.bat';
-  }
+  const basePath = process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();
+  const installFolder = getInstallFolderPath(basePath);
+  const binaryExtension = getBinaryExtension();
   const platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion, targetOS, binaryExtension);
 
   // #1 - Try to execute the scanner
@@ -172,8 +170,4 @@ function getLocalSonarScannerExecutable(passExecutableCallback) {
   }
 }
 
-function getInstallFolderPath() {
-  const basePath =
-    process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();
-  return path.join(basePath, '.sonar', 'native-sonar-scanner');
-}
+

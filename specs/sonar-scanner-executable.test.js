@@ -2,13 +2,16 @@ const { assert } = require('chai');
 const sinon = require('sinon');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const mkdirpSync = require('mkdirp').sync;
+const rimraf = require('rimraf');
 const {
   prepareExecEnvironment,
-  getInstallFolderPath,
   getSonarScannerExecutable,
+  SONAR_SCANNER_VERSION,
 } = require('../src/sonar-scanner-executable');
 const platformUtils = require('../src/utils/platform');
+const { findTargetOS, getBinaryExtension, getInstallFolderPath, buildExecutablePath } = require('../src/utils');
 
 describe('sqScannerExecutable', function () {
   const exclusions = 'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
@@ -68,13 +71,6 @@ describe('sqScannerExecutable', function () {
     });
   });
 
-  describe('getInstallFolderPath()', function () {
-    it('should use SONAR_BINARY_CACHE env when exists', function () {
-      process.env.SONAR_BINARY_CACHE = './test-cache';
-      assert.equal(getInstallFolderPath(), 'test-cache/.sonar/native-sonar-scanner', 'congrats');
-    });
-  });
-
   describe('getSonarScannerExecutable()', function () {
     it('should not execute callback when download of executable failed', function () {
       process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
@@ -99,15 +95,14 @@ describe('sqScannerExecutable', function () {
     });
 
     describe('when the executable exists', function () {
-      const FOLDER = path.join(__dirname, '../test-cache/.sonar/native-sonar-scanner/sonar-scanner-4.7.0.2747-macosx/bin/');
-      const FILEPATH = path.join(FOLDER, 'sonar-scanner');
+      let filepath;
       before(function () {
-        ;
-        mkdirpSync(FOLDER);
-        fs.writeFileSync(FILEPATH, 'delete me');
+        filepath = buildExecutablePath(getInstallFolderPath(os.homedir()), SONAR_SCANNER_VERSION, findTargetOS(), getBinaryExtension());
+        mkdirpSync(path.dirname(filepath));
+        fs.writeFileSync(filepath, 'delete me');
       });
       after(function () {
-        fs.unlinkSync(FILEPATH)
+        rimraf.sync(filepath);
       });
       it('should run the callback with it as parameter', function (done) {
         function callback(receivedExecutable) {

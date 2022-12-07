@@ -48,6 +48,7 @@
     "mocha": "^10.1.0",
     "mocha-sonarqube-reporter": "^1.0.2",
     "nyc": "^15.1.0",
+    "rimraf": "^3.0.2",
     "sinon": "^15.0.0"
   },
   "keywords": [
