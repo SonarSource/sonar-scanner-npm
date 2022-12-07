@@ -11,7 +11,7 @@ const ProgressBar = require('progress');
 const log = require('fancy-log');
 const logError = log.error;
 const sonarScannerParams = require('./sonar-scanner-params');
-const { isWindows, findTargetOS } = require('./utils/platform');
+const { isWindows, findTargetOS, buildExecutablePath } = require('./utils');
 
 module.exports.prepareExecEnvironment = prepareExecEnvironment;
 module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
@@ -73,12 +73,7 @@ function getSonarScannerExecutable(passExecutableCallback) {
   if (isWindows()) {
     binaryExtension = '.bat';
   }
-  const platformExecutable = path.join(
-    installFolder,
-    `sonar-scanner-${platformBinariesVersion}-${targetOS}`,
-    'bin',
-    `sonar-scanner${binaryExtension}`,
-  );
+  const platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion, targetOS, binaryExtension);
 
   // #1 - Try to execute the scanner
   let executableFound = false;

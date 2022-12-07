@@ -1,3 +1,3 @@
 const platform = require('./platform');
-
-module.exports = platform;
+const paths = require('./paths');
+module.exports = Object.assign({}, platform, paths);

@@ -1,6 +1,8 @@
-const assert = require('assert');
+const { assert } = require('chai');
 const sinon = require('sinon');
 const path = require('path');
+const fs = require('fs');
+const mkdirpSync = require('mkdirp').sync;
 const {
   prepareExecEnvironment,
   getInstallFolderPath,
@@ -86,12 +88,34 @@ describe('sqScannerExecutable', function () {
       assert.equal(executed, false);
     });
 
-    it('run on Windows', function () {
-      const stub = sinon.stub(platformUtils, 'isWindows');
-      stub.returns(true);
+    describe('when running on Windows', function () {
+      it('run on Windows', function () {
+        const stub = sinon.stub(platformUtils, 'isWindows');
+        stub.returns(true);
 
-      getSonarScannerExecutable(() => {});
-      stub.restore();
+        getSonarScannerExecutable(() => {});
+        stub.restore();
+      });
+    });
+
+    describe('when the executable exists', function () {
+      const FOLDER = path.join(__dirname, '../test-cache/.sonar/native-sonar-scanner/sonar-scanner-4.7.0.2747-macosx/bin/');
+      const FILEPATH = path.join(FOLDER, 'sonar-scanner');
+      before(function () {
+        ;
+        mkdirpSync(FOLDER);
+        fs.writeFileSync(FILEPATH, 'delete me');
+      });
+      after(function () {
+        fs.unlinkSync(FILEPATH)
+      });
+      it('should run the callback with it as parameter', function (done) {
+        function callback(receivedExecutable) {
+          assert.isTrue(receivedExecutable.includes('sonar-scanner'));
+          done();
+        }
+        getSonarScannerExecutable(callback);
+      });
     });
   });
 });
