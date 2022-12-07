@@ -68,7 +68,8 @@ function getSonarScannerExecutable(passExecutableCallback) {
     process.env.npm_config_sonar_scanner_version ||
     SONAR_SCANNER_VERSION;
   const targetOS = findTargetOS();
-  const basePath = process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();
+  const basePath =
+    process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();
   const installFolder = buildInstallFolderPath(basePath);
   const platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
 
@@ -168,5 +169,3 @@ function getLocalSonarScannerExecutable(passExecutableCallback) {
     throw Error('Local install of SonarScanner not found.');
   }
 }
-
-

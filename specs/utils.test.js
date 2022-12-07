@@ -1,4 +1,4 @@
-const { assert } = require('chai');
+const { assert } = require('chai');
 const { findTargetOS, buildInstallFolderPath } = require('../src/utils');
 const sinon = require('sinon');
 

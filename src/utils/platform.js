@@ -1,14 +1,14 @@
 function isWindows() {
   return /^win/.test(process.platform);
-};
+}
 
 function isMac() {
   return /^darwin/.test(process.platform);
-};
+}
 
 function isLinux() {
   return /^linux/.test(process.platform);
-};
+}
 
 /*
  * Get the target OS based on the platform name

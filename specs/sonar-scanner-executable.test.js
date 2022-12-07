@@ -1,4 +1,4 @@
-const { assert } = require('chai');
+const { assert } = require('chai');
 const sinon = require('sinon');
 const path = require('path');
 const fs = require('fs');

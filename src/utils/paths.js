@@ -8,13 +8,13 @@ module.exports.buildExecutablePath = function (installFolder, platformBinariesVe
     'bin',
     `sonar-scanner${getBinaryExtension()}`,
   );
-}
+};
 
 module.exports.buildInstallFolderPath = function (basePath) {
   return path.join(basePath, '.sonar', 'native-sonar-scanner');
-}
+};
 
-function getBinaryExtension () {
+function getBinaryExtension() {
   if (isWindows()) {
     return '.bat';
   } else {
