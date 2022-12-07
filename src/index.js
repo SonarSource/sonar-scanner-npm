@@ -2,11 +2,12 @@ const exec = require('child_process').execFileSync;
 const log = require('fancy-log');
 const {
   prepareExecEnvironment,
-  scannerExecutable,
-  localscannerExecutable,
+  getSonarScannerExecutable,
+  getLocalSonarScannerExecutable,
 } = require('./sonar-scanner-executable');
 
 module.exports = scan;
+module.exports.promise = scanPromise;
 module.exports.cli = scanCLI;
 module.exports.customScanner = scanUsingCustomScanner;
 module.exports.fromParam = fromParam;
@@ -20,6 +21,27 @@ function scan(params, callback) {
   scanCLI([], params, callback);
 }
 
+function scanPromise(params) {
+  return new Promise((resolve, reject) => {
+    log('Starting analysis...');
+
+    // prepare the exec options, most notably with the SQ params
+    const optionsExec = prepareExecEnvironment(params, process);
+
+    // determine the command to run and execute it
+    getSonarScannerExecutable(sqScannerCommand => {
+      try {
+        console.log('wada')
+        exec(sqScannerCommand, fromParam().concat(cliArgs), optionsExec);
+        log('Analysis finished.');
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
 /*
  * Function used by the '/bin/sonar-scanner' executable that accepts command line arguments.
  */
@@ -30,7 +52,7 @@ function scanCLI(cliArgs, params, callback) {
   const optionsExec = prepareExecEnvironment(params, process);
 
   // determine the command to run and execute it
-  scannerExecutable(sqScannerCommand => {
+  getSonarScannerExecutable(sqScannerCommand => {
     try {
       exec(sqScannerCommand, fromParam().concat(cliArgs), optionsExec);
       log('Analysis finished.');
@@ -51,7 +73,7 @@ function scanUsingCustomScanner(params, callback) {
   const optionsExec = prepareExecEnvironment(params, process);
 
   // determine the command to run and execute it
-  localscannerExecutable(sqScannerCommand => {
+  getLocalSonarScannerExecutable(sqScannerCommand => {
     try {
       exec(sqScannerCommand, fromParam(), optionsExec);
       log('Analysis finished.');
