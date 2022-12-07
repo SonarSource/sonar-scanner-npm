@@ -11,7 +11,7 @@ const {
   SONAR_SCANNER_VERSION,
 } = require('../src/sonar-scanner-executable');
 const platformUtils = require('../src/utils/platform');
-const { findTargetOS, getBinaryExtension, getInstallFolderPath, buildExecutablePath } = require('../src/utils');
+const { getInstallFolderPath, buildExecutablePath } = require('../src/utils');
 
 describe('sqScannerExecutable', function () {
   const exclusions = 'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
@@ -97,7 +97,7 @@ describe('sqScannerExecutable', function () {
     describe('when the executable exists', function () {
       let filepath;
       before(function () {
-        filepath = buildExecutablePath(getInstallFolderPath(os.homedir()), SONAR_SCANNER_VERSION, findTargetOS(), getBinaryExtension());
+        filepath = buildExecutablePath(getInstallFolderPath(os.homedir()), SONAR_SCANNER_VERSION);
         mkdirpSync(path.dirname(filepath));
         fs.writeFileSync(filepath, 'delete me');
       });

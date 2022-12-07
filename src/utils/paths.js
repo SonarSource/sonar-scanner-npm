@@ -1,12 +1,12 @@
 const path = require('path');
-const { isWindows } = require('./platform');
+const { isWindows, findTargetOS } = require('./platform');
 
-module.exports.buildExecutablePath = function (installFolder, platformBinariesVersion, targetOS, binaryExtension) {
+module.exports.buildExecutablePath = function (installFolder, platformBinariesVersion) {
   return path.join(
     installFolder,
-    `sonar-scanner-${platformBinariesVersion}-${targetOS}`,
+    `sonar-scanner-${platformBinariesVersion}-${findTargetOS()}`,
     'bin',
-    `sonar-scanner${binaryExtension}`,
+    `sonar-scanner${getBinaryExtension()}`,
   );
 }
 
@@ -14,7 +14,7 @@ module.exports.getInstallFolderPath = function (basePath) {
   return path.join(basePath, '.sonar', 'native-sonar-scanner');
 }
 
-module.exports.getBinaryExtension = function () {
+function getBinaryExtension () {
   if (isWindows()) {
     return '.bat';
   } else {
