@@ -32,7 +32,7 @@ function scanPromise(params) {
     getSonarScannerExecutable(sqScannerCommand => {
       try {
         console.log('wada')
-        exec(sqScannerCommand, fromParam().concat(cliArgs), optionsExec);
+        exec(sqScannerCommand, fromParam(), optionsExec);
         log('Analysis finished.');
         resolve();
       } catch (error) {
