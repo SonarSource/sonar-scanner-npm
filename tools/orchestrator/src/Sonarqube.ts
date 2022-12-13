@@ -24,6 +24,12 @@ export function start(sqPath: string = DEFAULT_FOLDER) {
   return spawn(`${pathToBin}`, ['console'], {stdio: 'inherit'});
 }
 
+export async function startAndReady(sqPath: string = DEFAULT_FOLDER) {
+  const process = start(sqPath);
+  await waitForStart();
+  return process;
+}
+
 export async function waitForStart() {
   let isReady = false;
   while (! isReady) {
@@ -35,7 +41,8 @@ export async function waitForStart() {
       isReady = response.data;
       console.log('got', isReady);
     } catch (error: any) {
-      console.log('error on ready check', )
+      console.log('error on ready check')
+      await sleep();
     }
   }
 }
@@ -44,14 +51,16 @@ export async function isApiReady(): Promise<any> {
   return await instance.get(`${IS_READY_PATH}`);
 }
 
-export async function generateToken(): Promise<any> {
+export async function generateToken(): Promise<string> {
   const name = generateId();
-  return await instance.post(`${CREATE_TOKEN_PATH}?name=${name}`)
+  const response = await instance.post(`${CREATE_TOKEN_PATH}?name=${name}`)
+  return response.data.token;
 }
 
-export async function createProject(): Promise<any> {
+export async function createProject(): Promise<string> {
   const project = generateId();
-  return await instance.post(`${CREATE_PROJECT_PATH}?name=${project}&project=${project}`)
+  const response =  await instance.post(`${CREATE_PROJECT_PATH}?name=${project}&project=${project}`)
+  return response.data.project.key;
 }
 
 export function generateToken2(): Promise<any> {
