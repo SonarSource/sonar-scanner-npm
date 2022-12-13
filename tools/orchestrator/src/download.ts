@@ -7,8 +7,8 @@ import * as mkdirp from 'mkdirp';
 
 const DEFAULT_VERSION: string = '9.7.1.62043';
 const VERSIONS_URL: string = 'https://repox.jfrog.io/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*'
-const DEFAULT_PATH: string = path.join(__dirname, '..', 'test', 'cache');
-const DEFAULT_SONARQUBE_PATH: string = path.join(DEFAULT_PATH, 'sonarqube');
+const CACHE_PATH: string = path.join(__dirname, '..', 'test', 'cache');
+const DEFAULT_SONARQUBE_PATH: string = path.join(CACHE_PATH, 'sonarqube');
 
 
 /**
@@ -59,7 +59,7 @@ function getLatestVersion(url: string = VERSIONS_URL): Promise<string> {
  * @param url
  * @param path
  */
-function download(version: string = DEFAULT_VERSION, downloadFolder: string = DEFAULT_PATH): Promise<string> {
+function download(version: string = DEFAULT_VERSION, downloadFolder: string = CACHE_PATH): Promise<string> {
   mkdirp.sync(downloadFolder);
   const url = buildSonarQubeUrl(version);
   const parsedUrl = urlLib.parse(url);
@@ -80,15 +80,12 @@ function download(version: string = DEFAULT_VERSION, downloadFolder: string = DE
         console.log('unzipped in ', outputFolderPath);
         resolve(buildSonarQubePath(outputFolderPath));
       });
-      //file.on('')
       file.on('error', (error: Error) => {
         reject(error);
       });
     });
   });
 }
-
-
 
 function buildSonarQubeUrl(version: string) {
   return `https://repox.jfrog.io/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`;

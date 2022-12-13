@@ -15,6 +15,7 @@ const instance = axios.create({
   baseURL: `http://${DEFAULT_HOST}:${DEFAULT_PORT}`,
   auth: {
     username: 'admin',
+    // TODO change this to 'admin' once we go in prod
     password: 'admin2',
   },
 })
@@ -44,9 +45,8 @@ export async function waitForStart() {
         sleep(),
       ]);
       isReady = response.data;
-      console.log('got', isReady);
+      console.log('server ready')
     } catch (error: any) {
-      console.log('error on ready check')
       await sleep();
     }
   }
