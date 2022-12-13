@@ -6,7 +6,8 @@ const axios = require('axios').default;
 const DEFAULT_FOLDER = path.join(__dirname, '..', 'test', 'cache', 'sonarqube-9.7.1.62043', 'bin', 'macosx-universal-64');
 const DEFAULT_HOST = 'localhost';
 const DEFAULT_PORT = 9000;
-const DEFAULT_PATH = '/api/user_tokens/generate';
+const CREATE_TOKEN_PATH = '/api/user_tokens/generate';
+const CREATE_PROJECT_PATH = '/api/projects/create'
 const DEFAULT_CREDENTIALS = 'admin:admin';
 
 const instance = axios.create({
@@ -39,14 +40,20 @@ export async function waitForStart() {
 }
 
 export async function signIn(): Promise<any> {
-  return await instance.post(`${DEFAULT_PATH}?name=bob4`)
+  const name = generateId();
+  return await instance.post(`${CREATE_TOKEN_PATH}?name=${name}`)
+}
+
+export async function createProject(): Promise<any> {
+  const project = generateId();
+  return await instance.post(`${CREATE_PROJECT_PATH}?name=${project}&project=${project}`)
 }
 
 export function signIn2(): Promise<any> {
   const params = {
     host: DEFAULT_HOST,
     port: DEFAULT_PORT,
-    path: `${DEFAULT_PATH}?name2=bob3`,
+    path: `${CREATE_TOKEN_PATH}?name2=bob3`,
     method: 'POST',
     auth: DEFAULT_CREDENTIALS,
     headers: {
@@ -69,4 +76,14 @@ export function signIn2(): Promise<any> {
       });
     }).end();
   });
+}
+
+function generateId(length: number = 10): string {
+  var result           = '';
+  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result + '1';
 }
