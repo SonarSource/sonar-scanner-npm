@@ -5,7 +5,7 @@ import { createProject, generateToken, startAndReady, stop } from './sonarqube';
   try {
     const latest = await getLatestSonarQube();
     console.log('finished', latest);
-    const process = await startAndReady(latest);
+    await startAndReady(latest);
     const token = await generateToken();
     console.log('got token', token);
     const projectKey = await createProject();
