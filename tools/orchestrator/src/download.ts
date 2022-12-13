@@ -93,5 +93,5 @@ function buildSonarQubeUrl(version: string) {
 
 function buildSonarQubePath(folder: string) {
   const [sqDir] = fs.readdirSync(folder);
-  return sqDir;
+  return path.join(folder, sqDir);
 }
