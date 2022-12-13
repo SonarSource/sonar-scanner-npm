@@ -3,9 +3,10 @@ import { signIn } from './sonarqube';
 
 (async () => {
   try {
-    console.log('replied with', await signIn());
-  } catch (err) {
-    console.log('yo', err);
+    const response = await signIn();
+    console.log('replied with', response.data);
+  } catch (err: any) {
+    console.log('yo', err.response.data);
   }
 
 })();
