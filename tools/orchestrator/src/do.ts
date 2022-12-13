@@ -1,9 +1,10 @@
 
-import { signIn, createProject } from './sonarqube';
+import { generateToken, createProject, waitForStart } from './sonarqube';
 
 (async () => {
   try {
-    let response = await signIn();
+    await waitForStart();
+    let response = await generateToken();
     console.log('replied with', response.data);
     response = await createProject();
     console.log('repliedWith', response.data);
