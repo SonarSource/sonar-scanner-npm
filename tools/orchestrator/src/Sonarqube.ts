@@ -9,7 +9,7 @@ const DEFAULT_PORT = 9000;
 const CREATE_TOKEN_PATH = '/api/user_tokens/generate';
 const CREATE_PROJECT_PATH = '/api/projects/create';
 const IS_READY_PATH = '/api/analysis_reports/is_queue_empty';
-const DEFAULT_CREDENTIALS = 'admin:admin';
+const GET_ISSUES_PATH = '/api/issues/search';
 
 const instance = axios.create({
   baseURL: `http://${DEFAULT_HOST}:${DEFAULT_PORT}`,
@@ -52,19 +52,38 @@ export async function waitForStart() {
 }
 
 export async function isApiReady(): Promise<any> {
-  return await instance.get(`${IS_READY_PATH}`);
+  return await instance.get(IS_READY_PATH);
 }
 
 export async function generateToken(): Promise<string> {
   const name = generateId();
-  const response = await instance.post(`${CREATE_TOKEN_PATH}?name=${name}&type=GLOBAL_ANALYSIS_TOKEN`)
+  const response = await instance.post(CREATE_TOKEN_PATH, {}, {
+    params: {
+      name,
+      type: 'GLOBAL_ANALYSIS_TOKEN',
+    },
+  })
   return response.data.token;
 }
 
 export async function createProject(): Promise<string> {
   const project = generateId();
-  const response =  await instance.post(`${CREATE_PROJECT_PATH}?name=${project}&project=${project}`)
+  const response =  await instance.post(CREATE_PROJECT_PATH, {}, {
+    params: {
+      name: project,
+      project,
+    }
+  });
   return response.data.project.key;
+}
+
+export async function getIssues(projectKey: string): Promise<any> {
+  const response =  await instance.get(GET_ISSUES_PATH, {
+    params: {
+      componentKeys: projectKey,
+    },
+  });
+  return response.data.issues;
 }
 
 export function generateToken2(): Promise<any> {
@@ -73,7 +92,7 @@ export function generateToken2(): Promise<any> {
     port: DEFAULT_PORT,
     path: `${CREATE_TOKEN_PATH}?name2=bob3`,
     method: 'POST',
-    auth: DEFAULT_CREDENTIALS,
+    auth: 'admin:admin',
     /* headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
   } */

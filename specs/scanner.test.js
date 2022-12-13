@@ -8,6 +8,7 @@ const {
   generateToken,
   startAndReady,
   stop,
+  getIssues,
 } = require('../tools/orchestrator');
 
 describe('scanner', function () {
@@ -35,9 +36,13 @@ describe('scanner', function () {
         token,
         options: {
           'sonar.projectName': projectKey,
+          'sonar.projectKey': projectKey,
           'sonar.sources': path.join(__dirname, '/resources/fake_project_for_integration/src'),
         },
       });
+      const issues = await getIssues(projectKey);
+      assert.equal(issues.length, 1);
+      assert.deepEqual(issues[0].textRange, { startLine: 1, endLine: 1, startOffset: 0, endOffset: 13 });
     }).timeout(60 * 1000);
   });
   describe.skip('on SonarCloud', function () {
