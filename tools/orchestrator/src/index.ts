@@ -1,5 +1,5 @@
 import { getLatestSonarQube } from './download';
-import { createProject, generateToken, startAndReady } from './sonarqube';
+import { createProject, generateToken, startAndReady, stop } from './sonarqube';
 
 (async () => {
   try {
@@ -10,7 +10,7 @@ import { createProject, generateToken, startAndReady } from './sonarqube';
     console.log('got token', token);
     const projectKey = await createProject();
     console.log('got project', projectKey);
-    process.kill('SIGHUP');
+    stop(latest);
     process.on('error', err => {
       console.log('got', err);
     })

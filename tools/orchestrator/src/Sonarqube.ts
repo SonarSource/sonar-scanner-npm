@@ -24,6 +24,11 @@ export function start(sqPath: string = DEFAULT_FOLDER) {
   return spawn(`${pathToBin}`, ['console'], {stdio: 'inherit'});
 }
 
+export function stop(sqPath: string = DEFAULT_FOLDER) {
+  const pathToBin = path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
+  return spawn(`${pathToBin}`, ['stop'], {stdio: 'inherit'});
+}
+
 export async function startAndReady(sqPath: string = DEFAULT_FOLDER) {
   const process = start(sqPath);
   await waitForStart();
