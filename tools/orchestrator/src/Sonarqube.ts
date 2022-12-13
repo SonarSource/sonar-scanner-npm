@@ -15,8 +15,7 @@ const instance = axios.create({
   baseURL: `http://${DEFAULT_HOST}:${DEFAULT_PORT}`,
   auth: {
     username: 'admin',
-    // TODO change this to 'admin' once we go in prod
-    password: 'admin2',
+    password: 'admin',
   },
 })
 
@@ -58,7 +57,7 @@ export async function isApiReady(): Promise<any> {
 
 export async function generateToken(): Promise<string> {
   const name = generateId();
-  const response = await instance.post(`${CREATE_TOKEN_PATH}?name=${name}`)
+  const response = await instance.post(`${CREATE_TOKEN_PATH}?name=${name}&type=GLOBAL_ANALYSIS_TOKEN`)
   return response.data.token;
 }
 

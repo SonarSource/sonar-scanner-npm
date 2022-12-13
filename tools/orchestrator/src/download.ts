@@ -10,7 +10,6 @@ const VERSIONS_URL: string = 'https://repox.jfrog.io/repox/api/search/versions?g
 const CACHE_PATH: string = path.join(__dirname, '..', 'test', 'cache');
 const DEFAULT_SONARQUBE_PATH: string = path.join(CACHE_PATH, 'sonarqube');
 
-
 /**
  * Downloads the latest SonarQube Community edition
  * @returns the path to the folder where it was unpacked

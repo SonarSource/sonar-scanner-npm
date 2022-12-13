@@ -2,11 +2,11 @@
   "name": "orchestrator",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "tsc -b .",
-    "crun": "npm run compile && node dist/index.js"
+    "sonarqube": "npm run compile && node scripts/sonarqube.js",
+    "test": "npm run compile && node scripts/full.js"
   },
   "keywords": [],
   "author": "",

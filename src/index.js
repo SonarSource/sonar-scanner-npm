@@ -31,7 +31,6 @@ function scanPromise(params) {
     // determine the command to run and execute it
     getSonarScannerExecutable(sqScannerCommand => {
       try {
-        console.log('wada')
         exec(sqScannerCommand, fromParam(), optionsExec);
         log('Analysis finished.');
         resolve();
