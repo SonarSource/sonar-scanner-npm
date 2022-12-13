@@ -42,7 +42,12 @@ describe('scanner', function () {
       });
       const issues = await getIssues(projectKey);
       assert.equal(issues.length, 1);
-      assert.deepEqual(issues[0].textRange, { startLine: 1, endLine: 1, startOffset: 0, endOffset: 13 });
+      assert.deepEqual(issues[0].textRange, {
+        startLine: 1,
+        endLine: 1,
+        startOffset: 0,
+        endOffset: 13,
+      });
     }).timeout(60 * 1000);
   });
   describe.skip('on SonarCloud', function () {
