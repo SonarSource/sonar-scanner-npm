@@ -38,8 +38,36 @@ export async function startAndReady(sqPath: string = DEFAULT_FOLDER) {
  * @returns
  */
 function start(sqPath: string = DEFAULT_FOLDER) {
-  const pathToBin = path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
+  const pathToBin = getPathForPlatform(sqPath);
   return spawn(`${pathToBin}`, ['console'], {stdio: 'inherit'});
+}
+
+/**
+ * Get the path to the SonarQube launcher based on the OS
+ *
+ * @param sqPath The path where SQ was downloaded and unzipped
+ * @returns The path to the SQ launcher
+ */
+function getPathForPlatform(sqPath: string) {
+  if (isWindows()) {
+    return path.join(sqPath, 'bin', 'windows-x86-64', 'StartSonar.bat');
+  }
+  if (isMac()) {
+    return path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
+  }
+  if (isLinux()) {
+    return path.join(sqPath, 'bin', 'linux-x86-64', 'sonar.sh');
+  }
+
+  function isWindows() {
+    return /^win/.test(process.platform);
+  }
+  function isMac() {
+    return /^darwin/.test(process.platform);
+  }
+  function isLinux() {
+    return /^linux/.test(process.platform);
+  }
 }
 
 async function waitForStart() {
