@@ -32,7 +32,6 @@
     "mkdirp": "^1.0.4",
     "node-downloader-helper": "^2.1.5",
     "progress": "^2.0.3",
-    "read-pkg": "2.0.0",
     "slugify": "^1.6.5"
   },
   "devDependencies": {

@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const extend = require('extend');
-const readPackage = require('read-pkg').sync;
 const slugify = require('slugify');
 const log = require('fancy-log');
 const get = require('lodash.get');
@@ -62,7 +61,8 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
 
 function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
   const packageFile = path.join(projectBaseDir, 'package.json');
-  const pkg = readPackage(packageFile);
+  const packageData = fs.readFileSync(packageFile);
+  const pkg = JSON.parse(packageData);
   log('Getting info from "package.json" file');
   function fileExistsInProjectSync(file) {
     return fs.existsSync(path.resolve(projectBaseDir, file));
