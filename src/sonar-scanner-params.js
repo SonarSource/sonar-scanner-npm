@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const slugify = require('slugify');
 const log = require('fancy-log');
-const get = require('lodash.get');
 const uniq = require('lodash.uniq');
 
 module.exports = defineSonarScannerParams;
@@ -94,14 +93,11 @@ function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
       [
         // jest coverage output directory
         // See: http://facebook.github.io/jest/docs/en/configuration.html#coveragedirectory-string
-        'jest.coverageDirectory',
+        pkg['nyc']?.['report-dir'],
         // nyc coverage output directory
         // See: https://github.com/istanbuljs/nyc#configuring-nyc
-        'nyc.report-dir',
+        pkg['jest']?.['coverageDirectory'],
       ]
-        .map(function (aPath) {
-          return get(pkg, aPath);
-        })
         .filter(Boolean)
         .concat(
           // default coverage output directory
