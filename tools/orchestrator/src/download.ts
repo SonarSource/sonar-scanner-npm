@@ -12,6 +12,7 @@ const DEFAULT_SONARQUBE_PATH: string = path.join(CACHE_PATH, 'sonarqube');
 
 /**
  * Downloads the latest SonarQube Community edition
+ * @param cacheFolder The folder where to look for potential SQs and where to download it
  * @returns the path to the folder where it was unpacked
  */
 export async function getLatestSonarQube(cacheFolder: string = DEFAULT_SONARQUBE_PATH) {
@@ -31,7 +32,7 @@ export async function getLatestSonarQube(cacheFolder: string = DEFAULT_SONARQUBE
 /**
  * Returns the last available SonarQube Community edition version
  *
- * @param url
+ * @param url the URL where to get the existing community SQ versions
  */
 function getLatestVersion(url: string = VERSIONS_URL): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -52,11 +53,11 @@ function getLatestVersion(url: string = VERSIONS_URL): Promise<string> {
 }
 
 /**
- * Downloads the file at the provided URL and saves it to the path
+ * Downloads the file at the provided URL and saves it to the path ${downloadFolder}/sonarqube/
  *
- * @returns the filepath to the downloaded zip file
- * @param url
- * @param path
+ * @param version The SQ version to download
+ * @param downloadFolder the folder where the zip is downloaded and unpacked
+ * @returns the path to the folder where it was unpacked
  */
 function download(version: string = DEFAULT_VERSION, downloadFolder: string = CACHE_PATH): Promise<string> {
   mkdirp.sync(downloadFolder);
