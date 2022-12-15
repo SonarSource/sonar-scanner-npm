@@ -116,5 +116,5 @@ describe('sqScannerExecutable', function () {
 });
 
 function pathForProject(projectFolder) {
-  return path.join(process.cwd(), 'specs', 'resources', projectFolder);
+  return path.join(__dirname, 'resources', projectFolder);
 }

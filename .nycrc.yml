@@ -2,5 +2,5 @@ reporter:
   - lcov
   - text-summary
 exclude:
-  - "specs/**/*.js"
-  - "specs/**/*.ts"
+  - "test/**/*.js"
+  - "test/**/*.ts"
