@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const extend = require('extend');
 const slugify = require('slugify');
 const log = require('fancy-log');
 const get = require('lodash.get');
@@ -16,14 +15,14 @@ const invalidCharacterRegex = /[?$*+~.()'"!:@/]/g;
  */
 function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnvVariable) {
   // #1 - set default values
-  const sonarScannerParams = {};
+  let sonarScannerParams = {};
   try {
     const sqFile = path.join(projectBaseDir, 'sonar-project.properties');
     fs.accessSync(sqFile, fs.F_OK);
     // there's a 'sonar-project.properties' file - no need to set default values
   } catch (e) {
     // No 'sonar-project.properties' file - let's add some default values
-    extend(sonarScannerParams, {
+    sonarScannerParams = Object.assign(sonarScannerParams, {
       'sonar.projectDescription': 'No description.',
       'sonar.sources': '.',
       'sonar.exclusions':
@@ -42,7 +41,7 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
 
   // #2 - if SONARQUBE_SCANNER_PARAMS exists, extend the current params
   if (sqScannerParamsFromEnvVariable) {
-    extend(sonarScannerParams, sqScannerParamsFromEnvVariable);
+    sonarScannerParams = Object.assign(sonarScannerParams, sqScannerParamsFromEnvVariable);
   }
 
   // #3 - check what's passed in the call params - these are prevalent params
@@ -53,7 +52,7 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
     sonarScannerParams['sonar.login'] = params.token;
   }
   if (params.options) {
-    extend(sonarScannerParams, params.options);
+    sonarScannerParams = Object.assign(sonarScannerParams, params.options);
   }
 
   return sonarScannerParams;
