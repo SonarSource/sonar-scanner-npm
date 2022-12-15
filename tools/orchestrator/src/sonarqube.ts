@@ -17,25 +17,32 @@ const instance = axios.create({
     username: 'admin',
     password: 'admin',
   },
-})
+});
 
-export function start(sqPath: string = DEFAULT_FOLDER) {
-  const pathToBin = path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
-  return spawn(`${pathToBin}`, ['console'], {stdio: 'inherit'});
-}
-
-export function stop(sqPath: string = DEFAULT_FOLDER) {
-  const pathToBin = path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
-  return spawn(`${pathToBin}`, ['stop'], {stdio: 'inherit'});
-}
-
+/**
+ * Start SonarQube instance and wait for it to be operational
+ *
+ * @param sqPath The path where SQ was downloaded and unzipped
+ * @returns
+ */
 export async function startAndReady(sqPath: string = DEFAULT_FOLDER) {
   const process = start(sqPath);
   await waitForStart();
   return process;
 }
 
-export async function waitForStart() {
+/**
+ * Start SonarQube instance
+ *
+ * @param sqPath The path where SQ was downloaded and unzipped
+ * @returns
+ */
+function start(sqPath: string = DEFAULT_FOLDER) {
+  const pathToBin = path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
+  return spawn(`${pathToBin}`, ['console'], {stdio: 'inherit'});
+}
+
+async function waitForStart() {
   let isReady = false;
   while (! isReady) {
     try {
@@ -51,10 +58,26 @@ export async function waitForStart() {
   }
 }
 
-export async function isApiReady(): Promise<any> {
+async function isApiReady(): Promise<any> {
   return await instance.get(IS_READY_PATH);
 }
 
+/**
+ * Stop SonarQube instance
+ *
+ * @param sqPath The path where SQ was downloaded and unzipped
+ * @returns
+ */
+export function stop(sqPath: string = DEFAULT_FOLDER) {
+  const pathToBin = path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
+  return spawn(`${pathToBin}`, ['stop'], {stdio: 'inherit'});
+}
+
+/**
+ * Generate a 'GLOBAL_ANALYSIS_TOKEN' level token with a random name
+ *
+ * @returns the generated token
+ */
 export async function generateToken(): Promise<string> {
   const name = generateId();
   const response = await instance.post(CREATE_TOKEN_PATH, {}, {
@@ -66,6 +89,11 @@ export async function generateToken(): Promise<string> {
   return response.data.token;
 }
 
+/**
+ * Create a project with a random name/key (they're the same)
+ *
+ * @returns the project name/key
+ */
 export async function createProject(): Promise<string> {
   const project = generateId();
   const response =  await instance.post(CREATE_PROJECT_PATH, {}, {
@@ -77,6 +105,12 @@ export async function createProject(): Promise<string> {
   return response.data.project.key;
 }
 
+/**
+ * Fetch issues for a given projectKey
+ *
+ * @param projectKey
+ * @returns the issues for this project
+ */
 export async function getIssues(projectKey: string): Promise<any> {
   const response =  await instance.get(GET_ISSUES_PATH, {
     params: {
@@ -86,6 +120,11 @@ export async function getIssues(projectKey: string): Promise<any> {
   return response.data.issues;
 }
 
+/**
+ * Non working generateToken() without using axios - to fix or erase
+ *
+ * @returns
+ */
 export function generateToken2(): Promise<any> {
   const params = {
     host: DEFAULT_HOST,
@@ -115,6 +154,12 @@ export function generateToken2(): Promise<any> {
   });
 }
 
+/**
+ * Generate random alphanumeric string of given length (+1). We append '1' at the end to ensure we have at least 1 number
+ *
+ * @param length
+ * @returns the random string
+ */
 function generateId(length: number = 10): string {
   var result           = '';
   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
