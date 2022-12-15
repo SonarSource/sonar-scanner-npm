@@ -183,7 +183,9 @@ export function generateToken2(): Promise<any> {
 }
 
 /**
- * Generate random alphanumeric string of given length (+1). We append '1' at the end to ensure we have at least 1 number
+ * Generate random alphanumeric string of given length (+1).
+ * We append '1' at the end to ensure we have at least 1 number,
+ * because it's required for the projectKey
  *
  * @param length
  * @returns the random string
