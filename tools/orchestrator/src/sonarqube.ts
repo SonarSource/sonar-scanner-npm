@@ -79,7 +79,6 @@ async function waitForStart() {
         sleep(),
       ]);
       isReady = response.data;
-      console.log('server ready')
     } catch (error: any) {
       await sleep();
     }
@@ -97,7 +96,7 @@ async function isApiReady(): Promise<any> {
  * @returns
  */
 export function stop(sqPath: string = DEFAULT_FOLDER) {
-  const pathToBin = path.join(sqPath, 'bin', 'macosx-universal-64', 'sonar.sh');
+  const pathToBin = getPathForPlatform(sqPath);
   return spawn(`${pathToBin}`, ['stop'], {stdio: 'inherit'});
 }
 
@@ -149,40 +148,6 @@ export async function getIssues(projectKey: string): Promise<any> {
 }
 
 /**
- * Non working generateToken() without using axios - to fix or erase
- *
- * @returns
- */
-export function generateToken2(): Promise<any> {
-  const params = {
-    host: DEFAULT_HOST,
-    port: DEFAULT_PORT,
-    path: `${CREATE_TOKEN_PATH}?name2=bob3`,
-    method: 'POST',
-    auth: 'admin:admin',
-    /* headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-  } */
-  };
-  return new Promise((resolve, reject) => {
-    http.request(params, response => {
-      let responseData = ''
-      response.on('data', data => {
-        console.log('received', data);
-        responseData += data;
-      });
-      response.on('close', () => {
-        console.log('closin')
-        resolve(responseData);
-      });
-      response.on('error', error => {
-        reject(error);
-      });
-    }).end();
-  });
-}
-
-/**
  * Generate random alphanumeric string of given length (+1).
  * We append '1' at the end to ensure we have at least 1 number,
  * because it's required for the projectKey
@@ -191,10 +156,10 @@ export function generateToken2(): Promise<any> {
  * @returns the random string
  */
 function generateId(length: number = 10): string {
-  var result           = '';
-  var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  var charactersLength = characters.length;
-  for ( var i = 0; i < length; i++ ) {
+  let result             = '';
+  const characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  for ( let i = 0; i < length; i++ ) {
       result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   // ensure that there is at least 1 number

@@ -20,7 +20,6 @@ describe('scanner', function () {
       await startAndReady(sqPath);
       try {
         token = await generateToken();
-        console.log('got token', token);
         projectKey = await createProject();
       } catch (error) {
         console.log(error);
@@ -30,7 +29,7 @@ describe('scanner', function () {
       this.timeout(10 * 1000);
       stop(sqPath);
     });
-    it.only('should run an analysis', async function () {
+    it('should run an analysis', async function () {
       await scannerPromise({
         serverUrl: 'http://localhost:9000',
         token,
