@@ -26,7 +26,6 @@
     "decompress": "^4.2.1",
     "fancy-log": "^2.0.0",
     "https-proxy-agent": "^5.0.1",
-    "lodash.uniq": "^4.5.0",
     "mkdirp": "^1.0.4",
     "node-downloader-helper": "^2.1.5",
     "progress": "^2.0.3",

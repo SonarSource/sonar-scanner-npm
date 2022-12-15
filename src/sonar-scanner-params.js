@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const slugify = require('slugify');
 const log = require('fancy-log');
-const uniq = require('lodash.uniq');
 
 module.exports = defineSonarScannerParams;
 
@@ -89,21 +88,21 @@ function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
       sonarScannerParams['sonar.links.scm'] = pkg.repository.url;
     }
 
-    uniq(
-      [
-        // jest coverage output directory
-        // See: http://facebook.github.io/jest/docs/en/configuration.html#coveragedirectory-string
-        pkg['nyc']?.['report-dir'],
-        // nyc coverage output directory
-        // See: https://github.com/istanbuljs/nyc#configuring-nyc
-        pkg['jest']?.['coverageDirectory'],
-      ]
-        .filter(Boolean)
-        .concat(
-          // default coverage output directory
-          'coverage',
-        ),
-    ).find(function (lcovReportDir) {
+    const potentialCoverageDirs = [
+      // jest coverage output directory
+      // See: http://facebook.github.io/jest/docs/en/configuration.html#coveragedirectory-string
+      pkg['nyc']?.['report-dir'],
+      // nyc coverage output directory
+      // See: https://github.com/istanbuljs/nyc#configuring-nyc
+      pkg['jest']?.['coverageDirectory'],
+    ]
+      .filter(Boolean)
+      .concat(
+        // default coverage output directory
+        'coverage',
+      );
+    const uniqueCoverageDirs = Array.from(new Set(potentialCoverageDirs));
+    uniqueCoverageDirs.find(function (lcovReportDir) {
       const lcovReportPath = path.posix.join(lcovReportDir, 'lcov.info');
       if (fileExistsInProjectSync(lcovReportPath)) {
         sonarScannerParams['sonar.exclusions'] += ',' + path.posix.join(lcovReportDir, '**');
