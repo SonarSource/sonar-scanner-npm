@@ -1,10 +1,10 @@
 const assert = require('assert');
 const path = require('path');
-const sqScannerParams = require('../src/sonar-scanner-params');
+const sqScannerParams = require('../../src/sonar-scanner-params');
 
 describe('sqScannerParams', function () {
   function pathForProject(projectFolder) {
-    return path.join(process.cwd(), 'specs', 'resources', projectFolder);
+    return path.join(__dirname, 'resources', projectFolder);
   }
 
   const exclusions = 'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';

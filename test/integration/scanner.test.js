@@ -1,5 +1,5 @@
 // Regular users will call 'require('sonarqube-scanner')' - but not here: eat your own dog food! :-)
-const { promise: scannerPromise } = require('../src/index');
+const { promise: scannerPromise } = require('../../src/index');
 const path = require('path');
 const { assert } = require('chai');
 const {
@@ -9,7 +9,7 @@ const {
   startAndReady,
   stop,
   getIssues,
-} = require('../tools/orchestrator');
+} = require('../../tools/orchestrator/dist');
 
 describe('scanner', function () {
   describe('on local SonarQube', function () {

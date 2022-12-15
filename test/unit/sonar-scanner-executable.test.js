@@ -9,9 +9,9 @@ const {
   prepareExecEnvironment,
   getSonarScannerExecutable,
   SONAR_SCANNER_VERSION,
-} = require('../src/sonar-scanner-executable');
-const platformUtils = require('../src/utils/platform');
-const { buildInstallFolderPath, buildExecutablePath } = require('../src/utils');
+} = require('../../src/sonar-scanner-executable');
+const platformUtils = require('../../src/utils/platform');
+const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
 
 describe('sqScannerExecutable', function () {
   const exclusions = 'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';

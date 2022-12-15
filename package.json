@@ -60,7 +60,8 @@
     "sonar-runner"
   ],
   "scripts": {
-    "test": "npx nyc mocha",
+    "test-unit": "npx nyc mocha test/unit/**/*.test.js",
+    "test-integration": "npx nyc mocha test/integration/**/*.test.js",
     "ci": "npm run test && node ci-analysis.js",
     "format": "prettier --write \"{src,specs}/**/!(*.lint).js\""
   },

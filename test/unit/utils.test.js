@@ -1,5 +1,5 @@
 const { assert } = require('chai');
-const { findTargetOS, buildInstallFolderPath } = require('../src/utils');
+const { findTargetOS, buildInstallFolderPath } = require('../../src/utils');
 const sinon = require('sinon');
 
 describe('utils', function () {
