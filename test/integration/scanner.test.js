@@ -1,4 +1,3 @@
-// Regular users will call 'require('sonarqube-scanner')' - but not here: eat your own dog food! :-)
 const { promise: scannerPromise } = require('../../src/index');
 const path = require('path');
 const { assert } = require('chai');
