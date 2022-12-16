@@ -70,7 +70,7 @@ function scanUsingCustomScanner(params, callback) {
   const optionsExec = prepareExecEnvironment(params, process);
 
   // determine the command to run and execute it
-  getLocalSonarScannerExecutable();
+  const sqScannerCommand = getLocalSonarScannerExecutable();
   try {
     exec(sqScannerCommand, fromParam(), optionsExec);
     log('Analysis finished.');
