@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const os = require('os');
 const exec = require('child_process').execSync;
 const mkdirs = require('mkdirp').sync;
@@ -15,7 +13,6 @@ const { isWindows, findTargetOS, buildExecutablePath, buildInstallFolderPath } =
 const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 const SONAR_SCANNER_VERSION = '4.7.0.2747';
 
-module.exports.prepareExecEnvironment = prepareExecEnvironment;
 module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
 module.exports.getLocalSonarScannerExecutable = getLocalSonarScannerExecutable;
 module.exports.SONAR_SCANNER_VERSION = SONAR_SCANNER_VERSION;
@@ -26,36 +23,6 @@ const bar = new ProgressBar('[:bar] :percent :etas', {
   width: 20,
   total: 0,
 });
-
-/*
- * Prepare the executable options (including env environments) required to run the
- * SQ executable.
- */
-function prepareExecEnvironment(params, process) {
-  // Define what the SQ Scanner params must be
-  let processEnvParams = {};
-  if (process.env.SONARQUBE_SCANNER_PARAMS) {
-    processEnvParams = JSON.parse(process.env.SONARQUBE_SCANNER_PARAMS);
-  }
-  const sqScannerParams = sonarScannerParams(params, process.cwd(), processEnvParams);
-
-  // We need to merge the existing env variables (process.env) with the SQ ones
-  const mergedEnv = Object.assign({}, process.env, {
-    SONARQUBE_SCANNER_PARAMS: JSON.stringify(sqScannerParams),
-  });
-
-  // this is the actual object that the process.exec function is waiting for
-  const optionsExec = {
-    env: mergedEnv,
-    stdio: [0, 1, 2],
-    // Increase the amount of data allowed on stdout or stderr
-    // (if this value is exceeded then the child process is killed).
-    // TODO: make this customizable
-    maxBuffer: 1024 * 1024,
-  };
-
-  return optionsExec;
-}
 
 /*
  * Returns the SQ Scanner executable for the current platform

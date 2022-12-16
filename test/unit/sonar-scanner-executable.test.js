@@ -1,5 +1,4 @@
 const { assert } = require('chai');
-const sinon = require('sinon');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -14,63 +13,6 @@ const platformUtils = require('../../src/utils/platform');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
 
 describe('sqScannerExecutable', function () {
-  const exclusions = 'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
-
-  describe('prepareExecEnvironment()', function () {
-    it('should provide default values', function () {
-      const expectedResult = {
-        maxBuffer: 1024 * 1024,
-        stdio: [0, 1, 2],
-        env: {
-          SONARQUBE_SCANNER_PARAMS: JSON.stringify({
-            'sonar.projectDescription': 'No description.',
-            'sonar.sources': '.',
-            'sonar.exclusions': exclusions,
-          }),
-        },
-      };
-
-      const fakeProcess = {
-        env: {},
-        cwd: function () {
-          return pathForProject('fake_project_with_no_package_file');
-        },
-      };
-
-      assert.deepEqual(prepareExecEnvironment({}, fakeProcess), expectedResult);
-    });
-
-    it('should read SONARQUBE_SCANNER_PARAMS provided by environment if it exists', function () {
-      const expectedResult = {
-        maxBuffer: 1024 * 1024,
-        stdio: [0, 1, 2],
-        env: {
-          SONARQUBE_SCANNER_PARAMS: JSON.stringify({
-            'sonar.projectDescription': 'No description.',
-            'sonar.sources': '.',
-            'sonar.exclusions': exclusions,
-            'sonar.host.url': 'https://sonarcloud.io',
-            'sonar.branch': 'dev',
-          }),
-        },
-      };
-
-      const fakeProcess = {
-        env: {
-          SONARQUBE_SCANNER_PARAMS: JSON.stringify({
-            'sonar.host.url': 'https://sonarcloud.io',
-            'sonar.branch': 'dev',
-          }),
-        },
-        cwd: function () {
-          return pathForProject('fake_project_with_no_package_file');
-        },
-      };
-
-      assert.deepEqual(prepareExecEnvironment({}, fakeProcess), expectedResult);
-    });
-  });
-
   describe('getSonarScannerExecutable()', function () {
     it('should return null when download of executable failed', function () {
       // better: read some log
@@ -98,7 +40,3 @@ describe('sqScannerExecutable', function () {
     });
   });
 });
-
-function pathForProject(projectFolder) {
-  return path.join(__dirname, 'resources', projectFolder);
-}

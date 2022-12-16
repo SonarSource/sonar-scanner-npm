@@ -1,7 +1,7 @@
 const exec = require('child_process').execFileSync;
 const log = require('fancy-log');
+const { getConfig } = require('./config');
 const {
-  prepareExecEnvironment,
   getSonarScannerExecutable,
   getLocalSonarScannerExecutable,
 } = require('./sonar-scanner-executable');
@@ -26,12 +26,12 @@ function scanPromise(params) {
     log('Starting analysis...');
 
     // prepare the exec options, most notably with the SQ params
-    const optionsExec = prepareExecEnvironment(params, process);
+    const optionsExec = getConfig(params, process.cwd());
 
     // determine the command to run and execute it
-    const executable = getSonarScannerExecutable();
+    const sqScannerCommand = getSonarScannerExecutable();
     try {
-      exec(executable, fromParam(), optionsExec);
+      exec(sqScannerCommand, fromParam(), optionsExec);
       log('Analysis finished.');
       resolve();
     } catch (error) {
@@ -47,7 +47,7 @@ function scanCLI(cliArgs, params, callback) {
   log('Starting analysis...');
 
   // prepare the exec options, most notably with the SQ params
-  const optionsExec = prepareExecEnvironment(params, process);
+  const optionsExec = getConfig(params, process.cwd());
 
   // determine the command to run and execute it
   const sqScannerCommand = getSonarScannerExecutable();
@@ -67,7 +67,7 @@ function scanUsingCustomScanner(params, callback) {
   log('Starting analysis (with local install of the SonarScanner)...');
 
   // prepare the exec options, most notably with the SQ params
-  const optionsExec = prepareExecEnvironment(params, process);
+  const optionsExec = getConfig(params, process.cwd());
 
   // determine the command to run and execute it
   const sqScannerCommand = getLocalSonarScannerExecutable();
