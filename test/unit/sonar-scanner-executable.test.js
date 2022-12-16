@@ -72,26 +72,12 @@ describe('sqScannerExecutable', function () {
   });
 
   describe('getSonarScannerExecutable()', function () {
-    it('should not execute callback when download of executable failed', function () {
+    it('should return null when download of executable failed', function () {
+      // better: read some log
       process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
-      let executed = false;
-      const callback = function () {
-        executed = true;
-      };
+      const executable = getSonarScannerExecutable();
 
-      getSonarScannerExecutable(callback);
-
-      assert.equal(executed, false);
-    });
-
-    describe('when running on Windows', function () {
-      it('run on Windows', function () {
-        const stub = sinon.stub(platformUtils, 'isWindows');
-        stub.returns(true);
-
-        getSonarScannerExecutable(() => {});
-        stub.restore();
-      });
+      assert.equal(executable, null);
     });
 
     describe('when the executable exists', function () {
@@ -99,17 +85,15 @@ describe('sqScannerExecutable', function () {
       before(function () {
         filepath = buildExecutablePath(buildInstallFolderPath(os.homedir()), SONAR_SCANNER_VERSION);
         mkdirpSync(path.dirname(filepath));
-        fs.writeFileSync(filepath, 'delete me');
+        fs.writeFileSync(filepath, 'echo "hello"');
+        fs.chmodSync(filepath, 0o700);
       });
       after(function () {
         rimraf.sync(filepath);
       });
-      it('should run the callback with it as parameter', function (done) {
-        function callback(receivedExecutable) {
-          assert.isTrue(receivedExecutable.includes('sonar-scanner'));
-          done();
-        }
-        getSonarScannerExecutable(callback);
+      it('should run the callback with it as parameter', function () {
+        const receivedExecutable = getSonarScannerExecutable();
+        assert.isTrue(receivedExecutable.includes('sonar-scanner'));
       });
     });
   });

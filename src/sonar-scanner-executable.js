@@ -60,7 +60,7 @@ function prepareExecEnvironment(params, process) {
 /*
  * Returns the SQ Scanner executable for the current platform
  */
-function getSonarScannerExecutable(passExecutableCallback) {
+function getSonarScannerExecutable() {
   const platformBinariesVersion =
     process.env.SONAR_SCANNER_VERSION ||
     process.env.npm_config_sonar_scanner_version ||
@@ -72,20 +72,9 @@ function getSonarScannerExecutable(passExecutableCallback) {
   const platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
 
   // #1 - Try to execute the scanner
-  let executableFound = false;
   try {
-    log('Checking if executable exists: ' + platformExecutable);
-    fs.accessSync(platformExecutable, fs.F_OK);
-    // executable exists!
-    log('Platform binaries for SonarScanner found. Using it.');
-    executableFound = true;
-  } catch (e) {
-    log('Could not find executable in "' + installFolder + '".');
-  }
-  if (executableFound) {
-    passExecutableCallback(platformExecutable);
-    return;
-  }
+    return getLocalSonarScannerExecutable(platformExecutable);
+  } catch (e) {}
 
   // #2 - Download the binaries and unzip them
   //      They are located at https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
@@ -129,7 +118,7 @@ function getSonarScannerExecutable(passExecutableCallback) {
     .start()
     .then(() => {
       decompress(`${installFolder}/${fileName}`, installFolder).then(() => {
-        passExecutableCallback(platformExecutable);
+        return platformExecutable;
       });
     })
     .catch(err => {
@@ -144,26 +133,25 @@ function getSonarScannerExecutable(passExecutableCallback) {
     });
 }
 
-/*
- * Returns the SQ Scanner executable if one available in the PATH (meaning user has also JAVA)
+/**
+ *
+ *
+ * @param {*} command
+ * @returns
  */
-function getLocalSonarScannerExecutable(passExecutableCallback) {
-  let command = 'sonar-scanner';
+function getLocalSonarScannerExecutable(command = 'sonar-scanner') {
   if (isWindows()) {
     command += '.bat';
   }
 
-  // Try to execute the 'sonar-scanner' command to see if it's installed locally
   try {
-    log('Trying to find a local install of the SonarScanner');
+    log(`Trying to find a local install of the SonarScanner: ${command}`);
     exec(command + ' -v', {});
-    // if we're here, this means that the SQ Scanner can be executed
     // TODO: we should check that it's at least v2.8+
-    log('Local install of Sonarscanner found. Using it.');
-    passExecutableCallback(command);
+    log('Local install of Sonarscanner found.');
+    return command;
     return;
   } catch (e) {
-    // sonar-scanner is not in the PATH
-    throw Error('Local install of SonarScanner not found.');
+    throw Error(`Local install of SonarScanner not found in: ${command}`);
   }
 }
