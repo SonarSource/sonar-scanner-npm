@@ -134,10 +134,11 @@ function getSonarScannerExecutable() {
 }
 
 /**
+ * Verifies if the provided (or default) command is executable
+ * Throws otherwise
  *
- *
- * @param {*} command
- * @returns
+ * @param {*} command the command to execute.
+ * @returns the command to execute
  */
 function getLocalSonarScannerExecutable(command = 'sonar-scanner') {
   if (isWindows()) {
@@ -150,7 +151,6 @@ function getLocalSonarScannerExecutable(command = 'sonar-scanner') {
     // TODO: we should check that it's at least v2.8+
     log('Local install of Sonarscanner found.');
     return command;
-    return;
   } catch (e) {
     throw Error(`Local install of SonarScanner not found in: ${command}`);
   }
