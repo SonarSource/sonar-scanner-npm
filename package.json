@@ -48,7 +48,7 @@
     "sonar-runner"
   ],
   "scripts": {
-    "build": "npm ci && npm run check-format && ./scripts/build-orchestrator.sh",
+    "build": "npm ci && npm run check-format && node ./scripts/build-orchestrator.js",
     "clear": "tsc -b src tests --clean",
     "test": "npx nyc mocha test/unit/**/*.test.js",
     "test-integration": "npx nyc mocha test/integration/**/*.test.js",
