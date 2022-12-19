@@ -11,7 +11,7 @@ const {
   getIssues,
 } = require('../../tools/orchestrator/dist');
 
-const TIMEOUT_MS = 60_000;
+const TIMEOUT_MS = 300_000;
 
 describe('scanner', function () {
   describe('on local SonarQube', function () {
