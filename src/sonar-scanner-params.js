@@ -51,7 +51,15 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
     sonarScannerParams = Object.assign(sonarScannerParams, params.options);
   }
 
-  return sonarScannerParams;
+  if (! isEmpty(sonarScannerParams)) {
+    return JSON.stringify(sonarScannerParams);
+  } else {
+    return null;
+  }
+}
+
+function isEmpty(jsObject) {
+  return jsObject.constructor === Object && Object.entries(jsObject).length === 0;
 }
 
 function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {

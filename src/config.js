@@ -16,8 +16,8 @@ function getConfig(params = {}, basePath) {
   const sqScannerParams = sonarScannerParams(params, basePath, env.SONARQUBE_SCANNER_PARAMS);
 
   // We need to merge the existing env variables (process.env) with the SQ ones
-  if (!isEmpty(sqScannerParams)) {
-    config.SONARQUBE_SCANNER_PARAMS = JSON.stringify(sqScannerParams);
+  if (sqScannerParams) {
+    config.SONARQUBE_SCANNER_PARAMS = sqScannerParams;
   }
 
   config.platformBinariesVersion =
@@ -43,8 +43,4 @@ function wrapWithExecParams(env = {}) {
     // TODO: make this customizable
     maxBuffer: 1024 * 1024,
   };
-}
-
-function isEmpty(jsObject) {
-  return jsObject.constructor === Object && Object.entries(jsObject).length === 0;
 }
