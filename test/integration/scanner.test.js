@@ -19,7 +19,7 @@ describe('scanner', function () {
     before(async function () {
       this.timeout(TIMEOUT_MS);
       sqPath = await getLatestSonarQube();
-      await startAndReady(sqPath);
+      await startAndReady(sqPath, TIMEOUT_MS);
       try {
         token = await generateToken();
         projectKey = await createProject();
