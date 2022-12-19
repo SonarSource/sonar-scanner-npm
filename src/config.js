@@ -1,23 +1,31 @@
 const sonarScannerParams = require('./sonar-scanner-params');
 
 module.exports.getConfig = getConfig;
+module.exports.wrapWithExecParams = wrapWithExecParams;
 
-function getConfig(params, basePath) {
+const DEFAULT_SCANNER_VERSION = '4.7.0.2747';
+const DEFAULT_EXCLUSIONS =
+  'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
+module.exports.DEFAULT_SCANNER_VERSION = DEFAULT_SCANNER_VERSION;
+module.exports.DEFAULT_EXCLUSIONS = DEFAULT_EXCLUSIONS;
+
+function getConfig(params = {}, basePath) {
   const env = process.env;
-  let config = {};
+  let config = env;
 
-  if (env.SONARQUBE_SCANNER_PARAMS) {
-    config = JSON.parse(env.SONARQUBE_SCANNER_PARAMS);
-  }
-
-  const sqScannerParams = sonarScannerParams(params, basePath, config);
+  const sqScannerParams = sonarScannerParams(params, basePath, env.SONARQUBE_SCANNER_PARAMS);
 
   // We need to merge the existing env variables (process.env) with the SQ ones
-  const mergedEnv = Object.assign({}, env, {
-    SONARQUBE_SCANNER_PARAMS: JSON.stringify(sqScannerParams),
-  });
+  if (!isEmpty(sqScannerParams)) {
+    config.SONARQUBE_SCANNER_PARAMS = JSON.stringify(sqScannerParams);
+  }
 
-  return wrapWithExecParams(mergedEnv);
+  config.platformBinariesVersion =
+    process.env.SONAR_SCANNER_VERSION ||
+    process.env.npm_config_sonar_scanner_version ||
+    DEFAULT_SCANNER_VERSION;
+
+  return config;
 }
 
 /**
@@ -35,4 +43,8 @@ function wrapWithExecParams(env = {}) {
     // TODO: make this customizable
     maxBuffer: 1024 * 1024,
   };
+}
+
+function isEmpty(jsObject) {
+  return jsObject.constructor === Object && Object.entries(jsObject).length === 0;
 }
