@@ -19,14 +19,12 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
     fs.accessSync(sqFile, fs.F_OK);
     // there's a 'sonar-project.properties' file - no need to set default values
   } catch (e) {
-    // No 'sonar-project.properties' file - let's add some default values
-    sonarScannerParams = Object.assign(sonarScannerParams, {
+    sonarScannerParams = {
       'sonar.projectDescription': 'No description.',
       'sonar.sources': '.',
       'sonar.exclusions':
         'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**',
-    });
-
+    };
     // If there's a 'package.json' file, read it to grab info
     try {
       extractInfoFromPackageFile(sonarScannerParams, projectBaseDir);
@@ -39,9 +37,6 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
 
   // #2 - if SONARQUBE_SCANNER_PARAMS exists, extend the current params
   if (sqScannerParamsFromEnvVariable) {
-    if (typeof sqScannerParamsFromEnvVariable === 'string') {
-      sqScannerParamsFromEnvVariable = JSON.parse(sqScannerParamsFromEnvVariable);
-    }
     sonarScannerParams = Object.assign(sonarScannerParams, sqScannerParamsFromEnvVariable);
   }
 
@@ -63,7 +58,7 @@ function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
   const packageFile = path.join(projectBaseDir, 'package.json');
   const packageData = fs.readFileSync(packageFile);
   const pkg = JSON.parse(packageData);
-  log('Getting info from "package.json" file');
+  log('Retrieving info from "package.json" file');
   function fileExistsInProjectSync(file) {
     return fs.existsSync(path.resolve(projectBaseDir, file));
   }

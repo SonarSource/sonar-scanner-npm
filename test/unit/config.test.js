@@ -190,8 +190,8 @@ describe('config', function () {
         SONARQUBE_SCANNER_PARAMS: {
           'sonar.host.url': 'https://another.server.com',
           'sonar.login': 'another_token',
-        }
-      }
+        },
+      };
 
       const sqParams = getConfig(
         { serverUrl: 'https://sonarcloud.io', token: 'my_token' },
@@ -201,44 +201,43 @@ describe('config', function () {
       assert.deepEqual(JSON.parse(sqParams), expectedResult);
     });
 
+    it('should get nyc lcov file path from package.json file', function () {
+      const expectedResult = {
+        'sonar.javascript.lcov.reportPaths': 'nyc-coverage/lcov.info',
+        'sonar.projectKey': 'fake-basic-project',
+        'sonar.projectName': 'fake-basic-project',
+        'sonar.projectDescription': 'No description.',
+        'sonar.projectVersion': '1.0.0',
+        'sonar.sources': '.',
+        'sonar.exclusions':
+          'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**,nyc-coverage/**',
+      };
+      process.env = {};
+      const sqParams = getConfig(
+        {},
+        pathForProject('fake_project_with_nyc_report_file'),
+      ).SONARQUBE_SCANNER_PARAMS;
+      assert.deepEqual(JSON.parse(sqParams), expectedResult);
+    });
 
-  it('should get nyc lcov file path from package.json file', function () {
-    const expectedResult = {
-      'sonar.javascript.lcov.reportPaths': 'nyc-coverage/lcov.info',
-      'sonar.projectKey': 'fake-basic-project',
-      'sonar.projectName': 'fake-basic-project',
-      'sonar.projectDescription': 'No description.',
-      'sonar.projectVersion': '1.0.0',
-      'sonar.sources': '.',
-      'sonar.exclusions':
-        'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**,nyc-coverage/**',
-    };
-    process.env = {};
-    const sqParams = getConfig(
-      {},
-      pathForProject('fake_project_with_nyc_report_file'),
-    ).SONARQUBE_SCANNER_PARAMS;
-    assert.deepEqual(JSON.parse(sqParams), expectedResult);
-  });
-
-  it('should get jest lcov file path from package.json file', function () {
-    const expectedResult = {
-      'sonar.javascript.lcov.reportPaths': 'jest-coverage/lcov.info',
-      'sonar.projectKey': 'fake-basic-project',
-      'sonar.projectName': 'fake-basic-project',
-      'sonar.projectDescription': 'No description.',
-      'sonar.projectVersion': '1.0.0',
-      'sonar.sources': '.',
-      'sonar.exclusions':
-        'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**,jest-coverage/**',
-    };
-    process.env = {};
-    const sqParams = getConfig(
-      {},
-      pathForProject('fake_project_with_jest_report_file'),
-    ).SONARQUBE_SCANNER_PARAMS;
-    assert.deepEqual(JSON.parse(sqParams), expectedResult);
-  });
+    it('should get jest lcov file path from package.json file', function () {
+      const expectedResult = {
+        'sonar.javascript.lcov.reportPaths': 'jest-coverage/lcov.info',
+        'sonar.projectKey': 'fake-basic-project',
+        'sonar.projectName': 'fake-basic-project',
+        'sonar.projectDescription': 'No description.',
+        'sonar.projectVersion': '1.0.0',
+        'sonar.sources': '.',
+        'sonar.exclusions':
+          'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**,jest-coverage/**',
+      };
+      process.env = {};
+      const sqParams = getConfig(
+        {},
+        pathForProject('fake_project_with_jest_report_file'),
+      ).SONARQUBE_SCANNER_PARAMS;
+      assert.deepEqual(JSON.parse(sqParams), expectedResult);
+    });
 
     it('should read SONARQUBE_SCANNER_PARAMS provided by environment if it exists', function () {
       const expectedResult = {
@@ -252,10 +251,10 @@ describe('config', function () {
       };
 
       process.env = {
-        SONARQUBE_SCANNER_PARAMS: JSON.stringify({
+        SONARQUBE_SCANNER_PARAMS: {
           'sonar.host.url': 'https://sonarcloud.io',
           'sonar.branch': 'dev',
-        }),
+        },
       };
 
       assert.ownInclude(
