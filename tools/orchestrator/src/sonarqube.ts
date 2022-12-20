@@ -57,17 +57,17 @@ function getPathForPlatform(sqPath: string) {
   }
   if (isLinux()) {
     return path.join(sqPath, 'bin', 'linux-x86-64', 'sonar.sh');
-  }  
+  }
 
-function isWindows() {
-  return /^win/.test(process.platform);
-}
-function isMac() {
-  return /^darwin/.test(process.platform);
-}
-function isLinux() {
-  return /^linux/.test(process.platform);
-}
+  function isWindows() {
+    return /^win/.test(process.platform);
+  }
+  function isMac() {
+    return /^darwin/.test(process.platform);
+  }
+  function isLinux() {
+    return /^linux/.test(process.platform);
+  }
 }
 
 async function waitForStart(maxWaitMs: number = DEFAULT_MAX_WAIT_MS) {
@@ -103,7 +103,7 @@ async function isApiReady(): Promise<any> {
  * @param sqPath The path where SQ was downloaded and unzipped
  * @returns
  */
-export function stop(sqPath: string = DEFAULT_FOLDER) {  
+export function stop(sqPath: string = DEFAULT_FOLDER) {
   return exec(`java ${__dirname}/stop.java ${sqPath}`, undefined,  (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
