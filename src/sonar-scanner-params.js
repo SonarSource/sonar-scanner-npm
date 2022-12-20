@@ -8,6 +8,35 @@ module.exports = defineSonarScannerParams;
 const invalidCharacterRegex = /[?$*+~.()'"!:@/]/g;
 
 /*
+ * Build the config.SONARQUBE_SCANNER_PARAMS property from:
+ * 1. params
+ *  serverUrl -> sonar.host.url
+ *  token     -> sonar.login
+ *  options to root
+ * 2. the 'SONARQUBE_SCANNER_PARAMS' env variable
+ *  all
+ * 3. sonar-project-properties
+ *  as-is
+ * OR
+ * 3. package.json (only some other fields)
+ *  slug(name)      -> sonar.projectKey
+ *  name            -> sonar.projectName
+ *  version         -> sonar.projectVersion
+ *  description     -> sonar.projectDescription
+ *  homepage        -> sonar.links.homepage
+ *  bugs.url        -> sonar.links.issue
+ *  repository.url  -> sonar.links.scm
+ *  pick up nyc/jest and append them to existing sonar.exclusions
+ *  some logic aroung sonar.javascript.lcov.reportPaths
+ *  same for sonar.testExecutionReportPaths
+ *  same for sonar.testExecutionReportPaths
+ * 4. default values (same)
+ *  sonar.projectDescription
+ *  sonar.sources
+ *  sonar.exclusions
+ *
+ * returns it stringified
+ *
  * Try to be smart and guess most SQ parameters from JS files that
  * might exist - like 'package.json'.
  */
@@ -27,7 +56,7 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
     };
     // If there's a 'package.json' file, read it to grab info
     try {
-      extractInfoFromPackageFile(sonarScannerParams, projectBaseDir);
+      sonarScannerParams = Object.assign({}, sonarScannerParams, extractInfoFromPackageFile(projectBaseDir, sonarScannerParams['sonar.exclusions']));
     } catch (extractError) {
       // No 'package.json' file (or invalid one) - let's remain on the defaults
       log(`No 'package.json' file found (or no valid one): ${extractError.message}`);
@@ -37,7 +66,7 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
 
   // #2 - if SONARQUBE_SCANNER_PARAMS exists, extend the current params
   if (sqScannerParamsFromEnvVariable) {
-    sonarScannerParams = Object.assign(sonarScannerParams, sqScannerParamsFromEnvVariable);
+    sonarScannerParams = Object.assign({}, sonarScannerParams, sqScannerParamsFromEnvVariable);
   }
 
   // #3 - check what's passed in the call params - these are prevalent params
@@ -62,7 +91,13 @@ function isEmpty(jsObject) {
   return jsObject.constructor === Object && Object.entries(jsObject).length === 0;
 }
 
-function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
+/**
+ * Build the config.
+ *
+ * @param {*} projectBaseDir
+ */
+function extractInfoFromPackageFile(projectBaseDir, exclusions) {
+  const packageJsonParams = {};
   const packageFile = path.join(projectBaseDir, 'package.json');
   const packageData = fs.readFileSync(packageFile);
   const pkg = JSON.parse(packageData);
@@ -76,22 +111,22 @@ function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
     });
   }
   if (pkg) {
-    sonarScannerParams['sonar.projectKey'] = slugify(pkg.name, {
+    packageJsonParams['sonar.projectKey'] = slugify(pkg.name, {
       remove: invalidCharacterRegex,
     });
-    sonarScannerParams['sonar.projectName'] = pkg.name;
-    sonarScannerParams['sonar.projectVersion'] = pkg.version;
+    packageJsonParams['sonar.projectName'] = pkg.name;
+    packageJsonParams['sonar.projectVersion'] = pkg.version;
     if (pkg.description) {
-      sonarScannerParams['sonar.projectDescription'] = pkg.description;
+      packageJsonParams['sonar.projectDescription'] = pkg.description;
     }
     if (pkg.homepage) {
-      sonarScannerParams['sonar.links.homepage'] = pkg.homepage;
+      packageJsonParams['sonar.links.homepage'] = pkg.homepage;
     }
-    if (pkg.bugs && pkg.bugs.url) {
-      sonarScannerParams['sonar.links.issue'] = pkg.bugs.url;
+    if (pkg.bugs?.url) {
+      packageJsonParams['sonar.links.issue'] = pkg.bugs.url;
     }
-    if (pkg.repository && pkg.repository.url) {
-      sonarScannerParams['sonar.links.scm'] = pkg.repository.url;
+    if (pkg.repository?.url) {
+      packageJsonParams['sonar.links.scm'] = pkg.repository.url;
     }
 
     const potentialCoverageDirs = [
@@ -109,11 +144,12 @@ function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
       );
     const uniqueCoverageDirs = Array.from(new Set(potentialCoverageDirs));
     uniqueCoverageDirs.find(function (lcovReportDir) {
+      packageJsonParams['sonar.exclusions'] = exclusions;
       const lcovReportPath = path.posix.join(lcovReportDir, 'lcov.info');
       if (fileExistsInProjectSync(lcovReportPath)) {
-        sonarScannerParams['sonar.exclusions'] += ',' + path.posix.join(lcovReportDir, '**');
+        packageJsonParams['sonar.exclusions'] += ',' + path.posix.join(lcovReportDir, '**');
         // https://docs.sonarqube.org/display/PLUG/JavaScript+Coverage+Results+Import
-        sonarScannerParams['sonar.javascript.lcov.reportPaths'] = lcovReportPath;
+        packageJsonParams['sonar.javascript.lcov.reportPaths'] = lcovReportPath;
         // TODO: use Generic Test Data to remove dependence of SonarJS, it is need transformation lcov to sonar generic coverage format
         return true;
       }
@@ -122,8 +158,9 @@ function extractInfoFromPackageFile(sonarScannerParams, projectBaseDir) {
 
     if (dependenceExists('mocha-sonarqube-reporter') && fileExistsInProjectSync('xunit.xml')) {
       // https://docs.sonarqube.org/display/SONAR/Generic+Test+Data
-      sonarScannerParams['sonar.testExecutionReportPaths'] = 'xunit.xml';
+      packageJsonParams['sonar.testExecutionReportPaths'] = 'xunit.xml';
     }
     // TODO: use `glob` to lookup xunit format files and transformation to sonar generic report format
   }
+  return packageJsonParams;
 }
