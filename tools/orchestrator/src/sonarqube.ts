@@ -70,13 +70,13 @@ function getPathForPlatform(sqPath: string) {
   }
 }
 
-async function waitForStart(process: ChildProcess, maxWaitMs: number = DEFAULT_MAX_WAIT_MS) {
+async function waitForStart(sqProcess: ChildProcess, maxWaitMs: number = DEFAULT_MAX_WAIT_MS) {
   const logs: string[] = [];
   let logsIndex = 0;
-  process.stdout?.setEncoding('utf8');
-  process.stdout?.on('data', data => {
+  sqProcess.stdout?.setEncoding('utf8');
+  sqProcess.stdout?.on('data', data => {
     // print logs by node process
-    console.log(data.toString());
+    process.stdout.write(data.toString());
     logs.push(data.toString());
   })
 
@@ -88,7 +88,7 @@ async function waitForStart(process: ChildProcess, maxWaitMs: number = DEFAULT_M
         return console.log(`Waiting for server ready aborted because we have waited more than ${maxWaitMs} ms.`)
       }
       const [response] = await Promise.all([
-        isApiReady(logs, logsIndex),
+        isSonarQubeReady(logs, logsIndex),
         sleep(),
       ]);
       isReady = response.isReady;
@@ -98,12 +98,17 @@ async function waitForStart(process: ChildProcess, maxWaitMs: number = DEFAULT_M
     }
   }
 
-  function isBeyondWaitingTime(startWaitMs: number, maxWaitMs: number) {
-    return (Date.now() - startWaitMs) > maxWaitMs;
-  }
+
 }
 
-async function isApiReady(logs: string[], startIndex: number): Promise<any> {
+/**
+ * Reads logs from line 'startIndex' until the end, looking for the SQ_READY_LINE
+ *
+ * @param logs
+ * @param startIndex
+ * @returns
+ */
+async function isSonarQubeReady(logs: string[], startIndex: number): Promise<any> {
   const SQ_READY_LINE = 'SonarQube is operational';
   for (let i=startIndex; i<logs.length; i++) {
     if (logs[i].includes(SQ_READY_LINE)) {
@@ -173,18 +178,11 @@ export async function waitForAnalysisFinished(maxWaitMs: number = DEFAULT_MAX_WA
       }
     }
 
-    function isBeyondWaitingTime(startWaitMs: number, maxWaitMs: number) {
-      return (Date.now() - startWaitMs) > maxWaitMs;
-    }
-
-
   async function isAnalysisFinished(): Promise<boolean> {
     const response = await instance.get(IS_ANALYSIS_FINISHED_PATH);
     return response.data;
   }
 }
-
-
 
 /**
  * Fetch issues for a given projectKey
@@ -223,3 +221,8 @@ function generateId(length: number = 10): string {
 function sleep(timeMs: number = 2000) {
   return new Promise(resolve => setTimeout(resolve, timeMs));
 }
+
+function isBeyondWaitingTime(startWaitMs: number, maxWaitMs: number) {
+  return (Date.now() - startWaitMs) > maxWaitMs;
+}
+
