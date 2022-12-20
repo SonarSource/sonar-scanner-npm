@@ -32,6 +32,9 @@
     "slugify": "^1.6.5"
   },
   "devDependencies": {
+    "@typescript-eslint/parser": "^5.47.0",
+    "eslint": "^8.30.0",
+    "eslint-plugin-notice": "^0.9.10",
     "chai": "^4.3.7",
     "mocha": "^10.1.0",
     "nyc": "^15.1.0",
@@ -52,7 +55,9 @@
     "test": "npx nyc mocha --timeout 5000 test/unit/**/*.test.js",
     "test-integration": "npx nyc mocha test/integration/**/*.test.js",
     "format": "prettier --write \"{src,test}/**/!(*.lint).js\"",
-    "check-format": "prettier --list-different \"{src,test}/**/!(*.lint).js\""
+    "check-format": "prettier --list-different \"{src,test}/**/!(*.lint).js\"",
+    "license": "eslint --ext js,ts src test tools",
+    "license-fix": "eslint --fix --ext js,ts src test tools"
   },
   "prettier": {
     "printWidth": 100,
