@@ -13,6 +13,7 @@ const DEFAULT_EXCLUSIONS =
 module.exports.DEFAULT_EXCLUSIONS = DEFAULT_EXCLUSIONS;
 const DEFAULT_SCANNER_VERSION = '4.7.0.2747';
 module.exports.DEFAULT_SCANNER_VERSION = DEFAULT_SCANNER_VERSION;
+const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 
 /**
  * Build the SONARQUBE_SCANNER_PARAMS which will be passed as an environment
