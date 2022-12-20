@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 const path = require('path');
-const { getScannerParams, wrapWithExecParams, DEFAULT_EXCLUSIONS } = require('../../src/config');
+const { getScannerParams, extendWithExecParams, DEFAULT_EXCLUSIONS } = require('../../src/config');
 
 function pathForProject(projectFolder) {
   return path.join(__dirname, 'resources', projectFolder);
@@ -261,9 +261,9 @@ describe('config', function () {
     });
   });
 
-  describe('wrapWithExecParams()', function () {
+  describe('extendWithExecParams()', function () {
     it('should put the provided config in the "env" property of the exec params', function () {
-      assert.deepEqual(wrapWithExecParams({ hello: 2 }), {
+      assert.deepEqual(extendWithExecParams({ hello: 2 }), {
         maxBuffer: 1024 * 1024,
         stdio: [0, 1, 2],
         env: {

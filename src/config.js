@@ -1,7 +1,7 @@
 const sonarScannerParams = require('./sonar-scanner-params');
 
 module.exports.getScannerParams = getScannerParams;
-module.exports.wrapWithExecParams = wrapWithExecParams;
+module.exports.extendWithExecParams = extendWithExecParams;
 
 const DEFAULT_EXCLUSIONS =
   'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
@@ -27,7 +27,7 @@ function getScannerParams(params = {}, basePath) {
  * @param {*} env the environment variables
  * @returns
  */
-function wrapWithExecParams(env = {}) {
+function extendWithExecParams(env = {}) {
   return {
     env,
     stdio: [0, 1, 2],
