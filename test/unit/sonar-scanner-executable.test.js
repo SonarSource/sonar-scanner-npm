@@ -4,7 +4,8 @@ const fs = require('fs');
 const os = require('os');
 const mkdirpSync = require('mkdirp').sync;
 const rimraf = require('rimraf');
-const { DEFAULT_SCANNER_VERSION, getSonarScannerExecutable } = require('../../src/sonar-scanner-executable');
+const { getSonarScannerExecutable } = require('../../src/sonar-scanner-executable');
+const { DEFAULT_SCANNER_VERSION } = require('../../src/config');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
 
 describe('sqScannerExecutable', function () {

@@ -1,17 +1,12 @@
-const os = require('os');
 const exec = require('child_process').execSync;
 const mkdirs = require('mkdirp').sync;
 const { DownloaderHelper } = require('node-downloader-helper');
-const HttpsProxyAgent = require('https-proxy-agent');
 const decompress = require('decompress');
 const ProgressBar = require('progress');
 const log = require('fancy-log');
 const logError = log.error;
-const { isWindows, findTargetOS, buildExecutablePath, buildInstallFolderPath } = require('./utils');
-
-const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
-const DEFAULT_SCANNER_VERSION = '4.7.0.2747';
-module.exports.DEFAULT_SCANNER_VERSION = DEFAULT_SCANNER_VERSION;
+const { isWindows } = require('./utils');
+const { getExecutableParams } = require('./config');
 
 module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
 module.exports.getLocalSonarScannerExecutable = getLocalSonarScannerExecutable;
@@ -27,48 +22,25 @@ const bar = new ProgressBar('[:bar] :percent :etas', {
  * Returns the SQ Scanner executable for the current platform
  */
 function getSonarScannerExecutable() {
-  const platformBinariesVersion =
-    process.env.SONAR_SCANNER_VERSION ||
-    process.env.npm_config_sonar_scanner_version ||
-    DEFAULT_SCANNER_VERSION;
-
-  const targetOS = findTargetOS();
-  const basePath =
-    process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();
-  const installFolder = buildInstallFolderPath(basePath);
-  const platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
+  const config = getExecutableParams();
+  const platformExecutable = config.platformExecutable;
 
   // #1 - Try to execute the scanner
   try {
     return getLocalSonarScannerExecutable(platformExecutable);
   } catch (e) {}
 
+  const installFolder = config.installFolder;
   // #2 - Download the binaries and unzip them
   //      They are located at https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
   log('Proceed with download of the platform binaries for SonarScanner...');
   log('Creating ' + installFolder);
   mkdirs(installFolder);
-  const baseUrl =
-    process.env.SONAR_SCANNER_MIRROR ||
-    process.env.npm_config_sonar_scanner_mirror ||
-    SONAR_SCANNER_MIRROR;
-  const fileName = 'sonar-scanner-cli-' + platformBinariesVersion + '-' + targetOS + '.zip';
-  const downloadUrl = baseUrl + fileName;
-  const proxy = process.env.http_proxy || '';
-  let proxyAgent;
-  let httpOptions = {};
-  log(`Downloading from ${downloadUrl}`);
-  log(`(executable will be saved in cache folder: ${installFolder})`);
-  if (proxy && proxy !== '') {
-    proxyAgent = new HttpsProxyAgent(proxy);
-    const proxyUrl = new URL(proxy);
-    httpOptions = {
-      httpRequestOptions: { agent: proxyAgent },
-      httpsRequestOptions: { agent: proxyAgent },
-    };
-    const port = proxyUrl.port === '' ? '' : `:${proxyUrl.port}`;
-    log(`Using proxy server ${proxyUrl.protocol}//${proxyUrl.hostname}${port}`);
-  }
+  // SQ
+
+  const downloadUrl = config.downloadUrl;
+  const httpOptions = config.httpOptions;
+
   const downloader = new DownloaderHelper(downloadUrl, installFolder, httpOptions);
   // node-downloader-helper recommends defining both an onError and a catch because:
   //   "if on('error') is not defined, an error will be thrown when the error event is emitted and

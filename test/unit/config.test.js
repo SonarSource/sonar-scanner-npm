@@ -36,8 +36,7 @@ describe('config', function () {
     });
 
     it('should not set default values if sonar-project.properties file exists', function () {
-      const expectedResult = {
-      };
+      const expectedResult = {};
 
       process.env = {};
 
