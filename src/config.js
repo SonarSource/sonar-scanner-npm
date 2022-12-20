@@ -38,7 +38,11 @@ function getScannerParams(params = {}, basePath) {
 }
 
 /**
- * Gather the parameters for sonar-scanner-executable
+ * Gather the parameters for sonar-scanner-executable:
+ *  - installFolder
+ *  - platformExecutable
+ *  - downloadUrl
+ *  - httpOptions
  */
 function getExecutableParams() {
   const config = {};
