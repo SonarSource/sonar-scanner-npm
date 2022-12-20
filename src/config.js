@@ -3,10 +3,8 @@ const sonarScannerParams = require('./sonar-scanner-params');
 module.exports.getConfig = getConfig;
 module.exports.wrapWithExecParams = wrapWithExecParams;
 
-const DEFAULT_SCANNER_VERSION = '4.7.0.2747';
 const DEFAULT_EXCLUSIONS =
   'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
-module.exports.DEFAULT_SCANNER_VERSION = DEFAULT_SCANNER_VERSION;
 module.exports.DEFAULT_EXCLUSIONS = DEFAULT_EXCLUSIONS;
 
 function getConfig(params = {}, basePath) {
@@ -19,11 +17,6 @@ function getConfig(params = {}, basePath) {
   if (sqScannerParams) {
     config.SONARQUBE_SCANNER_PARAMS = sqScannerParams;
   }
-
-  config.platformBinariesVersion =
-    process.env.SONAR_SCANNER_VERSION ||
-    process.env.npm_config_sonar_scanner_version ||
-    DEFAULT_SCANNER_VERSION;
 
   return config;
 }

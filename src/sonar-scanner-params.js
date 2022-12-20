@@ -56,7 +56,11 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
     };
     // If there's a 'package.json' file, read it to grab info
     try {
-      sonarScannerParams = Object.assign({}, sonarScannerParams, extractInfoFromPackageFile(projectBaseDir, sonarScannerParams['sonar.exclusions']));
+      sonarScannerParams = Object.assign(
+        {},
+        sonarScannerParams,
+        extractInfoFromPackageFile(projectBaseDir, sonarScannerParams['sonar.exclusions']),
+      );
     } catch (extractError) {
       // No 'package.json' file (or invalid one) - let's remain on the defaults
       log(`No 'package.json' file found (or no valid one): ${extractError.message}`);
@@ -80,7 +84,7 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
     sonarScannerParams = Object.assign(sonarScannerParams, params.options);
   }
 
-  if (! isEmpty(sonarScannerParams)) {
+  if (!isEmpty(sonarScannerParams)) {
     return JSON.stringify(sonarScannerParams);
   } else {
     return null;

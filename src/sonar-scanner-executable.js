@@ -10,6 +10,8 @@ const logError = log.error;
 const { isWindows, findTargetOS, buildExecutablePath, buildInstallFolderPath } = require('./utils');
 
 const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
+const DEFAULT_SCANNER_VERSION = '4.7.0.2747';
+module.exports.DEFAULT_SCANNER_VERSION = DEFAULT_SCANNER_VERSION;
 
 module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
 module.exports.getLocalSonarScannerExecutable = getLocalSonarScannerExecutable;
@@ -24,8 +26,12 @@ const bar = new ProgressBar('[:bar] :percent :etas', {
 /*
  * Returns the SQ Scanner executable for the current platform
  */
-function getSonarScannerExecutable(config) {
-  const platformBinariesVersion = config.platformBinariesVersion;
+function getSonarScannerExecutable() {
+  const platformBinariesVersion =
+    process.env.SONAR_SCANNER_VERSION ||
+    process.env.npm_config_sonar_scanner_version ||
+    DEFAULT_SCANNER_VERSION;
+
   const targetOS = findTargetOS();
   const basePath =
     process.env.SONAR_BINARY_CACHE || process.env.npm_config_sonar_binary_cache || os.homedir();

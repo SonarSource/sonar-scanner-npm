@@ -26,7 +26,6 @@ describe('config', function () {
           'sonar.sources': '.',
           'sonar.exclusions': exclusions,
         }),
-        platformBinariesVersion: '4.7.0.2747',
       };
 
       process.env = {};
@@ -39,7 +38,6 @@ describe('config', function () {
 
     it('should not set default values if sonar-project.properties file exists', function () {
       const expectedResult = {
-        platformBinariesVersion: '4.7.0.2747',
       };
 
       process.env = {};
