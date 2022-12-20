@@ -56,6 +56,7 @@ function getSonarScannerExecutable() {
   downloader
     .start()
     .then(() => {
+      const fileName = config.fileName;
       decompress(`${installFolder}/${fileName}`, installFolder).then(() => {
         return platformExecutable;
       });
