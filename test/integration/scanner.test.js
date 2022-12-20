@@ -42,7 +42,7 @@ describe('scanner', function () {
           'sonar.sources': path.join(__dirname, '/resources/fake_project_for_integration/src'),
         },
       });
-      await waitForAnalysisFinished();
+      await waitForAnalysisFinished(TIMEOUT_MS);
       const issues = await getIssues(projectKey);
       assert.equal(issues.length, 1);
       assert.deepEqual(issues[0].textRange, {
