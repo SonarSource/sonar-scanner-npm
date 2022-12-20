@@ -6,14 +6,13 @@ const mkdirpSync = require('mkdirp').sync;
 const rimraf = require('rimraf');
 const { DEFAULT_SCANNER_VERSION, getSonarScannerExecutable } = require('../../src/sonar-scanner-executable');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
-const { getConfig } = require('../../src/config');
 
 describe('sqScannerExecutable', function () {
   describe('getSonarScannerExecutable()', function () {
     it('should return null when download of executable failed', function () {
       // better: read some log
       process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
-      const executable = getSonarScannerExecutable(getConfig());
+      const executable = getSonarScannerExecutable();
 
       assert.equal(executable, null);
     });
@@ -33,7 +32,7 @@ describe('sqScannerExecutable', function () {
         rimraf.sync(filepath);
       });
       it('should run the callback with it as parameter', function () {
-        const receivedExecutable = getSonarScannerExecutable(getConfig());
+        const receivedExecutable = getSonarScannerExecutable();
         assert.isTrue(receivedExecutable.includes('sonar-scanner'));
       });
     });

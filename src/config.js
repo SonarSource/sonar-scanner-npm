@@ -1,16 +1,16 @@
 const sonarScannerParams = require('./sonar-scanner-params');
 
-module.exports.getConfig = getConfig;
+module.exports.getScannerParams = getScannerParams;
 module.exports.wrapWithExecParams = wrapWithExecParams;
 
 const DEFAULT_EXCLUSIONS =
   'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
 module.exports.DEFAULT_EXCLUSIONS = DEFAULT_EXCLUSIONS;
 
-function getConfig(params = {}, basePath) {
-  const env = process.env;
-  let config = env;
+function getScannerParams(params = {}, basePath) {
+  let config = {};
 
+  const env = process.env;
   const sqScannerParams = sonarScannerParams(params, basePath, env.SONARQUBE_SCANNER_PARAMS);
 
   // We need to merge the existing env variables (process.env) with the SQ ones
