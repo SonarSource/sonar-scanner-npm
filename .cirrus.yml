@@ -47,7 +47,9 @@ build_task:
     - jfrog npm-config --repo-resolve npm --repo-deploy sonarsource-npm-public-qa
     - npm run build
   sonarcloud_analysis_script:
-    - node ./ci-analysis.js
+    - node ./scripts/ci-analysis.js
+  publish_script:
+    - ./scripts/publish.sh
 
 mend_task:
   depends_on:
