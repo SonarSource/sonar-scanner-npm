@@ -65,8 +65,8 @@ describe('scanner', function () {
       const issues = await getIssues(projectKey);
       assert.equal(issues.length, 1);
       assert.deepEqual(issues[0].textRange, {
-        startLine: 1,
-        endLine: 1,
+        startLine: 20,
+        endLine: 20,
         startOffset: 0,
         endOffset: 7,
       });
