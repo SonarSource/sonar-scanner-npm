@@ -6,10 +6,10 @@ import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 import * as os from 'os';
 
-const DEFAULT_VERSION: string = '9.7.1.62043';
-const VERSIONS_URL: string = 'https://repox.jfrog.io/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*'
-const CACHE_PATH: string = path.join(os.homedir(), '.sonar');
-const DEFAULT_SONARQUBE_PATH: string = path.join(CACHE_PATH, 'sonarqube');
+const DEFAULT_VERSION = '9.7.1.62043';
+const VERSIONS_URL = 'https://repox.jfrog.io/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*'
+const CACHE_PATH = path.join(os.homedir(), '.sonar');
+const DEFAULT_SONARQUBE_PATH = path.join(CACHE_PATH, 'sonarqube');
 
 /**
  * Downloads the latest SonarQube Community edition
