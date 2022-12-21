@@ -10,7 +10,7 @@ const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils
 
 describe('sqScannerExecutable', function () {
   describe('getSonarScannerExecutable()', function () {
-    it('should return null when download of executable failed', function () {
+    it('should return null when the download of executable fails', function () {
       // better: read some log
       process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
       const executable = getSonarScannerExecutable();
@@ -32,9 +32,9 @@ describe('sqScannerExecutable', function () {
       after(function () {
         rimraf.sync(filepath);
       });
-      it('should run the callback with it as parameter', function () {
+      it('should return the path to it', function () {
         const receivedExecutable = getSonarScannerExecutable();
-        assert.isTrue(receivedExecutable.includes('sonar-scanner'));
+        assert.equal(receivedExecutable, filepath);
       });
     });
   });
