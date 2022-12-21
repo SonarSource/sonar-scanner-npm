@@ -11,13 +11,15 @@ const {
   getIssues,
 } = require('../../tools/orchestrator/dist');
 
+const TIMEOUT_MS = 300_000;
+
 describe('scanner', function () {
   describe('on local SonarQube', function () {
     let sqPath, token, projectKey;
     before(async function () {
-      this.timeout(60 * 1000);
+      this.timeout(TIMEOUT_MS);
       sqPath = await getLatestSonarQube();
-      await startAndReady(sqPath);
+      await startAndReady(sqPath, TIMEOUT_MS);
       try {
         token = await generateToken();
         projectKey = await createProject();
@@ -26,7 +28,7 @@ describe('scanner', function () {
       }
     });
     after(function () {
-      this.timeout(10 * 1000);
+      this.timeout(TIMEOUT_MS);
       stop(sqPath);
     });
     it('should run an analysis', async function () {
@@ -39,7 +41,7 @@ describe('scanner', function () {
           'sonar.sources': path.join(__dirname, '/resources/fake_project_for_integration/src'),
         },
       });
-      await waitForAnalysisFinished();
+      await waitForAnalysisFinished(TIMEOUT_MS);
       const issues = await getIssues(projectKey);
       assert.equal(issues.length, 1);
       assert.deepEqual(issues[0].textRange, {
@@ -48,6 +50,6 @@ describe('scanner', function () {
         startOffset: 0,
         endOffset: 7,
       });
-    }).timeout(60 * 1000);
+    }).timeout(TIMEOUT_MS);
   });
 });
