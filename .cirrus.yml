@@ -78,10 +78,9 @@ qa_task:
     <<: *CONTAINER_DEFINITION
     cpu: 4
     memory: 8G
-  build_script:
-#    TODO replace by downloading artifact build in build task
-    - npm run build
   qa_script:
+    -
+    - ./scripts/qa.sh
     - npm run test-integration
 
 qa_win_task:
