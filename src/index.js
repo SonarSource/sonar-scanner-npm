@@ -28,6 +28,8 @@ function scanPromise(params) {
     // determine the command to run and execute it
     const sqScannerCommand = getSonarScannerExecutable();
 
+    console.log('found sonar exec', sqScannerCommand)
+
     // prepare the exec options, most notably with the SQ params
     const scannerParams = getScannerParams(params, process.cwd());
     const execOptions = extendWithExecParams(scannerParams);
