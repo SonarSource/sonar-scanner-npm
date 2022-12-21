@@ -7,7 +7,8 @@ import * as mkdirp from 'mkdirp';
 import * as os from 'os';
 
 const DEFAULT_VERSION = '9.7.1.62043';
-const VERSIONS_URL = 'https://repox.jfrog.io/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*'
+const ARTIFACTORY_URL = process.env.ARTIFACTORY_URL || 'https://repox.jfrog.io';
+const VERSIONS_URL = `${ARTIFACTORY_URL}/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*`
 const CACHE_PATH = path.join(os.homedir(), '.sonar');
 const DEFAULT_SONARQUBE_PATH = path.join(CACHE_PATH, 'sonarqube');
 
@@ -89,7 +90,7 @@ function download(version: string = DEFAULT_VERSION, downloadFolder: string = CA
 }
 
 function buildSonarQubeUrl(version: string) {
-  return `https://repox.jfrog.io/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`;
+  return `${ARTIFACTORY_URL}/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`;
 }
 
 function buildSonarQubePath(folder: string, version: string) {
