@@ -17,7 +17,7 @@ const invalidCharacterRegex = /[?$*+~.()'"!:@/]/g;
  *  all
  * 3. sonar-project-properties
  *  as-is
- * OR
+ * OR (TODO: make it hierarchical, not conditionnal)
  * 3. package.json (only some other fields)
  *  slug(name)      -> sonar.projectKey
  *  name            -> sonar.projectName
