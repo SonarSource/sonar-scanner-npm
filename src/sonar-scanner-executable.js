@@ -108,7 +108,6 @@ async function getSonarScannerExecutable(params = {}) {
  */
 function getLocalSonarScannerExecutable(command = 'sonar-scanner') {
   if (isWindows()) {
-    // This is not true for latest version of the scanner, it's "StartSonar.bat", not "sonar-scanner.bat"
     command += '.bat';
   }
 
