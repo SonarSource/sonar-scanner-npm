@@ -46,12 +46,15 @@ function getScannerParams(params = {}, basePath) {
  *  - fileName
  *  - httpOptions, if proxy
  */
-function getExecutableParams() {
+function getExecutableParams(params = {}) {
   const config = {};
   const env = process.env;
 
   const platformBinariesVersion =
-    env.SONAR_SCANNER_VERSION || env.npm_config_sonar_scanner_version || DEFAULT_SCANNER_VERSION;
+    params.version ||
+    env.SONAR_SCANNER_VERSION ||
+    env.npm_config_sonar_scanner_version ||
+    DEFAULT_SCANNER_VERSION;
 
   const targetOS = findTargetOS();
 
@@ -61,12 +64,14 @@ function getExecutableParams() {
   config.platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
 
   const baseUrl =
+    params.baseUrl ||
     process.env.SONAR_SCANNER_MIRROR ||
     process.env.npm_config_sonar_scanner_mirror ||
     SONAR_SCANNER_MIRROR;
   const fileName = (config.fileName =
     'sonar-scanner-cli-' + platformBinariesVersion + '-' + targetOS + '.zip');
-  const downloadUrl = (config.downloadUrl = baseUrl + fileName);
+  console.log('buildin dl url from', fileName, baseUrl);
+  const downloadUrl = (config.downloadUrl = new URL(fileName, baseUrl).href);
 
   const proxy = process.env.http_proxy;
   log(`Downloading from ${downloadUrl}`);

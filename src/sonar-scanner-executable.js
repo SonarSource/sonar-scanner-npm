@@ -21,8 +21,8 @@ const bar = new ProgressBar('[:bar] :percent :etas', {
 /*
  * Returns the SQ Scanner executable for the current platform
  */
-function getSonarScannerExecutable() {
-  const config = getExecutableParams();
+function getSonarScannerExecutable(params = {}) {
+  const config = getExecutableParams(params);
   const platformExecutable = config.platformExecutable;
 
   // #1 - Try to execute the scanner
@@ -41,12 +41,17 @@ function getSonarScannerExecutable() {
   const downloadUrl = config.downloadUrl;
   const httpOptions = config.httpOptions;
 
+  console.log('dl url', downloadUrl);
+
   const downloader = new DownloaderHelper(downloadUrl, installFolder, httpOptions);
   // node-downloader-helper recommends defining both an onError and a catch because:
   //   "if on('error') is not defined, an error will be thrown when the error event is emitted and
   //    not listing, this is because EventEmitter is designed to throw an unhandled error event
   //    error if not been listened and is too late to change it now."
-  downloader.on('error', _ => {});
+  downloader.on('error', error => {
+    logError('error in downloader');
+    logError(error);
+  });
   downloader.on('download', downloadInfo => {
     bar.total = downloadInfo.totalSize;
   });
@@ -57,6 +62,7 @@ function getSonarScannerExecutable() {
     .start()
     .then(() => {
       const fileName = config.fileName;
+      console.log('finished dling');
       decompress(`${installFolder}/${fileName}`, installFolder).then(() => {
         return platformExecutable;
       });

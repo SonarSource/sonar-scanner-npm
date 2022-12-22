@@ -7,6 +7,7 @@ const rimraf = require('rimraf');
 const { getSonarScannerExecutable } = require('../../src/sonar-scanner-executable');
 const { DEFAULT_SCANNER_VERSION } = require('../../src/config');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
+const { startServer, closeServerPromise } = require('./resources/webserver/server');
 
 describe('sqScannerExecutable', function () {
   describe('getSonarScannerExecutable()', function () {
@@ -35,6 +36,27 @@ describe('sqScannerExecutable', function () {
       it('should return the path to it', function () {
         const receivedExecutable = getSonarScannerExecutable();
         assert.equal(receivedExecutable, filepath);
+      });
+    });
+
+    describe.only('when the executable is downloaded', function () {
+      let server, reqCallback;
+      before(async function () {
+        server = await startServer(reqCallback);
+        console.log('server listening on', server.address());
+      });
+      after(async function () {
+        await closeServerPromise(server);
+      });
+      it('should download the executable, unzip it and return a path to it.', async function () {
+        reqCallback = function (request) {
+          assert.exists(request);
+          console.log('got', request);
+        };
+
+        await getSonarScannerExecutable({
+          baseUrl: `http://${server.address().address}:${server.address().port}`,
+        });
       });
     });
   });
