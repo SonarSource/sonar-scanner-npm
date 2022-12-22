@@ -24,16 +24,16 @@ const os = require('os');
 const mkdirpSync = require('mkdirp').sync;
 const rimraf = require('rimraf');
 const { getSonarScannerExecutable } = require('../../src/sonar-scanner-executable');
-const { DEFAULT_SCANNER_VERSION } = require('../../src/config');
+const { DEFAULT_SCANNER_VERSION, getExecutableParams } = require('../../src/config');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
 const { startServer, closeServerPromise } = require('./resources/webserver/server');
 
 describe('sqScannerExecutable', function () {
   describe('getSonarScannerExecutable()', function () {
-    it('should return null when the download of executable fails', function () {
+    it('should return null when the download of executable fails', async function () {
       // better: read some log
       process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
-      const executable = getSonarScannerExecutable();
+      const executable = await getSonarScannerExecutable();
 
       assert.equal(executable, null);
     });
@@ -52,20 +52,32 @@ describe('sqScannerExecutable', function () {
       after(function () {
         rimraf.sync(filepath);
       });
-      it('should return the path to it', function () {
-        const receivedExecutable = getSonarScannerExecutable();
+      it('should return the path to it', async function () {
+        const receivedExecutable = await getSonarScannerExecutable();
         assert.equal(receivedExecutable, filepath);
       });
     });
 
-    describe.only('when the executable is downloaded', function () {
-      let server, reqCallback;
+    describe('when the executable is downloaded', function () {
+      let server,
+        reqCallback,
+        config,
+        pathToZip,
+        pathToUnzippedExecutable,
+        expectedPlatformExecutablePath;
+      const FILENAME = 'test-executable.zip';
       before(async function () {
         server = await startServer(reqCallback);
         console.log('server listening on', server.address());
+        config = getExecutableParams({ fileName: FILENAME });
+        expectedPlatformExecutablePath = config.platformExecutable;
       });
       after(async function () {
         await closeServerPromise(server);
+        pathToZip = path.join(config.installFolder, config.fileName);
+        pathToUnzippedExecutable = path.join(config.installFolder, 'executable');
+        rimraf.sync(pathToZip);
+        rimraf.sync(pathToUnzippedExecutable);
       });
       it('should download the executable, unzip it and return a path to it.', async function () {
         reqCallback = function (request) {
@@ -73,9 +85,11 @@ describe('sqScannerExecutable', function () {
           console.log('got', request);
         };
 
-        await getSonarScannerExecutable({
+        const execPath = await getSonarScannerExecutable({
           baseUrl: `http://${server.address().address}:${server.address().port}`,
+          fileName: FILENAME,
         });
+        assert.equal(execPath, expectedPlatformExecutablePath);
       });
     });
   });

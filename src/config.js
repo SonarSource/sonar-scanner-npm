@@ -75,7 +75,7 @@ function getExecutableParams(params = {}) {
     env.npm_config_sonar_scanner_version ||
     DEFAULT_SCANNER_VERSION;
 
-  const targetOS = findTargetOS();
+  const targetOS = (config.targetOS = findTargetOS());
 
   const basePath = env.SONAR_BINARY_CACHE || env.npm_config_sonar_binary_cache || os.homedir();
 

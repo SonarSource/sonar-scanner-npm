@@ -18,6 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Starts a server that listens on the provided port and answers with a simple shell command
@@ -28,6 +30,9 @@ const http = require('http');
  * @returns
  */
 module.exports.startServer = function (requestCallback = () => {}, port = 0) {
+  const pathToZip = path.join(__dirname, 'executable.zip');
+  const zipFileContent = fs.readFileSync(pathToZip);
+
   return new Promise((accept, reject) => {
     const server = http.createServer(requestListener);
     console.log('startin server on port', port);
@@ -43,7 +48,7 @@ module.exports.startServer = function (requestCallback = () => {}, port = 0) {
     console.log('got request', req.headers, req.url);
     requestCallback(req);
 
-    const resBody = 'echo "hello"';
+    const resBody = zipFileContent;
 
     res.setHeader('Content-length', resBody.length);
     res.writeHead(200);
