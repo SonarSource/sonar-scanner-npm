@@ -115,7 +115,7 @@ function getExecutableParams(params = {}) {
  */
 function extendWithExecParams(env = {}) {
   return {
-    env,
+    env: Object.assign({}, process.env, env),
     stdio: [0, 1, 2],
     // Increase the amount of data allowed on stdout or stderr
     // (if this value is exceeded then the child process is killed).

@@ -89,7 +89,11 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
 
   // #2 - if SONARQUBE_SCANNER_PARAMS exists, extend the current params
   if (sqScannerParamsFromEnvVariable) {
-    sonarScannerParams = Object.assign({}, sonarScannerParams, sqScannerParamsFromEnvVariable);
+    sonarScannerParams = Object.assign(
+      {},
+      sonarScannerParams,
+      JSON.parse(sqScannerParamsFromEnvVariable),
+    );
   }
 
   // #3 - check what's passed in the call params - these are prevalent params

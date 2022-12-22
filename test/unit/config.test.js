@@ -167,10 +167,10 @@ describe('config', function () {
       };
 
       process.env = {
-        SONARQUBE_SCANNER_PARAMS: {
+        SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.host.url': 'https://sonarcloud.io',
           'sonar.login': 'my_token',
-        },
+        }),
       };
 
       const sqParams = getScannerParams(
@@ -191,10 +191,10 @@ describe('config', function () {
       };
 
       process.env = {
-        SONARQUBE_SCANNER_PARAMS: {
+        SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.host.url': 'https://another.server.com',
           'sonar.login': 'another_token',
-        },
+        }),
       };
 
       const sqParams = getScannerParams(
@@ -255,10 +255,10 @@ describe('config', function () {
       };
 
       process.env = {
-        SONARQUBE_SCANNER_PARAMS: {
+        SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.host.url': 'https://sonarcloud.io',
           'sonar.branch': 'dev',
-        },
+        }),
       };
 
       assert.ownInclude(
@@ -270,11 +270,16 @@ describe('config', function () {
 
   describe('extendWithExecParams()', function () {
     it('should put the provided config in the "env" property of the exec params', function () {
+      process.env = {
+        whatsup: 'dog',
+      };
+
       assert.deepEqual(extendWithExecParams({ hello: 2 }), {
         maxBuffer: 1024 * 1024,
         stdio: [0, 1, 2],
         env: {
           hello: 2,
+          whatsup: 'dog',
         },
       });
     });
