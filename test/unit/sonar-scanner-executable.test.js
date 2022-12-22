@@ -68,7 +68,6 @@ describe('sqScannerExecutable', function () {
       const FILENAME = 'test-executable.zip';
       before(async function () {
         server = await startServer(reqCallback);
-        console.log('server listening on', server.address());
         config = getExecutableParams({ fileName: FILENAME });
         expectedPlatformExecutablePath = config.platformExecutable;
       });
@@ -82,7 +81,6 @@ describe('sqScannerExecutable', function () {
       it('should download the executable, unzip it and return a path to it.', async function () {
         reqCallback = function (request) {
           assert.exists(request);
-          console.log('got', request);
         };
 
         const execPath = await getSonarScannerExecutable({

@@ -62,8 +62,6 @@ async function getSonarScannerExecutable(params = {}) {
   const downloadUrl = config.downloadUrl;
   const httpOptions = config.httpOptions;
 
-  console.log('dl url', downloadUrl);
-
   const downloader = new DownloaderHelper(downloadUrl, installFolder, httpOptions);
   // node-downloader-helper recommends defining both an onError and a catch because:
   //   "if on('error') is not defined, an error will be thrown when the error event is emitted and
@@ -82,10 +80,9 @@ async function getSonarScannerExecutable(params = {}) {
   try {
     await downloader.start();
     const fileName = config.fileName;
-    console.log('finished dling');
-    console.log('decompressing', `${installFolder}/${fileName}`, 'into', installFolder);
+    log('decompressing', `${installFolder}/${fileName}`, 'into', installFolder);
     await decompress(`${installFolder}/${fileName}`, installFolder);
-    console.log('decompressed', platformExecutable);
+    log('decompressed', platformExecutable);
     return platformExecutable;
   } catch (err) {
     logError(`ERROR: impossible to download and extract binary: ${err.message}`);

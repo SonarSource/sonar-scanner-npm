@@ -35,7 +35,6 @@ module.exports.startServer = function (requestCallback = () => {}, port = 0) {
 
   return new Promise((accept, reject) => {
     const server = http.createServer(requestListener);
-    console.log('startin server on port', port);
     server.listen(port, '127.0.0.1', () => {
       accept(server);
     });
@@ -45,7 +44,6 @@ module.exports.startServer = function (requestCallback = () => {}, port = 0) {
   });
 
   function requestListener(req, res) {
-    console.log('got request', req.headers, req.url);
     requestCallback(req);
 
     const resBody = zipFileContent;
@@ -59,7 +57,6 @@ module.exports.startServer = function (requestCallback = () => {}, port = 0) {
 module.exports.closeServerPromise = function (server) {
   const promise = new Promise((resolve, reject) => {
     server.close(() => {
-      console.log('closed');
       resolve();
     });
   });

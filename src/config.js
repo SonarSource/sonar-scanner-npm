@@ -89,7 +89,6 @@ function getExecutableParams(params = {}) {
     SONAR_SCANNER_MIRROR;
   const fileName = (config.fileName =
     'sonar-scanner-cli-' + platformBinariesVersion + '-' + targetOS + '.zip');
-  console.log('buildin dl url from', fileName, baseUrl);
   const downloadUrl = (config.downloadUrl = new URL(fileName, baseUrl).href);
 
   const proxy = process.env.http_proxy;
