@@ -39,17 +39,18 @@ describe('config', function () {
   describe('getScannerParams()', function () {
     it('should provide default values', function () {
       const expectedResult = {
-        SONARQUBE_SCANNER_PARAMS: JSON.stringify({
-          'sonar.projectDescription': 'No description.',
-          'sonar.sources': '.',
-          'sonar.exclusions': exclusions,
-        }),
+        'sonar.projectDescription': 'No description.',
+        'sonar.sources': '.',
+        'sonar.exclusions': exclusions,
       };
 
       process.env = {};
 
       assert.deepEqual(
-        getScannerParams({}, pathForProject('fake_project_with_no_package_file')),
+        JSON.parse(
+          getScannerParams({}, pathForProject('fake_project_with_no_package_file'))
+            .SONARQUBE_SCANNER_PARAMS,
+        ),
         expectedResult,
       );
     });
