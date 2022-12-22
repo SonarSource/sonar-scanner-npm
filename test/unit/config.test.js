@@ -37,14 +37,13 @@ describe('config', function () {
   });
 
   describe('getScannerParams()', function () {
+
     it('should provide default values', function () {
       const expectedResult = {
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
         'sonar.exclusions': exclusions,
       };
-
-      process.env = {};
 
       assert.deepEqual(
         JSON.parse(
@@ -57,8 +56,6 @@ describe('config', function () {
 
     it('should not set default values if sonar-project.properties file exists', function () {
       const expectedResult = {};
-
-      process.env = {};
 
       assert.deepEqual(
         getScannerParams({}, pathForProject('fake_project_with_sonar_properties_file')),
@@ -74,8 +71,6 @@ describe('config', function () {
         'sonar.sources': '.',
         'sonar.exclusions': exclusions,
       };
-
-      process.env = {};
 
       const sqParams = getScannerParams(
         { serverUrl: 'https://sonarcloud.io', token: 'my_token' },
@@ -93,8 +88,6 @@ describe('config', function () {
         'sonar.tests': 'specs',
         'sonar.exclusions': exclusions,
       };
-
-      process.env = {};
 
       const sqParams = getScannerParams(
         { options: { 'sonar.projectName': 'Foo', 'sonar.tests': 'specs' } },
@@ -115,7 +108,6 @@ describe('config', function () {
         'sonar.exclusions':
           'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**,coverage/**',
       };
-      process.env = {};
 
       const sqParams = getScannerParams(
         {},
@@ -135,7 +127,6 @@ describe('config', function () {
         'sonar.exclusions':
           'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**',
       };
-      process.env = {};
 
       const sqParams = getScannerParams(
         {},
@@ -158,8 +149,6 @@ describe('config', function () {
         'sonar.testExecutionReportPaths': 'xunit.xml',
         'sonar.exclusions': exclusions,
       };
-
-      process.env = {};
 
       const sqParams = getScannerParams(
         {},
@@ -228,7 +217,7 @@ describe('config', function () {
         'sonar.exclusions':
           'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**,nyc-coverage/**',
       };
-      process.env = {};
+
       const sqParams = getScannerParams(
         {},
         pathForProject('fake_project_with_nyc_report_file'),
@@ -247,7 +236,7 @@ describe('config', function () {
         'sonar.exclusions':
           'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**,jest-coverage/**',
       };
-      process.env = {};
+
       const sqParams = getScannerParams(
         {},
         pathForProject('fake_project_with_jest_report_file'),
