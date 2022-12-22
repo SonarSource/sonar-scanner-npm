@@ -22,14 +22,12 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Starts a server that listens on the provided port and answers with a simple shell command
- * The requestCallback will be called on the request object, used to run assertions on the request
+ * Starts a server that listens on the provided port and answers with a zipped executable (Windows, Unix compatible)
  *
- * @param {*} requestCallback
  * @param {*} port
  * @returns
  */
-module.exports.startServer = function (requestCallback = () => {}, port = 0) {
+module.exports.startServer = function (port = 0) {
   const pathToZip = path.join(__dirname, 'executable.zip');
   const zipFileContent = fs.readFileSync(pathToZip);
 
@@ -44,8 +42,6 @@ module.exports.startServer = function (requestCallback = () => {}, port = 0) {
   });
 
   function requestListener(req, res) {
-    requestCallback(req);
-
     const resBody = zipFileContent;
 
     res.setHeader('Content-length', resBody.length);

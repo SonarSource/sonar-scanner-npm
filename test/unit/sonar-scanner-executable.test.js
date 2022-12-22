@@ -60,14 +60,13 @@ describe('sqScannerExecutable', function () {
 
     describe('when the executable is downloaded', function () {
       let server,
-        reqCallback,
         config,
         pathToZip,
         pathToUnzippedExecutable,
         expectedPlatformExecutablePath;
       const FILENAME = 'test-executable.zip';
       before(async function () {
-        server = await startServer(reqCallback);
+        server = await startServer();
         config = getExecutableParams({ fileName: FILENAME });
         expectedPlatformExecutablePath = config.platformExecutable;
       });
@@ -79,10 +78,6 @@ describe('sqScannerExecutable', function () {
         rimraf.sync(pathToUnzippedExecutable);
       });
       it('should download the executable, unzip it and return a path to it.', async function () {
-        reqCallback = function (request) {
-          assert.exists(request);
-        };
-
         const execPath = await getSonarScannerExecutable({
           baseUrl: `http://${server.address().address}:${server.address().port}`,
           fileName: FILENAME,
