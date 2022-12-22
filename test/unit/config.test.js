@@ -37,7 +37,6 @@ describe('config', function () {
   });
 
   describe('getScannerParams()', function () {
-
     it('should provide default values', function () {
       const expectedResult = {
         'sonar.projectDescription': 'No description.',

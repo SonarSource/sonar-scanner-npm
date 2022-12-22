@@ -59,11 +59,7 @@ describe('sqScannerExecutable', function () {
     });
 
     describe('when the executable is downloaded', function () {
-      let server,
-        config,
-        pathToZip,
-        pathToUnzippedExecutable,
-        expectedPlatformExecutablePath;
+      let server, config, pathToZip, pathToUnzippedExecutable, expectedPlatformExecutablePath;
       const FILENAME = 'test-executable.zip';
       before(async function () {
         server = await startServer();
