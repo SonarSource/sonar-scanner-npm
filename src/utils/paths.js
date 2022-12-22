@@ -21,18 +21,22 @@ const path = require('path');
 const { isWindows, findTargetOS } = require('./platform');
 
 module.exports.buildExecutablePath = function (installFolder, platformBinariesVersion) {
-  let execPath = path.join(
+  return path.join(
     installFolder,
     `sonar-scanner-${platformBinariesVersion}-${findTargetOS()}`,
     'bin',
-    `sonar-scanner`,
+    `sonar-scanner${getBinaryExtension()}`,
   );
-  if (isWindows()) {
-    execPath += '.bat';
-  }
-  return execPath;
 };
 
 module.exports.buildInstallFolderPath = function (basePath) {
   return path.join(basePath, '.sonar', 'native-sonar-scanner');
 };
+
+function getBinaryExtension() {
+  if (isWindows()) {
+    return '.bat';
+  } else {
+    return '';
+  }
+}
