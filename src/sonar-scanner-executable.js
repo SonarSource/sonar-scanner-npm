@@ -107,10 +107,6 @@ async function getSonarScannerExecutable(params = {}) {
  * @returns the command to execute
  */
 function getLocalSonarScannerExecutable(command = 'sonar-scanner') {
-  if (isWindows()) {
-    command += '.bat';
-  }
-
   try {
     log(`Trying to find a local install of the SonarScanner: ${command}`);
     exec(command + ' -v', {});
