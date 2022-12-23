@@ -42,7 +42,7 @@ describe('sqScannerExecutable', function () {
       let filepath;
       before(function () {
         filepath = buildExecutablePath(
-          buildInstallFolderPath(os.homedir()),
+          buildInstallFolderPath(os.tmpdir()),
           DEFAULT_SCANNER_VERSION,
         );
         mkdirpSync(path.dirname(filepath));
@@ -53,7 +53,9 @@ describe('sqScannerExecutable', function () {
         rimraf.sync(filepath);
       });
       it('should return the path to it', async function () {
-        const receivedExecutable = await getSonarScannerExecutable();
+        const receivedExecutable = await getSonarScannerExecutable({
+          basePath: os.tmpdir(),
+        });
         assert.equal(receivedExecutable, filepath);
       });
     });

@@ -77,7 +77,8 @@ function getExecutableParams(params = {}) {
 
   const targetOS = (config.targetOS = findTargetOS());
 
-  const basePath = env.SONAR_BINARY_CACHE || env.npm_config_sonar_binary_cache || os.homedir();
+  const basePath =
+    params.basePath || env.SONAR_BINARY_CACHE || env.npm_config_sonar_binary_cache || os.homedir();
 
   const installFolder = (config.installFolder = buildInstallFolderPath(basePath));
   config.platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
