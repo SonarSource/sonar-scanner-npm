@@ -114,12 +114,14 @@ function getExecutableParams(params = {}) {
  * @returns
  */
 function extendWithExecParams(env = {}) {
+  const ONE_MB = 1024 * 1024;
+
   return {
     env: Object.assign({}, process.env, env),
     stdio: [0, 1, 2],
     // Increase the amount of data allowed on stdout or stderr
     // (if this value is exceeded then the child process is killed).
     // TODO: make this customizable
-    maxBuffer: 1024 * 1024,
+    maxBuffer: ONE_MB,
   };
 }
