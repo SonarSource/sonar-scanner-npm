@@ -93,8 +93,6 @@ function getExecutableParams(params = {}) {
   const downloadUrl = (config.downloadUrl = new URL(fileName, baseUrl).href);
 
   const proxy = process.env.http_proxy;
-  log(`Downloading from ${downloadUrl}`);
-  log(`(executable will be saved in cache folder: ${installFolder})`);
   if (proxy && proxy !== '') {
     const proxyAgent = new HttpsProxyAgent(proxy);
     const proxyUrl = new URL(proxy);
@@ -103,8 +101,9 @@ function getExecutableParams(params = {}) {
       httpsRequestOptions: { agent: proxyAgent },
     };
     const port = proxyUrl.port === '' ? '' : `:${proxyUrl.port}`;
-    log(`Using proxy server ${proxyUrl.protocol}//${proxyUrl.hostname}${port}`);
   }
+  log(`Executable parameters built:`);
+  log(config);
   return config;
 }
 
