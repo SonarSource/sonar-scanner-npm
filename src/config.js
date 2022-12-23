@@ -95,12 +95,10 @@ function getExecutableParams(params = {}) {
   const proxy = process.env.http_proxy;
   if (proxy && proxy !== '') {
     const proxyAgent = new HttpsProxyAgent(proxy);
-    const proxyUrl = new URL(proxy);
     config.httpOptions = {
       httpRequestOptions: { agent: proxyAgent },
       httpsRequestOptions: { agent: proxyAgent },
     };
-    const port = proxyUrl.port === '' ? '' : `:${proxyUrl.port}`;
   }
   log(`Executable parameters built:`);
   log(config);
