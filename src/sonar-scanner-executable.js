@@ -42,7 +42,7 @@ const bar = new ProgressBar('[:bar] :percent :etas', {
  */
 async function getSonarScannerExecutable(params = {}) {
   const config = getExecutableParams(params);
-  const platformExecutable = config.platformExecutable;
+  const { downloadUrl, httpOptions, platformExecutable, fileName, targetOS } = config;
 
   // #1 - Try to execute the scanner
   try {
@@ -58,9 +58,6 @@ async function getSonarScannerExecutable(params = {}) {
   log('Creating ' + installFolder);
   mkdirs(installFolder);
   // SQ
-
-  const downloadUrl = config.downloadUrl;
-  const httpOptions = config.httpOptions;
 
   const downloader = new DownloaderHelper(downloadUrl, installFolder, httpOptions);
   // node-downloader-helper recommends defining both an onError and a catch because:
@@ -79,14 +76,13 @@ async function getSonarScannerExecutable(params = {}) {
   });
   try {
     await downloader.start();
-    const fileName = config.fileName;
     log('decompressing', `${installFolder}/${fileName}`, 'into', installFolder);
     await decompress(`${installFolder}/${fileName}`, installFolder);
     log('decompressed', platformExecutable);
     return platformExecutable;
   } catch (err) {
     logError(`ERROR: impossible to download and extract binary: ${err.message}`);
-    logError(`       SonarScanner binaries probably don't exist for your OS (${config.targetOS}).`);
+    logError(`       SonarScanner binaries probably don't exist for your OS (${targetOS}).`);
     logError(
       '       In such situation, the best solution is to install the standard SonarScanner (requires a JVM).',
     );
