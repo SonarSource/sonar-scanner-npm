@@ -64,6 +64,7 @@ function scanCLI(cliArgs, params, callback) {
     const execOptions = extendWithExecParams(scannerParams);
 
     try {
+      console.log('running scanCLI wid params', fromParam().concat(cliArgs), execOptions);
       exec(sqScannerCommand, fromParam().concat(cliArgs), execOptions);
       log('Analysis finished.');
       callback();
