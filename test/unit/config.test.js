@@ -276,7 +276,7 @@ describe('config', function () {
 
       assert.deepEqual(extendWithExecParams({ hello: 2 }), {
         maxBuffer: 1024 * 1024,
-        stdio: [0, 1, 2],
+        stdio: 'inherit',
         env: {
           hello: 2,
           whatsup: 'dog',

@@ -118,7 +118,7 @@ function extendWithExecParams(env = {}) {
 
   return {
     env: Object.assign({}, process.env, env),
-    stdio: [0, 1, 2],
+    stdio: 'inherit',
     // Increase the amount of data allowed on stdout or stderr
     // (if this value is exceeded then the child process is killed).
     // TODO: make this customizable
