@@ -19,7 +19,10 @@
  */
 const { assert } = require('chai');
 const path = require('path');
-const { getScannerParams, extendWithExecParams, DEFAULT_EXCLUSIONS } = require('../../src/config');
+const os = require('os');
+const { getScannerParams, extendWithExecParams, DEFAULT_EXCLUSIONS, getExecutableParams, DEFAULT_SCANNER_VERSION, SONAR_SCANNER_MIRROR } = require('../../src/config');
+const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils/paths');
+const { findTargetOS } = require('../../src/utils/platform');
 
 function pathForProject(projectFolder) {
   return path.join(__dirname, 'resources', projectFolder);
@@ -285,6 +288,22 @@ describe('config', function () {
         env: {},
         maxBuffer: 1024 * 1024,
         stdio: 'inherit',
+      });
+    });
+  });
+
+  describe('getExecutableParams()', function () {
+    it('should set default values', function () {
+      process.env = {};
+      const targetOS = findTargetOS();
+      const fileName = 'sonar-scanner-cli-' + DEFAULT_SCANNER_VERSION + '-' + targetOS + '.zip';
+      const installFolder =  buildInstallFolderPath(os.homedir());
+      assert.deepEqual(getExecutableParams(), {
+        installFolder,
+        fileName,
+        platformExecutable: buildExecutablePath(installFolder, DEFAULT_SCANNER_VERSION),
+        targetOS,
+        downloadUrl: new URL(fileName, SONAR_SCANNER_MIRROR).href,
       });
     });
   });
