@@ -31,9 +31,10 @@ const { startServer, closeServerPromise } = require('./resources/webserver/serve
 describe('sqScannerExecutable', function () {
   describe('getSonarScannerExecutable()', function () {
     it('should return null when the download of executable fails', async function () {
-      // better: read some log
       process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
-      const executable = await getSonarScannerExecutable();
+      const executable = await getSonarScannerExecutable({
+        basePath: os.tmpdir(),
+      });
 
       assert.equal(executable, null);
     });
