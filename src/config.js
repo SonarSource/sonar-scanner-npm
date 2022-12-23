@@ -40,7 +40,7 @@ const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sona
  *
  * @returns
  */
-function getScannerParams(params = {}, basePath) {
+function getScannerParams(basePath, params = {}) {
   const config = {};
 
   const sqScannerParams = sonarScannerParams(

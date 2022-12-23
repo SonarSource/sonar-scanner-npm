@@ -46,7 +46,7 @@ describe('config', function () {
 
       assert.deepEqual(
         JSON.parse(
-          getScannerParams({}, pathForProject('fake_project_with_no_package_file'))
+          getScannerParams(pathForProject('fake_project_with_no_package_file'))
             .SONARQUBE_SCANNER_PARAMS,
         ),
         expectedResult,
@@ -57,7 +57,7 @@ describe('config', function () {
       const expectedResult = {};
 
       assert.deepEqual(
-        getScannerParams({}, pathForProject('fake_project_with_sonar_properties_file')),
+        getScannerParams(pathForProject('fake_project_with_sonar_properties_file')),
         expectedResult,
       );
     });
@@ -72,8 +72,8 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        { serverUrl: 'https://sonarcloud.io', token: 'my_token' },
         pathForProject('fake_project_with_no_package_file'),
+        { serverUrl: 'https://sonarcloud.io', token: 'my_token' },
       ).SONARQUBE_SCANNER_PARAMS;
 
       assert.deepEqual(JSON.parse(sqParams), expectedResult);
@@ -89,8 +89,8 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        { options: { 'sonar.projectName': 'Foo', 'sonar.tests': 'specs' } },
         pathForProject('fake_project_with_no_package_file'),
+        { options: { 'sonar.projectName': 'Foo', 'sonar.tests': 'specs' } },
       ).SONARQUBE_SCANNER_PARAMS;
 
       assert.deepEqual(JSON.parse(sqParams), expectedResult);
@@ -109,7 +109,6 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        {},
         pathForProject('fake_project_with_basic_package_file'),
       ).SONARQUBE_SCANNER_PARAMS;
 
@@ -128,7 +127,6 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        {},
         pathForProject('fake_project_with_scoped_package_name'),
       ).SONARQUBE_SCANNER_PARAMS;
 
@@ -150,7 +148,6 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        {},
         pathForProject('fake_project_with_complete_package_file'),
       ).SONARQUBE_SCANNER_PARAMS;
 
@@ -174,7 +171,6 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        {},
         pathForProject('fake_project_with_no_package_file'),
       ).SONARQUBE_SCANNER_PARAMS;
 
@@ -198,8 +194,8 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        { serverUrl: 'https://sonarcloud.io', token: 'my_token' },
         pathForProject('fake_project_with_no_package_file'),
+        { serverUrl: 'https://sonarcloud.io', token: 'my_token' },
       ).SONARQUBE_SCANNER_PARAMS;
 
       assert.deepEqual(JSON.parse(sqParams), expectedResult);
@@ -218,7 +214,6 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        {},
         pathForProject('fake_project_with_nyc_report_file'),
       ).SONARQUBE_SCANNER_PARAMS;
       assert.deepEqual(JSON.parse(sqParams), expectedResult);
@@ -237,7 +232,6 @@ describe('config', function () {
       };
 
       const sqParams = getScannerParams(
-        {},
         pathForProject('fake_project_with_jest_report_file'),
       ).SONARQUBE_SCANNER_PARAMS;
       assert.deepEqual(JSON.parse(sqParams), expectedResult);
@@ -262,7 +256,7 @@ describe('config', function () {
       };
 
       assert.ownInclude(
-        getScannerParams({}, pathForProject('fake_project_with_no_package_file')),
+        getScannerParams(pathForProject('fake_project_with_no_package_file')),
         expectedResult,
       );
     });
@@ -281,6 +275,16 @@ describe('config', function () {
           hello: 2,
           whatsup: 'dog',
         },
+      });
+    });
+
+    it('should set default empty object if no params provided', function () {
+      process.env = {};
+
+      assert.deepEqual(extendWithExecParams(), {
+        env: {},
+        maxBuffer: 1024 * 1024,
+        stdio: 'inherit',
       });
     });
   });
