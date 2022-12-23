@@ -287,7 +287,7 @@ describe('config', function () {
       });
     });
 
-    it('should set default empty object if no params provided', function () {
+    it('should set default empty object if no params are provided', function () {
       process.env = {};
 
       assert.deepEqual(extendWithExecParams(), {
@@ -299,7 +299,7 @@ describe('config', function () {
   });
 
   describe('getExecutableParams()', function () {
-    it('should set default values', function () {
+    it('should set default values if no params are provided', function () {
       process.env = {};
       const targetOS = findTargetOS();
       const fileName = 'sonar-scanner-cli-' + DEFAULT_SCANNER_VERSION + '-' + targetOS + '.zip';
