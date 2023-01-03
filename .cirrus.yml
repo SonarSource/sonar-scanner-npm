@@ -82,6 +82,7 @@ qa_task:
     memory: 8G
   qa_script:
     - ./scripts/qa.sh
+    - node ./scripts/build-orchestrator.js
     - npm run test-integration
 
 qa_win_task:
