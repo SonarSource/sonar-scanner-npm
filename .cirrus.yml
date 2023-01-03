@@ -90,11 +90,11 @@ qa_win_task:
     - build
   <<: *ONLY_SONARSOURCE_QA
   <<: *INSTANCE_DEFINITION
-  build_script:
-    #    TODO replace by downloading artifact build in build task
-    - npm run build
   qa_script:
+    - ./scripts/qa.sh
+    - node ./scripts/build-orchestrator.js
     - npm run test-integration
+
 
 promote_task:
   depends_on:
