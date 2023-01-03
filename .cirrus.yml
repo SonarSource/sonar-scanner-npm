@@ -91,6 +91,7 @@ qa_win_task:
   <<: *ONLY_SONARSOURCE_QA
   <<: *INSTANCE_DEFINITION
   qa_script:
+    - curl -fL https://install-cli.jfrog.io | sh
     - ./scripts/qa.sh
     - node ./scripts/build-orchestrator.js
     - npm run test-integration
