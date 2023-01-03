@@ -5,6 +5,8 @@ set -euo pipefail
 VERSION=$(grep version package.json | head -1  | awk -F: '{ print $2 }' | sed 's/[", ]//g')
 
 source cirrus-env QA
+curl -fL https://getcli.jfrog.io/v2 | sh
+
 jfrog config add repox --url $ARTIFACTORY_URL --access-token $ARTIFACTORY_PRIVATE_PASSWORD
 
 # TODO: https://sonarsource.atlassian.net/browse/BUILD-2397
