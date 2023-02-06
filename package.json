@@ -23,24 +23,24 @@
     "node": ">= 14"
   },
   "dependencies": {
-    "decompress": "^4.2.1",
-    "fancy-log": "^2.0.0",
-    "https-proxy-agent": "^5.0.1",
-    "mkdirp": "^1.0.4",
-    "node-downloader-helper": "^2.1.5",
-    "progress": "^2.0.3",
-    "slugify": "^1.6.5"
+    "decompress": "4.2.1",
+    "fancy-log": "2.0.0",
+    "https-proxy-agent": "5.0.1",
+    "mkdirp": "1.0.4",
+    "node-downloader-helper": "2.1.5",
+    "progress": "2.0.3",
+    "slugify": "1.6.5"
   },
   "devDependencies": {
-    "@typescript-eslint/parser": "^5.47.0",
-    "eslint": "^8.30.0",
-    "eslint-plugin-notice": "^0.9.10",
-    "chai": "^4.3.7",
-    "mocha": "^10.1.0",
-    "nyc": "^15.1.0",
-    "prettier": "^2.8.0",
-    "rimraf": "^3.0.2",
-    "sinon": "^15.0.0"
+    "@typescript-eslint/parser": "5.47.0",
+    "eslint": "8.30.0",
+    "eslint-plugin-notice": "0.9.10",
+    "chai": "4.3.7",
+    "mocha": "10.1.0",
+    "nyc": "15.1.0",
+    "prettier": "2.8.0",
+    "rimraf": "3.0.2",
+    "sinon": "15.0.0"
   },
   "keywords": [
     "sonarqube",
