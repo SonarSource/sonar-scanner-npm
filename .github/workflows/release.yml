@@ -25,7 +25,7 @@ jobs:
             development/artifactory/token/SonarSource-sonar-scanner-npm-qa-deployer access_token  | qa_deployer_access_token;
             development/artifactory/token/SonarSource-sonar-scanner-npm-promoter access_token  | promoter_access_token;
             development/kv/data/npmjs sonartech_npm_token  | npm_token;
-            development/kv/data/repox url  | npm_token;
+            development/kv/data/repox url  | repox_url;
       - name: Setup JFrog for deploy
         uses: SonarSource/jfrog-setup-wrapper@eb712d76540e5d1f3756303f30387657fb204e52  # tag=2.4.1-1
         with:
