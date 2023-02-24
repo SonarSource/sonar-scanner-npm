@@ -48,5 +48,5 @@ jobs:
           REPOX_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
           PROMOTE_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
         run: |
-          jfrog rt bpr --status it-passed $PACKAGE 3.0.1 sonarsource-npm-public-builds --url $REPOX_URL --access-token PROMOTE_ACCESS_TOKEN
-          jfrog rt bpr --status released $PACKAGE 3.0.1 sonarsource-npm-public-releases --url $REPOX_URL --access-token PROMOTE_ACCESS_TOKEN
+          jfrog --url $REPOX_URL --access-token $PROMOTE_ACCESS_TOKEN rt bpr --status it-passed $PACKAGE 3.0.1 sonarsource-npm-public-builds 
+          jfrog --url $REPOX_URL --access-token $PROMOTE_ACCESS_TOKEN rt bpr --status released $PACKAGE 3.0.1 sonarsource-npm-public-releases 
