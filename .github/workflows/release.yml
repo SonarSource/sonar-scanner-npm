@@ -11,7 +11,7 @@ jobs:
       id-token: write # required for SonarSource/vault-action-wrapper
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_TAG: 3.0.1
       REPOX_URL: "https://repox.jfrog.io/artifactory"
       NPM_REPOSITORY: "sonarsource-npm-public"
       SCOPE: ""
@@ -41,12 +41,12 @@ jobs:
         run: |
             jfrog rt npm-config --repo-resolve npm --repo-deploy sonarsource-npm-public-qa
             jfrog rt npm-ci            
-            jfrog rt npm-publish --build-name=$PACKAGE --build-number=${{ github.event.release.tag_name }}
-            jfrog rt build-publish $PACKAGE ${{ github.event.release.tag_name }}      
+            jfrog rt npm-publish --build-name=$PACKAGE --build-number=3.0.1
+            jfrog rt build-publish $PACKAGE 3.0.1      
       - name: Promote npm package
         env:
           REPOX_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
           PROMOTE_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
         run: |
-          jfrog rt bpr --status it-passed $PACKAGE ${{ github.event.release.tag_name }} sonarsource-npm-public-builds --url $REPOX_URL --access-token PROMOTE_ACCESS_TOKEN
-          jfrog rt bpr --status released $PACKAGE ${{ github.event.release.tag_name }} sonarsource-npm-public-releases --url $REPOX_URL --access-token PROMOTE_ACCESS_TOKEN
+          jfrog rt bpr --status it-passed $PACKAGE 3.0.1 sonarsource-npm-public-builds --url $REPOX_URL --access-token PROMOTE_ACCESS_TOKEN
+          jfrog rt bpr --status released $PACKAGE 3.0.1 sonarsource-npm-public-releases --url $REPOX_URL --access-token PROMOTE_ACCESS_TOKEN
