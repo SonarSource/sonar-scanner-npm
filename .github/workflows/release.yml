@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   release:
     types:
       - published
@@ -39,8 +40,7 @@ jobs:
          NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
         run: |
             jfrog rt npm-config --repo-resolve npm --repo-deploy sonarsource-npm-public-qa
-            jfrog rt npm-ci
-            npm publish
+            jfrog rt npm-ci            
             jfrog rt npm-publish --build-name=$PACKAGE --build-number=${{ github.event.release.tag_name }}
             jfrog rt build-publish $PACKAGE ${{ github.event.release.tag_name }}      
       - name: Promote npm package
