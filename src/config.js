@@ -109,6 +109,12 @@ function getExecutableParams(params = {}) {
       httpsRequestOptions: { agent: proxyAgent },
     };
   }
+
+  if (finalUrl.username !== '' || finalUrl.password !== '') {
+    const authHeader =
+      'Basic ' + Buffer.from(finalUrl.username + ':' + finalUrl.password).toString('base64');
+    config.httpOptions.headers['Authorization'] = authHeader;
+  }
   log(`Executable parameters built:`);
   log(config);
   return config;
