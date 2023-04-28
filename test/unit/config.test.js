@@ -310,7 +310,67 @@ describe('config', function () {
         platformExecutable: buildExecutablePath(installFolder, DEFAULT_SCANNER_VERSION),
         targetOS,
         downloadUrl: new URL(fileName, SONAR_SCANNER_MIRROR).href,
+        httpOptions: {
+          httpRequestOptions: {},
+          httpsRequestOptions: {},
+        },
       });
+    });
+
+    it('should set http proxy configuration if proxy configuration is provided', function () {
+      process.env = {
+        http_proxy: 'http://user:password@proxy:3128',
+      };
+      const config = getExecutableParams();
+      assert.exists(config.httpOptions.httpRequestOptions.agent);
+      assert.exists(config.httpOptions.httpsRequestOptions.agent);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'proxy');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'http:');
+    });
+
+    it('should set https proxy configuration if proxy configuration is provided', function () {
+      process.env = {
+        https_proxy: 'https://user:password@proxy:3128',
+      };
+      const config = getExecutableParams();
+      assert.exists(config.httpOptions.httpRequestOptions.agent);
+      assert.exists(config.httpOptions.httpsRequestOptions.agent);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'proxy');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'https:');
+    });
+
+    it('should prefer https over http proxy configuration if proxy configuration is provided on a HTTPS url', function () {
+      process.env = {
+        http_proxy: 'http://user:password@httpproxy:3128',
+        https_proxy: 'https://user:password@httpsproxy:3128',
+      };
+      const config = getExecutableParams();
+      assert.exists(config.httpOptions.httpRequestOptions.agent);
+      assert.exists(config.httpOptions.httpsRequestOptions.agent);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'httpsproxy');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'https:');
+    });
+
+    it('should prefer http over https proxy configuration if proxy configuration is provided on a HTTP url', function () {
+      process.env = {
+        http_proxy: 'http://user:password@httpproxy:3128',
+        https_proxy: 'https://user:password@httpsproxy:3128',
+      };
+      const config = getExecutableParams({
+        baseUrl: 'http://example.com/sonarqube-repository/',
+      });
+      assert.exists(config.httpOptions.httpRequestOptions.agent);
+      assert.exists(config.httpOptions.httpsRequestOptions.agent);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'httpproxy');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'http:');
     });
   });
 });
