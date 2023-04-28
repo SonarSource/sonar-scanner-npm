@@ -69,6 +69,7 @@ function getScannerParams(basePath, params = {}) {
 function getExecutableParams(params = {}) {
   const config = {
     httpOptions: {
+      headers: {},
       httpRequestOptions: {},
       httpsRequestOptions: {},
     },
@@ -111,6 +112,12 @@ function getExecutableParams(params = {}) {
     const proxyAgent = new HttpsProxyAgent(proxy);
     config.httpOptions.httpRequestOptions.agent = proxyAgent;
     config.httpOptions.httpsRequestOptions.agent = proxyAgent;
+  }
+
+  if (finalUrl.username !== '' || finalUrl.password !== '') {
+    const authHeader =
+      'Basic ' + Buffer.from(finalUrl.username + ':' + finalUrl.password).toString('base64');
+    config.httpOptions.headers['Authorization'] = authHeader;
   }
   log(`Executable parameters built:`);
   log(config);

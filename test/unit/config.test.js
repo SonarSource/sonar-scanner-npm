@@ -311,6 +311,7 @@ describe('config', function () {
         targetOS,
         downloadUrl: new URL(fileName, SONAR_SCANNER_MIRROR).href,
         httpOptions: {
+          headers: {},
           httpRequestOptions: {},
           httpsRequestOptions: {},
         },
@@ -371,6 +372,15 @@ describe('config', function () {
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'httpproxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'http:');
+    });
+
+    it('should consume and preserve username and password for sonar-scanner mirror server', function () {
+      process.env = {};
+      const config = getExecutableParams({
+        baseUrl: 'https://user:password@example.com/sonarqube-repository/',
+      });
+      assert.exists(config.httpOptions.headers['Authorization']);
+      assert.equal(config.httpOptions.headers['Authorization'], 'Basic dXNlcjpwYXNzd29yZA==');
     });
   });
 });

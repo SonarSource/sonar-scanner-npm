@@ -141,6 +141,15 @@ or alternatively set variable in `.npmrc`
     sonar_scanner_version=3.2.0.1227
 ```
 
+For mirrors using Basic HTTP authentication (e.g. Sonatype Nexus 3 `raw-proxy`, Artifactory with `artifactory-cache-proxy`), simply specify the username and password
+as part of the URL:
+
+```shell
+export SONAR_SCANNER_MIRROR=https://username:password@repo.example.com/mirrors/sonar-scanner/
+```
+
+Mirror authentication is supported as well, see below.
+
 ## Specifying the cache folder
 
 By default, the scanner binaries are cached into `$HOME/.sonar/native-sonar-scanner` folder.
