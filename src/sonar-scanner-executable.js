@@ -79,7 +79,7 @@ async function getSonarScannerExecutable(params = {}) {
     const tarPath = path.join(installFolder, fileName);
     log('decompressing', tarPath, 'into', installFolder);
     const zip = new AdmZip(tarPath);
-    zip.extractAllTo(installFolder);
+    zip.extractAllTo(installFolder, true, true);
     log('decompressed', platformExecutable);
     return platformExecutable;
   } catch (err) {
