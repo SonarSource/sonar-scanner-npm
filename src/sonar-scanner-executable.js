@@ -20,11 +20,11 @@
 const exec = require('child_process').execSync;
 const mkdirs = require('mkdirp').sync;
 const { DownloaderHelper } = require('node-downloader-helper');
-const decompress = require('decompress');
+const AdmZip = require("adm-zip");
 const ProgressBar = require('progress');
 const log = require('fancy-log');
 const logError = log.error;
-const { isWindows } = require('./utils');
+const path = require('path');
 const { getExecutableParams } = require('./config');
 
 module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
@@ -76,8 +76,10 @@ async function getSonarScannerExecutable(params = {}) {
   });
   try {
     await downloader.start();
-    log('decompressing', `${installFolder}/${fileName}`, 'into', installFolder);
-    await decompress(`${installFolder}/${fileName}`, installFolder);
+    const tarPath = path.join(installFolder, fileName)
+    log('decompressing', tarPath, 'into', installFolder);
+    const zip = new AdmZip(tarPath);
+    zip.extractAllTo(installFolder)
     log('decompressed', platformExecutable);
     return platformExecutable;
   } catch (err) {
