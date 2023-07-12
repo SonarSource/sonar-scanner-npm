@@ -23,7 +23,7 @@
     "node": ">= 14"
   },
   "dependencies": {
-    "decompress": "^4.2.1",
+    "adm-zip": "^0.5.10",
     "fancy-log": "^2.0.0",
     "https-proxy-agent": "^5.0.1",
     "mkdirp": "^1.0.4",
