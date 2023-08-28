@@ -30,7 +30,7 @@ module.exports.getExecutableParams = getExecutableParams;
 const DEFAULT_EXCLUSIONS =
   'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
 module.exports.DEFAULT_EXCLUSIONS = DEFAULT_EXCLUSIONS;
-const DEFAULT_SCANNER_VERSION = '4.7.0.2747';
+const DEFAULT_SCANNER_VERSION = '5.0.1.3006';
 module.exports.DEFAULT_SCANNER_VERSION = DEFAULT_SCANNER_VERSION;
 const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 module.exports.SONAR_SCANNER_MIRROR = SONAR_SCANNER_MIRROR;
