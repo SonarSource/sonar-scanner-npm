@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-const { async: scanAsync } = require('sonarqube-scanner');
+const scan = require('sonarqube-scanner');
 const path = require('path');
 const { assert } = require('chai');
 const {
@@ -51,7 +51,7 @@ describe('scanner', function () {
       stop(sqPath);
     });
     it('should run an analysis', async function () {
-      await scanAsync({
+      await scan({
         serverUrl: 'http://localhost:9000',
         token,
         options: {

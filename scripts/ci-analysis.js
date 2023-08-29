@@ -36,6 +36,7 @@ scanner(
       'sonar.tests': 'test',
       'sonar.host.url': 'https://sonarcloud.io'
     }
-  },
-  () => process.exit()
-)
+  }
+).catch(err => {
+  process.exitCode = err.status;
+})
