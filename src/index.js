@@ -32,7 +32,7 @@ module.exports.fromParam = fromParam;
 /*
  * Function used programmatically to trigger an analysis.
  */
-async function scan(params, cliArgs = [], localScanner = true) {
+async function scan(params, cliArgs = [], localScanner = false) {
   log('Starting analysis...');
 
   // determine the command to run and execute it
