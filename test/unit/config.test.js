@@ -310,6 +310,7 @@ describe('config', function () {
         platformExecutable: buildExecutablePath(installFolder, DEFAULT_SCANNER_VERSION),
         targetOS,
         downloadUrl: new URL(fileName, SONAR_SCANNER_MIRROR).href,
+        httpOptions: {},
       });
     });
 

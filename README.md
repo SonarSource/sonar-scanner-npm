@@ -148,7 +148,7 @@ as part of the URL:
 export SONAR_SCANNER_MIRROR=https://username:password@repo.example.com/mirrors/sonar-scanner/
 ```
 
-Mirror authentication is supported as well, see below.
+Proxy authentication is supported as well, see below.
 
 ## Specifying the cache folder
 

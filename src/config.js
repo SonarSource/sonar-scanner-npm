@@ -67,7 +67,9 @@ function getScannerParams(basePath, params = {}) {
  *  - httpOptions, if proxy
  */
 function getExecutableParams(params = {}) {
-  const config = {};
+  const config = {
+    httpOptions: {},
+  };
   const env = process.env;
 
   const platformBinariesVersion =
@@ -104,16 +106,15 @@ function getExecutableParams(params = {}) {
   }
   if (proxy && proxy !== '') {
     const proxyAgent = new HttpsProxyAgent(proxy);
-    config.httpOptions = {
-      httpRequestOptions: { agent: proxyAgent },
-      httpsRequestOptions: { agent: proxyAgent },
-    };
+    config.httpOptions.httpRequestOptions = { agent: proxyAgent };
+    config.httpOptions.httpsRequestOptions = { agent: proxyAgent };
   }
 
   if (finalUrl.username !== '' || finalUrl.password !== '') {
-    const authHeader =
-      'Basic ' + Buffer.from(finalUrl.username + ':' + finalUrl.password).toString('base64');
-    config.httpOptions.headers['Authorization'] = authHeader;
+    config.httpOptions.headers = {
+      Authorization:
+        'Basic ' + Buffer.from(finalUrl.username + ':' + finalUrl.password).toString('base64'),
+    };
   }
   log(`Executable parameters built:`);
   log(config);
