@@ -159,10 +159,7 @@ or alternatively set variable in `.npmrc`
 
 ## Download behind proxy
 
-In order to be able to download binaries when you're behind a proxy it will be enough to set the `http_proxy` environment
-variable. The `https_proxy` environment variable is supported as well, should the mirror be using the HTTPS protocol.
-
-Both support proxies using plain HTTP or HTTPS.
+In order to be able to download binaries when you're behind a proxy it will be enough to set the `http_proxy` or `https_proxy` environment variable. Both support proxies using plain HTTP or HTTPS.
 
 **Example:**
 ```shell
