@@ -67,12 +67,7 @@ function getScannerParams(basePath, params = {}) {
  *  - httpOptions, if proxy
  */
 function getExecutableParams(params = {}) {
-  const config = {
-    httpOptions: {
-      httpRequestOptions: {},
-      httpsRequestOptions: {},
-    },
-  };
+  const config = {};
   const env = process.env;
 
   const platformBinariesVersion =
@@ -109,8 +104,10 @@ function getExecutableParams(params = {}) {
   }
   if (proxy && proxy !== '') {
     const proxyAgent = new HttpsProxyAgent(proxy);
-    config.httpOptions.httpRequestOptions.agent = proxyAgent;
-    config.httpOptions.httpsRequestOptions.agent = proxyAgent;
+    config.httpOptions = {
+      httpRequestOptions: {agent: proxyAgent},
+      httpsRequestOptions: {agent: proxyAgent}
+    }
   }
   log(`Executable parameters built:`);
   log(config);
