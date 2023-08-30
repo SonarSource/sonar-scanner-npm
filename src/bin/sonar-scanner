@@ -8,6 +8,6 @@ if (process.argv.length > 2) {
 
 scan({}, options)
   .catch(err => {
-    process.exitCode = err.status;
+    process.exitCode = 1;
   })
 

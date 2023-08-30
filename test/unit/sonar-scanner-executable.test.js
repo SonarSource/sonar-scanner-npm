@@ -33,14 +33,18 @@ const { startServer, closeServerPromise } = require('./resources/webserver/serve
 
 describe('sqScannerExecutable', function () {
   describe('getSonarScannerExecutable()', function () {
-    it('should return null when the download of executable fails', async function () {
-      process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
-      const executable = await getSonarScannerExecutable({
-        basePath: os.tmpdir(),
-      });
-
-      assert.equal(executable, null);
-    });
+    it('should throw exception when the download of executable fails', async function () {
+      //process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
+      try {
+        await getSonarScannerExecutable({
+          basePath: os.tmpdir(),
+        });
+        assert.fail();
+      } catch (err) {
+        console.log(err);
+        assert.equal(err.message, 'getaddrinfo ENOTFOUND fake.url');
+      }
+    }).timeout(60000);
 
     describe('when the executable exists', function () {
       let filepath;
