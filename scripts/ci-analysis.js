@@ -19,7 +19,7 @@
  */
 
 // Regular users will call 'require('sonarqube-scanner')' - but not here: eat your own dog food! :-)
-const scanner = require('../src')
+const scanner = require('../src').scan;
 
 // We just run an analysis and push it to SonarCloud
 // (No need to pass the server URL and the token, we're using the Travis
@@ -36,6 +36,7 @@ scanner(
       'sonar.tests': 'test',
       'sonar.host.url': 'https://sonarcloud.io'
     }
-  },
-  () => process.exit()
-)
+  }
+).catch(err => {
+  process.exitCode = err.status;
+})

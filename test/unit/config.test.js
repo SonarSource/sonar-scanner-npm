@@ -321,7 +321,8 @@ describe('config', function () {
       const config = getExecutableParams();
       assert.exists(config.httpOptions.httpRequestOptions.agent);
       assert.exists(config.httpOptions.httpsRequestOptions.agent);
-      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.username, 'user');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.password, 'password');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'proxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'http:');
@@ -338,7 +339,8 @@ describe('config', function () {
       const config = getExecutableParams();
       assert.exists(config.httpOptions.httpRequestOptions.agent);
       assert.exists(config.httpOptions.httpsRequestOptions.agent);
-      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.username, 'user');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.password, 'password');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'proxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'https:');
@@ -356,7 +358,8 @@ describe('config', function () {
       const config = getExecutableParams();
       assert.exists(config.httpOptions.httpRequestOptions.agent);
       assert.exists(config.httpOptions.httpsRequestOptions.agent);
-      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.username, 'user');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.password, 'password');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'httpsproxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'https:');
@@ -376,7 +379,8 @@ describe('config', function () {
       });
       assert.exists(config.httpOptions.httpRequestOptions.agent);
       assert.exists(config.httpOptions.httpsRequestOptions.agent);
-      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.auth, 'user:password');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.username, 'user');
+      assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.password, 'password');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'httpproxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'http:');

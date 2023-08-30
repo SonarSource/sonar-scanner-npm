@@ -51,13 +51,12 @@ module.exports.startServer = function (port = 0) {
 };
 
 module.exports.closeServerPromise = function (server) {
-  const promise = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     server.close(() => {
       resolve();
     });
+    server.on('error', error => {
+      reject(error);
+    });
   });
-  server.on('error', error => {
-    reject(error);
-  });
-  return promise;
 };
