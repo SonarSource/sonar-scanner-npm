@@ -26,9 +26,6 @@ const {
 } = require('./sonar-scanner-executable');
 const version = require('../package.json').version;
 
-module.exports = scan;
-module.exports.fromParam = fromParam;
-
 /*
  * Function used programmatically to trigger an analysis.
  */
@@ -47,6 +44,22 @@ async function scan(params, cliArgs = [], localScanner = false) {
   log('Analysis finished.');
 }
 
+function scanWithCallback(params, cliArgs, localScanner, callback) {
+  scan(params).then(() => {
+    callback();
+  });
+}
+
 function fromParam() {
   return [`--from=ScannerNpm/${version}`];
 }
+
+module.exports = (params, callback) => scanWithCallback(params, [], false, callback);
+module.exports.scan = scan;
+module.exports.cli = (cliArgs, params, callback) =>
+  scanWithCallback(params, cliArgs, false, callback);
+module.exports.customScanner = (params, callback) => scanWithCallback(params, [], true, callback);
+module.exports.async = async params => {
+  await scan(params);
+};
+module.exports.fromParam = fromParam;
