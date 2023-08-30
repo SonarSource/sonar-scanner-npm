@@ -91,6 +91,7 @@ async function getSonarScannerExecutable(params = {}) {
     logError(
       '       Check it out at https://redirect.sonarsource.com/doc/install-configure-scanner.html',
     );
+    throw err;
   }
 }
 
