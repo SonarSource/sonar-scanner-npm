@@ -309,7 +309,7 @@ describe('config', function () {
         fileName,
         platformExecutable: buildExecutablePath(installFolder, DEFAULT_SCANNER_VERSION),
         targetOS,
-        downloadUrl: new URL(fileName, SONAR_SCANNER_MIRROR).href
+        downloadUrl: new URL(fileName, SONAR_SCANNER_MIRROR).href,
       });
     });
 
@@ -324,7 +324,10 @@ describe('config', function () {
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'proxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'http:');
-      assert.deepEqual(config.httpOptions.httpRequestOptions.agent, config.httpOptions.httpsRequestOptions.agent)
+      assert.deepEqual(
+        config.httpOptions.httpRequestOptions.agent,
+        config.httpOptions.httpsRequestOptions.agent,
+      );
     });
 
     it('should set https proxy configuration if proxy configuration is provided', function () {
@@ -338,7 +341,10 @@ describe('config', function () {
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'proxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'https:');
-      assert.deepEqual(config.httpOptions.httpRequestOptions.agent, config.httpOptions.httpsRequestOptions.agent)
+      assert.deepEqual(
+        config.httpOptions.httpRequestOptions.agent,
+        config.httpOptions.httpsRequestOptions.agent,
+      );
     });
 
     it('should prefer https over http proxy configuration if proxy configuration is provided on a HTTPS url', function () {
@@ -353,7 +359,10 @@ describe('config', function () {
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'httpsproxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'https:');
-      assert.deepEqual(config.httpOptions.httpRequestOptions.agent, config.httpOptions.httpsRequestOptions.agent)
+      assert.deepEqual(
+        config.httpOptions.httpRequestOptions.agent,
+        config.httpOptions.httpsRequestOptions.agent,
+      );
     });
 
     it('should prefer http over https proxy configuration if proxy configuration is provided on a HTTP url', function () {
@@ -370,7 +379,10 @@ describe('config', function () {
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.hostname, 'httpproxy');
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.port, 3128);
       assert.equal(config.httpOptions.httpRequestOptions.agent.proxy.protocol, 'http:');
-      assert.deepEqual(config.httpOptions.httpRequestOptions.agent, config.httpOptions.httpsRequestOptions.agent)
+      assert.deepEqual(
+        config.httpOptions.httpRequestOptions.agent,
+        config.httpOptions.httpsRequestOptions.agent,
+      );
     });
   });
 });

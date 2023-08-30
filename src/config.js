@@ -105,9 +105,9 @@ function getExecutableParams(params = {}) {
   if (proxy && proxy !== '') {
     const proxyAgent = new HttpsProxyAgent(proxy);
     config.httpOptions = {
-      httpRequestOptions: {agent: proxyAgent},
-      httpsRequestOptions: {agent: proxyAgent}
-    }
+      httpRequestOptions: { agent: proxyAgent },
+      httpsRequestOptions: { agent: proxyAgent },
+    };
   }
   log(`Executable parameters built:`);
   log(config);
