@@ -67,7 +67,9 @@ function getScannerParams(basePath, params = {}) {
  *  - httpOptions, if proxy
  */
 function getExecutableParams(params = {}) {
-  const config = {};
+  const config = {
+    httpOptions: {},
+  };
   const env = process.env;
 
   const platformBinariesVersion =
@@ -91,14 +93,27 @@ function getExecutableParams(params = {}) {
     SONAR_SCANNER_MIRROR;
   const fileName = (config.fileName =
     'sonar-scanner-cli-' + platformBinariesVersion + '-' + targetOS + '.zip');
-  config.downloadUrl = new URL(fileName, baseUrl).href;
+  const finalUrl = new URL(fileName, baseUrl);
+  config.downloadUrl = finalUrl.href;
 
-  const proxy = process.env.http_proxy;
+  let proxy = '';
+  if (typeof process.env.http_proxy === 'string') {
+    proxy = process.env.http_proxy;
+  }
+  // Use https_proxy when available
+  if (typeof process.env.https_proxy === 'string' && finalUrl.protocol === 'https:') {
+    proxy = process.env.https_proxy;
+  }
   if (proxy && proxy !== '') {
     const proxyAgent = new HttpsProxyAgent(proxy);
-    config.httpOptions = {
-      httpRequestOptions: { agent: proxyAgent },
-      httpsRequestOptions: { agent: proxyAgent },
+    config.httpOptions.httpRequestOptions = { agent: proxyAgent };
+    config.httpOptions.httpsRequestOptions = { agent: proxyAgent };
+  }
+
+  if (finalUrl.username !== '' || finalUrl.password !== '') {
+    config.httpOptions.headers = {
+      Authorization:
+        'Basic ' + Buffer.from(finalUrl.username + ':' + finalUrl.password).toString('base64'),
     };
   }
   log(`Executable parameters built:`);

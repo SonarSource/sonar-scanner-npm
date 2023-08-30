@@ -141,6 +141,15 @@ or alternatively set variable in `.npmrc`
     sonar_scanner_version=3.2.0.1227
 ```
 
+For mirrors using Basic HTTP authentication (e.g. Sonatype Nexus 3 `raw-proxy`, Artifactory with `artifactory-cache-proxy`), simply specify the username and password
+as part of the URL:
+
+```shell
+export SONAR_SCANNER_MIRROR=https://username:password@repo.example.com/mirrors/sonar-scanner/
+```
+
+Proxy authentication is supported as well, see below.
+
 ## Specifying the cache folder
 
 By default, the scanner binaries are cached into `$HOME/.sonar/native-sonar-scanner` folder.
@@ -159,16 +168,24 @@ or alternatively set variable in `.npmrc`
 
 ## Download behind proxy
 
-In order to be able to download binaries when you're behind a proxy it will be enough to set http_proxy environment variable.
+In order to be able to download binaries when you're behind a proxy it will be enough to set the `http_proxy` or `https_proxy` environment variable. Both support proxies using plain HTTP or HTTPS.
 
 **Example:**
 ```shell
 export http_proxy=http://mycompanyproxy.com:PORT
+export https_proxy=http://mycompanyproxy.com:PORT
+
+export http_proxy=https://encryptedcompanyproxy.com:PORT
+export https_proxy=https://encryptedcompanyproxy.com:PORT
 ```
 
 **Behind authenticated proxy:**
 ```shell
 export http_proxy=http://user:password@mycompanyproxy.com:PORT
+export https_proxy=http://user:password@mycompanyproxy.com:PORT
+
+export http_proxy=https://user:password@encryptedcompanyproxy.com:PORT
+export https_proxy=https://user:password@encryptedcompanyproxy.com:PORT
 ```
 
 ## License
