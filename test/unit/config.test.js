@@ -310,6 +310,7 @@ describe('config', function () {
         platformExecutable: buildExecutablePath(installFolder, DEFAULT_SCANNER_VERSION),
         targetOS,
         downloadUrl: new URL(fileName, SONAR_SCANNER_MIRROR).href,
+        httpOptions: {},
       });
     });
 
@@ -383,6 +384,15 @@ describe('config', function () {
         config.httpOptions.httpRequestOptions.agent,
         config.httpOptions.httpsRequestOptions.agent,
       );
+    });
+
+    it('should consume and preserve username and password for sonar-scanner mirror server', function () {
+      process.env = {};
+      const config = getExecutableParams({
+        baseUrl: 'https://user:password@example.com/sonarqube-repository/',
+      });
+      assert.exists(config.httpOptions.headers['Authorization']);
+      assert.equal(config.httpOptions.headers['Authorization'], 'Basic dXNlcjpwYXNzd29yZA==');
     });
   });
 });
