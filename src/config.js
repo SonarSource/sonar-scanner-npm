@@ -21,7 +21,7 @@ const sonarScannerParams = require('./sonar-scanner-params');
 const { findTargetOS, buildInstallFolderPath, buildExecutablePath } = require('./utils');
 const os = require('os');
 const log = require('fancy-log');
-const HttpsProxyAgent = require('https-proxy-agent');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 module.exports.getScannerParams = getScannerParams;
 module.exports.extendWithExecParams = extendWithExecParams;
