@@ -1,13 +1,10 @@
 #!/usr/bin/env node
-var scan = require('../index').scan;
+const scan = require('../index').scan;
 
-var options = [];
-if (process.argv.length > 2) {
-  options = process.argv.slice(2);
-}
+const options = (process.argv.length > 2) ? process.argv.slice(2) : [];
 
 scan({}, options)
-  .catch(err => {
+  .catch(() => {
     process.exitCode = 1;
   })
 
