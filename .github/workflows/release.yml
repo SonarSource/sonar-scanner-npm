@@ -51,5 +51,5 @@ jobs:
         run: |
           jfrog config add repox --artifactory-url $REPOX_URL --access-token $PROMOTE_ACCESS_TOKEN
           jfrog config use repox
-          jfrog rt bpr --status it-passed $PACKAGE 3.0.1 sonarsource-npm-public-builds 
-          jfrog rt bpr --status released $PACKAGE 3.0.1 sonarsource-npm-public-releases
+          jfrog rt bpr --status it-passed $PACKAGE $RELEASE_TAG sonarsource-npm-public-builds 
+          jfrog rt bpr --status released $PACKAGE $RELEASE_TAG sonarsource-npm-public-releases
