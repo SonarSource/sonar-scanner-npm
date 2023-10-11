@@ -6,8 +6,6 @@ VERSION=$(grep version package.json | head -1  | awk -F: '{ print $2 }' | sed 's
 
 source cirrus-env QA
 
-echo "my build number is $BUILD_NUMBER"
-
 # TODO: https://sonarsource.atlassian.net/browse/BUILD-2397
 # We should have a virtual repo that include npmjs and sonarsource-npm-public-qa
 # and an other one that include npmjs and sonarsource-npm-public-builds
