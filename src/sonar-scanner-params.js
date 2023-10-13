@@ -101,6 +101,7 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
     sonarScannerParams['sonar.host.url'] = params.serverUrl;
   }
   if (params.token) {
+    sonarScannerParams['sonar.login'] = params.token;
     sonarScannerParams['sonar.token'] = params.token;
   }
   if (params.options) {
