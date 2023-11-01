@@ -35,8 +35,7 @@ const TIMEOUT_MS = 300_000;
 describe('scanner', function () {
   describe('on local SonarQube', function () {
     let sqPath, token, projectKey;
-    before(async function () {
-      this.timeout(TIMEOUT_MS);
+    beforeAll(async function () {
       sqPath = await getLatestSonarQube();
       await startAndReady(sqPath, TIMEOUT_MS);
       try {
@@ -45,11 +44,10 @@ describe('scanner', function () {
       } catch (error) {
         console.log(error);
       }
-    });
-    after(function () {
-      this.timeout(TIMEOUT_MS);
+    }, TIMEOUT_MS);
+    afterAll(function () {
       stop(sqPath);
-    });
+    }, TIMEOUT_MS);
     it('should run an analysis', async function () {
       await scan({
         serverUrl: 'http://localhost:9000',
@@ -57,7 +55,7 @@ describe('scanner', function () {
         options: {
           'sonar.projectName': projectKey,
           'sonar.projectKey': projectKey,
-          'sonar.sources': path.join(__dirname, '/resources/fake_project_for_integration/src'),
+          'sonar.sources': path.join(__dirname, '/fixtures/fake_project_for_integration/src'),
         },
       });
       await waitForAnalysisFinished(TIMEOUT_MS);
@@ -69,6 +67,6 @@ describe('scanner', function () {
         startOffset: 0,
         endOffset: 7,
       });
-    }).timeout(TIMEOUT_MS);
+    }, TIMEOUT_MS);
   });
 });

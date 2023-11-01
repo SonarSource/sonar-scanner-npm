@@ -32,7 +32,7 @@ const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils
 const { findTargetOS } = require('../../src/utils/platform');
 
 function pathForProject(projectFolder) {
-  return path.join(__dirname, 'resources', projectFolder);
+  return path.join(__dirname, 'fixtures', projectFolder);
 }
 
 describe('config', function () {
