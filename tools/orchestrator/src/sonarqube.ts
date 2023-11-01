@@ -153,7 +153,7 @@ async function isSonarQubeReady(logs: string[], startIndex: number): Promise<any
  * @returns
  */
 export function stop(sqPath: string = DEFAULT_FOLDER) {
-  return exec(`java ${__dirname}/stop.java ${sqPath}`, undefined, (error, stdout, stderr) => {
+  const cp = exec(`java ${__dirname}/stop.java ${sqPath}`, undefined, (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
       return;
@@ -161,6 +161,14 @@ export function stop(sqPath: string = DEFAULT_FOLDER) {
     console.log(`stdout: ${stdout}`);
     console.error(`stderr: ${stderr}`);
   });
+  return promiseFromChildProcess(cp);
+
+  function promiseFromChildProcess(child: ChildProcess) {
+    return new Promise(function (resolve, reject) {
+      child.addListener('error', reject);
+      child.addListener('exit', resolve);
+    });
+  }
 }
 
 /**

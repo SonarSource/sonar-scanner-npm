@@ -41,7 +41,7 @@ const {
     console.log('no analysis waiting');
     const issues = await getIssues(projectKey);
     console.log('got issues', issues);
-    stop(latest);
+    await stop(latest);
   } catch (error) {
     console.log('got err', error.response.data);
   }

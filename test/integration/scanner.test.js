@@ -46,8 +46,8 @@ describe('scanner', function () {
         console.log(error);
       }
     }, TIMEOUT_MS);
-    afterAll(function () {
-      stop(sqPath);
+    afterAll(async function () {
+      await stop(sqPath);
     }, TIMEOUT_MS);
     it(
       'should run an analysis',
