@@ -48,25 +48,29 @@ describe('scanner', function () {
     afterAll(function () {
       stop(sqPath);
     }, TIMEOUT_MS);
-    it('should run an analysis', async function () {
-      await scan({
-        serverUrl: 'http://localhost:9000',
-        token,
-        options: {
-          'sonar.projectName': projectKey,
-          'sonar.projectKey': projectKey,
-          'sonar.sources': path.join(__dirname, '/fixtures/fake_project_for_integration/src'),
-        },
-      });
-      await waitForAnalysisFinished(TIMEOUT_MS);
-      const issues = await getIssues(projectKey);
-      assert.equal(issues.length, 1);
-      assert.deepEqual(issues[0].textRange, {
-        startLine: 20,
-        endLine: 20,
-        startOffset: 0,
-        endOffset: 7,
-      });
-    }, TIMEOUT_MS);
+    it(
+      'should run an analysis',
+      async function () {
+        await scan({
+          serverUrl: 'http://localhost:9000',
+          token,
+          options: {
+            'sonar.projectName': projectKey,
+            'sonar.projectKey': projectKey,
+            'sonar.sources': path.join(__dirname, '/fixtures/fake_project_for_integration/src'),
+          },
+        });
+        await waitForAnalysisFinished(TIMEOUT_MS);
+        const issues = await getIssues(projectKey);
+        assert.equal(issues.length, 1);
+        assert.deepEqual(issues[0].textRange, {
+          startLine: 20,
+          endLine: 20,
+          startOffset: 0,
+          endOffset: 7,
+        });
+      },
+      TIMEOUT_MS,
+    );
   });
 });
