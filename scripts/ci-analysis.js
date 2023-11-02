@@ -19,7 +19,6 @@
  */
 const path = require('path');
 
-
 // Regular users will call 'require('sonarqube-scanner')' - but not here: eat your own dog food! :-)
 const scanner = require('../src').scan;
 
@@ -27,19 +26,17 @@ const scanner = require('../src').scan;
 // (No need to pass the server URL and the token, we're using the Travis
 //  Addon for SonarCloud which does this for you.)
 // ---------
-scanner(
-  {
-    options: {
-      'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
-      'sonar.organization': 'sonarsource',
-      'sonar.projectName': 'SonarScanner for NPM',
-      'sonar.projectDescription': 'SonarQube/SonarCloud Scanner for the JavaScript world',
-      'sonar.sources': 'src',
-      'sonar.tests': 'test',
-      'sonar.host.url': 'https://sonarcloud.io',
-      'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
-    }
-  }
-).catch(err => {
+scanner({
+  options: {
+    'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
+    'sonar.organization': 'sonarsource',
+    'sonar.projectName': 'SonarScanner for NPM',
+    'sonar.projectDescription': 'SonarQube/SonarCloud Scanner for the JavaScript world',
+    'sonar.sources': 'src',
+    'sonar.tests': 'test',
+    'sonar.host.url': 'https://sonarcloud.io',
+    'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
+  },
+}).catch(err => {
   process.exitCode = err.status;
-})
+});

@@ -1,4 +1,3 @@
-
 env:
   CIRRUS_VAULT_URL: https://vault.sonar.build:8200
   CIRRUS_VAULT_AUTH_PATH: jwt-cirrusci
@@ -6,10 +5,10 @@ env:
 
   SONAR_TOKEN: VAULT[development/kv/data/sonarcloud data.token]
   ARTIFACTORY_URL: https://repox.jfrog.io/
-  ARTIFACTORY_DEPLOY_ACCESS_TOKEN : VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
+  ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
   ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
   ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
-  ARTIFACTORY_PROMOTE_ACCESS_TOKEN : VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
+  ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
   BURGR_URL: VAULT[development/kv/data/burgr data.url]
   BURGR_USERNAME: VAULT[development/kv/data/burgr data.cirrus_username]
   BURGR_PASSWORD: VAULT[development/kv/data/burgr data.cirrus_password]
@@ -18,7 +17,6 @@ env:
 
 only_sonarsource_qa: &ONLY_SONARSOURCE_QA
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
-
 
 container_definition: &CONTAINER_DEFINITION
   dockerfile: .cirrus/Dockerfile
@@ -66,14 +64,14 @@ mend_task:
   # run only on master and long-term branches
   only_if: $CIRRUS_USER_COLLABORATOR == 'true' && ($CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*")
   env:
-#    TODO replace secret with vault
+    #    TODO replace secret with vault
     WS_APIKEY: ENCRYPTED[!3929c6148b9dfc751a2d17c590b15d755f82cd9c108f2de5f24a5b32f2a0c26144e921fab7e2c959fc2824d6d6d1550d!]
   run_script:
     - .cirrus/run_ws_scan.sh
-  allow_failures: "true"
+  allow_failures: 'true'
   always:
     mend_artifacts:
-      path: "whitesource/**/*"
+      path: 'whitesource/**/*'
 
 qa_task:
   depends_on:
@@ -100,7 +98,6 @@ qa_win_task:
     - ./scripts/qa.sh
     - node ./scripts/build-orchestrator.js
     - npm run test-integration
-
 
 promote_task:
   depends_on:
