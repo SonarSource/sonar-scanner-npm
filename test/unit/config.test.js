@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2022 SonarSource SA
+ * Copyright (C) 2022-2023 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 const { assert } = require('chai');
 const path = require('path');
 const os = require('os');
@@ -32,7 +33,7 @@ const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils
 const { findTargetOS } = require('../../src/utils/platform');
 
 function pathForProject(projectFolder) {
-  return path.join(__dirname, 'resources', projectFolder);
+  return path.join(__dirname, 'fixtures', projectFolder);
 }
 
 describe('config', function () {

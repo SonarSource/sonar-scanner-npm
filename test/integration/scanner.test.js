@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2022 SonarSource SA
+ * Copyright (C) 2022-2023 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 const { scan } = require('sonarqube-scanner');
 const path = require('path');
 const { assert } = require('chai');
@@ -35,8 +36,7 @@ const TIMEOUT_MS = 300_000;
 describe('scanner', function () {
   describe('on local SonarQube', function () {
     let sqPath, token, projectKey;
-    before(async function () {
-      this.timeout(TIMEOUT_MS);
+    beforeAll(async function () {
       sqPath = await getLatestSonarQube();
       await startAndReady(sqPath, TIMEOUT_MS);
       try {
@@ -45,30 +45,33 @@ describe('scanner', function () {
       } catch (error) {
         console.log(error);
       }
-    });
-    after(function () {
-      this.timeout(TIMEOUT_MS);
-      stop(sqPath);
-    });
-    it('should run an analysis', async function () {
-      await scan({
-        serverUrl: 'http://localhost:9000',
-        token,
-        options: {
-          'sonar.projectName': projectKey,
-          'sonar.projectKey': projectKey,
-          'sonar.sources': path.join(__dirname, '/resources/fake_project_for_integration/src'),
-        },
-      });
-      await waitForAnalysisFinished(TIMEOUT_MS);
-      const issues = await getIssues(projectKey);
-      assert.equal(issues.length, 1);
-      assert.deepEqual(issues[0].textRange, {
-        startLine: 20,
-        endLine: 20,
-        startOffset: 0,
-        endOffset: 7,
-      });
-    }).timeout(TIMEOUT_MS);
+    }, TIMEOUT_MS);
+    afterAll(async function () {
+      await stop(sqPath);
+    }, TIMEOUT_MS);
+    it(
+      'should run an analysis',
+      async function () {
+        await scan({
+          serverUrl: 'http://localhost:9000',
+          token,
+          options: {
+            'sonar.projectName': projectKey,
+            'sonar.projectKey': projectKey,
+            'sonar.sources': path.join(__dirname, '/fixtures/fake_project_for_integration/src'),
+          },
+        });
+        await waitForAnalysisFinished(TIMEOUT_MS);
+        const issues = await getIssues(projectKey);
+        assert.equal(issues.length, 1);
+        assert.deepEqual(issues[0].textRange, {
+          startLine: 21,
+          endLine: 21,
+          startOffset: 0,
+          endOffset: 7,
+        });
+      },
+      TIMEOUT_MS,
+    );
   });
 });

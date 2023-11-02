@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2022 SonarSource SA
+ * Copyright (C) 2022-2023 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 const { assert } = require('chai');
 const path = require('path');
 const fs = require('fs');
@@ -29,7 +30,7 @@ const {
 } = require('../../src/sonar-scanner-executable');
 const { DEFAULT_SCANNER_VERSION, getExecutableParams } = require('../../src/config');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
-const { startServer, closeServerPromise } = require('./resources/webserver/server');
+const { startServer, closeServerPromise } = require('./fixtures/webserver/server');
 
 describe('sqScannerExecutable', function () {
   describe('getSonarScannerExecutable()', function () {
@@ -44,11 +45,11 @@ describe('sqScannerExecutable', function () {
         console.log(err);
         assert.equal(err.message, 'getaddrinfo ENOTFOUND fake.url');
       }
-    }).timeout(60000);
+    }, 60000);
 
     describe('when the executable exists', function () {
       let filepath;
-      before(function () {
+      beforeAll(function () {
         filepath = buildExecutablePath(
           buildInstallFolderPath(os.tmpdir()),
           DEFAULT_SCANNER_VERSION,
@@ -57,7 +58,7 @@ describe('sqScannerExecutable', function () {
         fs.writeFileSync(filepath, 'echo "hello"');
         fs.chmodSync(filepath, 0o700);
       });
-      after(function () {
+      afterAll(function () {
         rimraf.sync(filepath);
       });
       it('should return the path to it', async function () {
@@ -71,12 +72,12 @@ describe('sqScannerExecutable', function () {
     describe('when the executable is downloaded', function () {
       let server, config, pathToZip, pathToUnzippedExecutable, expectedPlatformExecutablePath;
       const FILENAME = 'test-executable.zip';
-      before(async function () {
+      beforeAll(async function () {
         server = await startServer();
         config = getExecutableParams({ fileName: FILENAME });
         expectedPlatformExecutablePath = config.platformExecutable;
       });
-      after(async function () {
+      afterAll(async function () {
         await closeServerPromise(server);
         pathToZip = path.join(config.installFolder, config.fileName);
         pathToUnzippedExecutable = path.join(config.installFolder, 'executable');

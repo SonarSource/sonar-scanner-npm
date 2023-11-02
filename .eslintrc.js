@@ -5,6 +5,6 @@ module.exports = {
   "ignorePatterns": ["**/dist"],
   rules: {
     // notice
-    'notice/notice': ['error', { templateFile: 'scripts/file-header.ts' }],
+    'notice/notice': ['error', { templateFile: 'scripts/file-header.ts', onNonMatchingHeader: 'replace' }],
   },
 };
