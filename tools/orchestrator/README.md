@@ -2,7 +2,7 @@
 
 ## Usage
 
-*Prerequisites:* Node v16+
+_Prerequisites:_ Node v16+
 
 - Fetch dependencies and transpile: `npm run build`
 - Transpile TypeScript: `npm run compile`
