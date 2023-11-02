@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const { assert, expect } = require('chai');
+const { assert } = require('chai');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -97,19 +97,25 @@ describe('sqScannerExecutable', function () {
         fs.writeFileSync(caPath, '-----BEGIN CERTIFICATE-----');
       });
 
-      it('should fail if the provided path is invalid', function () {
-        return getScannerExecutable(false, { caPath: 'invalid-path' }).catch(e => {
-          assert.exists(e);
-        });
+      it('should fail if the provided path is invalid', async function () {
+        try {
+          await getScannerExecutable(false, { caPath: 'invalid-path' });
+          assert.fail('should have thrown');
+        } catch (e) {
+          assert.equal(e.message, 'Provided CA certificate path does not exist: invalid-path');
+        }
       });
       it('should proceed with the download if the provided CA certificate is valid', async function () {
         process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
-        return getScannerExecutable(false, {
-          caPath: caPath,
-          basePath: os.tmpdir(),
-        }).catch(e => {
-          assert.exists(e);
-        });
+        try {
+          await getScannerExecutable(false, {
+            caPath: caPath,
+            basePath: os.tmpdir(),
+          });
+          assert.fail('should have thrown');
+        } catch (e) {
+          assert.equal(e.message, 'getaddrinfo ENOTFOUND fake.url');
+        }
       });
     });
   });
