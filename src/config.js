@@ -117,9 +117,24 @@ function getExecutableParams(params = {}) {
         'Basic ' + Buffer.from(finalUrl.username + ':' + finalUrl.password).toString('base64'),
     };
   }
+
+  if (params.caPath) {
+    config.httpOptions.caPath = extractCa(params.caPath);
+  }
+
   log(`Executable parameters built:`);
   log(config);
   return config;
+
+  function extractCa(caPath) {
+    if (!fs.existsSync(caPath)) {
+      throw new Error(`Provided CA certificate path does not exist: ${caPath}`);
+    }
+    const ca = fs.readFileSync(caPath, 'utf8');
+    if (!ca.startsWith('-----BEGIN CERTIFICATE-----')) {
+      throw new Error('Invalid CA certificate');
+    }
+  }
 }
 
 /**

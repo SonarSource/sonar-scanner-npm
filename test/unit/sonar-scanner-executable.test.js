@@ -18,26 +18,23 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const { assert } = require('chai');
+const { assert, expect } = require('chai');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const mkdirpSync = require('mkdirp').sync;
 const rimraf = require('rimraf');
-const {
-  getSonarScannerExecutable,
-  getLocalSonarScannerExecutable,
-} = require('../../src/sonar-scanner-executable');
+const { getScannerExecutable } = require('../../src/sonar-scanner-executable');
 const { DEFAULT_SCANNER_VERSION, getExecutableParams } = require('../../src/config');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils');
 const { startServer, closeServerPromise } = require('./fixtures/webserver/server');
 
 describe('sqScannerExecutable', function () {
-  describe('getSonarScannerExecutable()', function () {
+  describe('Sonar: getScannerExecutable(false)', function () {
     it('should throw exception when the download of executable fails', async function () {
       process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
       try {
-        await getSonarScannerExecutable({
+        await getScannerExecutable(false, {
           basePath: os.tmpdir(),
         });
         assert.fail();
@@ -62,7 +59,7 @@ describe('sqScannerExecutable', function () {
         rimraf.sync(filepath);
       });
       it('should return the path to it', async function () {
-        const receivedExecutable = await getSonarScannerExecutable({
+        const receivedExecutable = await getScannerExecutable(false, {
           basePath: os.tmpdir(),
         });
         assert.equal(receivedExecutable, filepath);
@@ -85,7 +82,7 @@ describe('sqScannerExecutable', function () {
         rimraf.sync(pathToUnzippedExecutable);
       });
       it('should download the executable, unzip it and return a path to it.', async function () {
-        const execPath = await getSonarScannerExecutable({
+        const execPath = await getScannerExecutable(false, {
           baseUrl: `http://${server.address().address}:${server.address().port}`,
           fileName: FILENAME,
         });
@@ -94,12 +91,13 @@ describe('sqScannerExecutable', function () {
     });
   });
 
-  describe('getLocalSonarScannerExecutable', () => {
-    it('should fail when the executable is not found', () => {
+  describe('local: getScannerExecutable(true)', () => {
+    it('should fail when the executable is not found', async () => {
       assert.throws(
-        getLocalSonarScannerExecutable,
+        getScannerExecutable.bind(null, true),
         'Local install of SonarScanner not found in: sonar-scanner',
       );
+      //expect(getScannerExecutable(true)).to.eventually.be.rejectedWith('Local install of SonarScanner not found in: sonar-scanner');
     });
   });
 });
