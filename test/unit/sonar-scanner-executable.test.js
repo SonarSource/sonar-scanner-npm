@@ -89,6 +89,29 @@ describe('sqScannerExecutable', function () {
         assert.equal(execPath, expectedPlatformExecutablePath);
       });
     });
+
+    describe('when providing a self-signed CA certificate', function () {
+      let caPath;
+      beforeAll(() => {
+        caPath = path.join(os.tmpdir(), 'ca.pem');
+        fs.writeFileSync(caPath, '-----BEGIN CERTIFICATE-----');
+      });
+
+      it('should fail if the provided path is invalid', function () {
+        return getScannerExecutable(false, { caPath: 'invalid-path' }).catch(e => {
+          assert.exists(e);
+        });
+      });
+      it('should proceed with the download if the provided CA certificate is valid', async function () {
+        process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
+        return getScannerExecutable(false, {
+          caPath: caPath,
+          basePath: os.tmpdir(),
+        }).catch(e => {
+          assert.exists(e);
+        });
+      });
+    });
   });
 
   describe('local: getScannerExecutable(true)', () => {
