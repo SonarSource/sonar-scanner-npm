@@ -120,7 +120,7 @@ function getExecutableParams(params = {}) {
   }
 
   if (params.caPath) {
-    config.httpOptions.caPath = extractCa(params.caPath);
+    config.httpOptions.ca = extractCa(params.caPath);
   }
 
   log(`Executable parameters built:`);
