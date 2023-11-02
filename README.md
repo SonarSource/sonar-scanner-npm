@@ -82,7 +82,7 @@ sonar-scanner
 * Additional [analysis parameters](https://redirect.sonarsource.com/doc/analysis-parameters.html) can be passed on the command line using the standard `-Dsonar.xxx=yyy` syntax
   * Example:
 
-    `sonar-scanner -Dsonar.host.url=https://myserver.com -Dsonar.login=019d1e2e04e`
+    `sonar-scanner -Dsonar.host.url=https://myserver.com -Dsonar.token=019d1e2e04e`
 
 ## Usage: run analyses with npx
 

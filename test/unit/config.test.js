@@ -75,7 +75,7 @@ describe('config', function () {
     it('should propagate custom server and token into "SONARQUBE_SCANNER_PARAMS"', function () {
       const expectedResult = {
         'sonar.host.url': 'https://sonarcloud.io',
-        'sonar.login': 'my_token',
+        'sonar.token': 'my_token',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
         'sonar.exclusions': exclusions,
@@ -166,7 +166,7 @@ describe('config', function () {
     it('should take into account SONARQUBE_SCANNER_PARAMS env variable', function () {
       const expectedResult = {
         'sonar.host.url': 'https://sonarcloud.io',
-        'sonar.login': 'my_token',
+        'sonar.token': 'my_token',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
         'sonar.exclusions': exclusions,
@@ -175,7 +175,7 @@ describe('config', function () {
       process.env = {
         SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.host.url': 'https://sonarcloud.io',
-          'sonar.login': 'my_token',
+          'sonar.token': 'my_token',
         }),
       };
 
@@ -189,7 +189,7 @@ describe('config', function () {
     it('should make priority to user options over SONARQUBE_SCANNER_PARAMS env variable', function () {
       const expectedResult = {
         'sonar.host.url': 'https://sonarcloud.io',
-        'sonar.login': 'my_token',
+        'sonar.token': 'my_token',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
         'sonar.exclusions': exclusions,
@@ -198,7 +198,7 @@ describe('config', function () {
       process.env = {
         SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.host.url': 'https://another.server.com',
-          'sonar.login': 'another_token',
+          'sonar.token': 'another_token',
         }),
       };
 
