@@ -21,6 +21,7 @@
 const sonarScannerParams = require('./sonar-scanner-params');
 const { findTargetOS, buildInstallFolderPath, buildExecutablePath } = require('./utils');
 const os = require('os');
+const fs = require('fs');
 const log = require('fancy-log');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
@@ -134,6 +135,7 @@ function getExecutableParams(params = {}) {
     if (!ca.startsWith('-----BEGIN CERTIFICATE-----')) {
       throw new Error('Invalid CA certificate');
     }
+    return ca;
   }
 }
 
