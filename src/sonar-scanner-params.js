@@ -30,6 +30,7 @@ const invalidCharacterRegex = /[?$*+~.()'"!:@/]/g;
  * Build the config.SONARQUBE_SCANNER_PARAMS property from:
  * 1. params
  *  serverUrl -> sonar.host.url
+ *  login     -> sonar.login
  *  token     -> sonar.token
  *  options to root
  * 2. the 'SONARQUBE_SCANNER_PARAMS' env variable
@@ -99,6 +100,9 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
   // #3 - check what's passed in the call params - these are prevalent params
   if (params.serverUrl) {
     sonarScannerParams['sonar.host.url'] = params.serverUrl;
+  }
+  if (params.login) {
+    sonarScannerParams['sonar.login'] = params.login;
   }
   if (params.token) {
     sonarScannerParams['sonar.token'] = params.token;

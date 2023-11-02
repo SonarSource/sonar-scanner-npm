@@ -189,7 +189,7 @@ describe('config', function () {
     it('should make priority to user options over SONARQUBE_SCANNER_PARAMS env variable', function () {
       const expectedResult = {
         'sonar.host.url': 'https://sonarcloud.io',
-        'sonar.token': 'my_token',
+        'sonar.login': 'my_token',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
         'sonar.exclusions': exclusions,
@@ -198,13 +198,13 @@ describe('config', function () {
       process.env = {
         SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.host.url': 'https://another.server.com',
-          'sonar.token': 'another_token',
+          'sonar.login': 'another_token',
         }),
       };
 
       const sqParams = getScannerParams(pathForProject('fake_project_with_no_package_file'), {
         serverUrl: 'https://sonarcloud.io',
-        token: 'my_token',
+        login: 'my_token',
       }).SONARQUBE_SCANNER_PARAMS;
 
       assert.deepEqual(JSON.parse(sqParams), expectedResult);
