@@ -8,7 +8,6 @@ This module is analyzed on SonarCloud.
 
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=alert_status)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=sqale_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=reliability_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Security](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=security_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Releases](https://img.shields.io/github/release/SonarSource/sonar-scanner-npm.svg)](https://github.com/SonarSource/sonar-scanner-npm/releases)
 
-
 ## Installation
 
 _Prerequisite: Node v14+ (otherwise use sonarqube-scanner v2.9.1)_
@@ -17,13 +16,13 @@ This package is available on npm as: `sonarqube-scanner`
 
 To add code analysis to your build files, simply add the package to your project dev dependencies:
 
-``` sh
+```sh
 npm install -D sonarqube-scanner
 ```
 
 To install the scanner globally and be able to run analyses on the command line:
 
-``` sh
+```sh
 npm install -g sonarqube-scanner
 ```
 
@@ -39,29 +38,29 @@ const scanner = require('sonarqube-scanner');
 
 scanner(
   {
-    serverUrl : 'https://sonarqube.mycompany.com',
-    token : "019d1e2e04eefdcd0caee1468f39a45e69d33d3f",
+    serverUrl: 'https://sonarqube.mycompany.com',
+    token: '019d1e2e04eefdcd0caee1468f39a45e69d33d3f',
     options: {
       'sonar.projectName': 'My App',
       'sonar.projectDescription': 'Description for "My App" project...',
       'sonar.sources': 'src',
-      'sonar.tests': 'test'
-    }
+      'sonar.tests': 'test',
+    },
   },
-  () => process.exit()
-)
+  () => process.exit(),
+);
 ```
 
 **Syntax:** sonarqube-scanner **(** `parameters`, [`callback`] **)**
 
 **Arguments**
 
-* `parameters` *Map*
-  * `serverUrl` *String* (optional) The URL of the SonarQube server. Defaults to http://localhost:9000
-  * `token` *String* (optional) The token used to connect to the SonarQube/SonarCloud server. Empty by default.
-  * `options` *Map* (optional) Used to pass extra parameters for the analysis. See the [official documentation](http://redirect.sonarsource.com/doc/analysis-parameters.html) for more details.
-* `callback` *Function* (optional)
-Callback (the execution of the analysis is asynchronous).
+- `parameters` _Map_
+  - `serverUrl` _String_ (optional) The URL of the SonarQube server. Defaults to http://localhost:9000
+  - `token` _String_ (optional) The token used to connect to the SonarQube/SonarCloud server. Empty by default.
+  - `options` _Map_ (optional) Used to pass extra parameters for the analysis. See the [official documentation](http://redirect.sonarsource.com/doc/analysis-parameters.html) for more details.
+- `callback` _Function_ (optional)
+  Callback (the execution of the analysis is asynchronous).
 
 ## Usage: run analyses on the command line
 
@@ -77,10 +76,11 @@ sonar-scanner
 
 **Specifying properties/settings**
 
-* If there's a `package.json` file in the folder, it will be read to feed the analysis with basic information (like project name or version)
-* If there's a `sonar-project.properties` file in the folder, it will behave like the [original SonarScanner](https://redirect.sonarsource.com/doc/install-configure-scanner.html)
-* Additional [analysis parameters](https://redirect.sonarsource.com/doc/analysis-parameters.html) can be passed on the command line using the standard `-Dsonar.xxx=yyy` syntax
-  * Example:
+- If there's a `package.json` file in the folder, it will be read to feed the analysis with basic information (like project name or version)
+- If there's a `sonar-project.properties` file in the folder, it will behave like the [original SonarScanner](https://redirect.sonarsource.com/doc/install-configure-scanner.html)
+- Additional [analysis parameters](https://redirect.sonarsource.com/doc/analysis-parameters.html) can be passed on the command line using the standard `-Dsonar.xxx=yyy` syntax
+
+  - Example:
 
     `sonar-scanner -Dsonar.host.url=https://myserver.com -Dsonar.login=019d1e2e04e`
 
@@ -88,7 +88,7 @@ sonar-scanner
 
 To run analyses without explicitly installing the scanner, run the following command instead:
 
-``` sh
+```sh
 npx sonarqube-scanner
 ```
 
@@ -96,14 +96,14 @@ Similar to the above, you can specify analysis properties and settings using eit
 
 ## FAQ
 
-#### *I constantly get "Impossible to download and extract binary [...] In such situation, the best solution is to install the standard SonarScanner", what can I do?*
+#### _I constantly get "Impossible to download and extract binary [...] In such situation, the best solution is to install the standard SonarScanner", what can I do?_
 
 You can install manually the [standard SonarScanner](https://redirect.sonarsource.com/doc/install-configure-scanner.html),
 which requires to have a Java Runtime Environment available too (Java 8+).
 
 It is important to make sure that the SonarScanner `$install_directory/bin` location is added to the system `$PATH` environment variable. This will ensure that `sonar-scanner` command will be resolved by the customScanner, and prevent the error:
 
-``` javascript
+```javascript
 Error: Local install of SonarScanner not found.
     at getLocalSonarScannerExecutable (<project_dir>/node_modules/sonarqube-scanner/src/sonar-scanner-executable.js:153:11)
     at scanUsingCustomScanner (<project_dir>/node_modules/sonarqube-scanner/src/index.js:52:3)
@@ -129,6 +129,7 @@ By default, the scanner binaries are downloaded from `https://binaries.sonarsour
 To use a custom mirror, set `$SONAR_SCANNER_MIRROR`. Or download precise version with `$SONAR_SCANNER_VERSION`
 
 **Example:**
+
 ```shell
 export SONAR_SCANNER_MIRROR=https://npm.taobao.org/mirrors/sonar-scanner/
 export SONAR_SCANNER_VERSION=3.2.0.1227
@@ -156,6 +157,7 @@ By default, the scanner binaries are cached into `$HOME/.sonar/native-sonar-scan
 To use a custom cache fodler instead of `$HOME`, set `$SONAR_BINARY_CACHE`.
 
 **Example:**
+
 ```shell
 export SONAR_BINARY_CACHE=/Users/myaccount/cache
 ```
@@ -171,6 +173,7 @@ or alternatively set variable in `.npmrc`
 In order to be able to download binaries when you're behind a proxy it will be enough to set the `http_proxy` or `https_proxy` environment variable. Both support proxies using plain HTTP or HTTPS.
 
 **Example:**
+
 ```shell
 export http_proxy=http://mycompanyproxy.com:PORT
 export https_proxy=http://mycompanyproxy.com:PORT
@@ -180,6 +183,7 @@ export https_proxy=https://encryptedcompanyproxy.com:PORT
 ```
 
 **Behind authenticated proxy:**
+
 ```shell
 export http_proxy=http://user:password@mycompanyproxy.com:PORT
 export https_proxy=http://user:password@mycompanyproxy.com:PORT

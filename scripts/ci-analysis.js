@@ -25,18 +25,16 @@ const scanner = require('../src').scan;
 // (No need to pass the server URL and the token, we're using the Travis
 //  Addon for SonarCloud which does this for you.)
 // ---------
-scanner(
-  {
-    options: {
-      'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
-      'sonar.organization': 'sonarsource',
-      'sonar.projectName': 'SonarScanner for NPM',
-      'sonar.projectDescription': 'SonarQube/SonarCloud Scanner for the JavaScript world',
-      'sonar.sources': 'src',
-      'sonar.tests': 'test',
-      'sonar.host.url': 'https://sonarcloud.io'
-    }
-  }
-).catch(err => {
+scanner({
+  options: {
+    'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
+    'sonar.organization': 'sonarsource',
+    'sonar.projectName': 'SonarScanner for NPM',
+    'sonar.projectDescription': 'SonarQube/SonarCloud Scanner for the JavaScript world',
+    'sonar.sources': 'src',
+    'sonar.tests': 'test',
+    'sonar.host.url': 'https://sonarcloud.io',
+  },
+}).catch(err => {
   process.exitCode = err.status;
-})
+});

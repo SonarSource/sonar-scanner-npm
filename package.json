@@ -38,7 +38,7 @@
     "eslint-plugin-notice": "^0.9.10",
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
-    "prettier": "^3.0.3",
+    "prettier": "^2.8.8",
     "rimraf": "^5.0.1",
     "sinon": "^15.2.0",
     "typescript": "<5.2"
@@ -55,8 +55,8 @@
     "build": "npm ci && npm run check-format && npm run license && npm run test && node ./scripts/build-orchestrator.js",
     "test": "npx nyc mocha --timeout 5000 test/unit/**/*.test.js",
     "test-integration": "cd test/integration && npm run test-integration",
-    "format": "prettier --write \"{src,test}/**/!(*.lint).js\"",
-    "check-format": "prettier --list-different \"{src,test}/**/!(*.lint).js\"",
+    "format": "prettier --write .",
+    "check-format": "prettier --list-different .",
     "license": "eslint --ext js,ts src test tools scripts .",
     "license-fix": "eslint --fix --ext js,ts src test tools scripts ."
   },
