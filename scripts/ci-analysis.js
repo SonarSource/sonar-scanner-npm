@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Regular users will call 'require('sonarqube-scanner')' - but not here: eat your own dog food! :-)
 const scanner = require('../src').scan;
@@ -26,17 +27,33 @@ const scanner = require('../src').scan;
 // (No need to pass the server URL and the token, we're using the Travis
 //  Addon for SonarCloud which does this for you.)
 // ---------
+const options = {
+  'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
+  'sonar.organization': 'sonarsource',
+  'sonar.projectName': 'SonarScanner for NPM',
+  'sonar.projectDescription': 'SonarQube/SonarCloud Scanner for the JavaScript world',
+  'sonar.sources': 'src',
+  'sonar.tests': 'test',
+  'sonar.host.url': 'https://sonarcloud.io',
+  'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
+};
+
+if (!isMasterBranch()) {
+  options['sonar.pullrequest.base'] = 'master';
+}
+
 scanner({
-  options: {
-    'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
-    'sonar.organization': 'sonarsource',
-    'sonar.projectName': 'SonarScanner for NPM',
-    'sonar.projectDescription': 'SonarQube/SonarCloud Scanner for the JavaScript world',
-    'sonar.sources': 'src',
-    'sonar.tests': 'test',
-    'sonar.host.url': 'https://sonarcloud.io',
-    'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
-  },
+  options,
 }).catch(err => {
   process.exitCode = err.status;
 });
+
+function isMasterBranch() {
+  try {
+    const stdout = execSync('git rev-parse --abbrev-ref HEAD');
+    return typeof stdout === 'string' && stdout.trim() === 'master';
+  } catch (err) {
+    console.error(`failed to retrieve branch information: ${err}`);
+  }
+  return false;
+}
