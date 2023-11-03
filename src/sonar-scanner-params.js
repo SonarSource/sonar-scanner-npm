@@ -111,6 +111,7 @@ function defineSonarScannerParams(params, projectBaseDir, sqScannerParamsFromEnv
   if (params.options) {
     sonarScannerParams = Object.assign(sonarScannerParams, params.options);
   }
+  console.log('Salut je suis un test pour le coverage!');
 
   if (!isEmpty(sonarScannerParams)) {
     return JSON.stringify(sonarScannerParams);
