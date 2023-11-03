@@ -2,9 +2,12 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['notice'],
-  "ignorePatterns": ["**/dist"],
+  ignorePatterns: ['**/dist'],
   rules: {
     // notice
-    'notice/notice': ['error', { templateFile: 'scripts/file-header.ts' }],
+    'notice/notice': [
+      'error',
+      { templateFile: 'scripts/file-header.ts', onNonMatchingHeader: 'replace' },
+    ],
   },
 };

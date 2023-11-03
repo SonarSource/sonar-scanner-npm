@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2022 SonarSource SA
+ * Copyright (C) 2022-2023 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -17,4 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-// some code
+
+module.exports = {
+  collectCoverageFrom: ['src/**/*.js'],
+  coverageReporters: ['lcov', 'text'],
+  coveragePathIgnorePatterns: ['.fixture.', '/fixtures/'],
+  moduleFileExtensions: ['js', 'ts', 'json'],
+  moduleDirectories: ['node_modules'],
+  testResultsProcessor: 'jest-sonar-reporter',
+  testMatch: ['<rootDir>/test/unit/**/*.test.js'],
+  testTimeout: 20000,
+};

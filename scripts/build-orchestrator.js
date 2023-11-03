@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2022 SonarSource SA
+ * Copyright (C) 2022-2023 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -17,11 +17,11 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 const { execSync } = require('child_process');
 const path = require('path');
 
 execSync('npm run build', {
   cwd: path.join(__dirname, '..', 'tools', 'orchestrator'),
-  stdio: 'inherit'
-})
-
+  stdio: 'inherit',
+});

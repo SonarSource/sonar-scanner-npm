@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2022 SonarSource SA
+ * Copyright (C) 2022-2023 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+
 import * as path from 'path';
 import { ChildProcess, spawn, exec } from 'child_process';
 const axios = require('axios').default;
@@ -152,7 +153,7 @@ async function isSonarQubeReady(logs: string[], startIndex: number): Promise<any
  * @returns
  */
 export function stop(sqPath: string = DEFAULT_FOLDER) {
-  return exec(`java ${__dirname}/stop.java ${sqPath}`, undefined, (error, stdout, stderr) => {
+  const cp = exec(`java ${__dirname}/stop.java ${sqPath}`, undefined, (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
       return;
@@ -160,6 +161,14 @@ export function stop(sqPath: string = DEFAULT_FOLDER) {
     console.log(`stdout: ${stdout}`);
     console.error(`stderr: ${stderr}`);
   });
+  return promiseFromChildProcess(cp);
+
+  function promiseFromChildProcess(child: ChildProcess) {
+    return new Promise(function (resolve, reject) {
+      child.addListener('error', reject);
+      child.addListener('exit', resolve);
+    });
+  }
 }
 
 /**
