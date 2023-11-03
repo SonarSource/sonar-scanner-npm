@@ -57,7 +57,8 @@ scanner(
 
 - `parameters` _Map_
   - `serverUrl` _String_ (optional) The URL of the SonarQube server. Defaults to http://localhost:9000
-  - `token` _String_ (optional) The token used to connect to the SonarQube/SonarCloud server. Empty by default.
+  - `login` _String_ (optional) The login used to connect to the SonarQube server up to version 9. Empty by default.
+  - `token` _String_ (optional) The token used to connect to the SonarQube server v10+ or SonarCloud. Empty by default.
   - `options` _Map_ (optional) Used to pass extra parameters for the analysis. See the [official documentation](http://redirect.sonarsource.com/doc/analysis-parameters.html) for more details.
 - `callback` _Function_ (optional)
   Callback (the execution of the analysis is asynchronous).
@@ -82,7 +83,7 @@ sonar-scanner
 
   - Example:
 
-    `sonar-scanner -Dsonar.host.url=https://myserver.com -Dsonar.login=019d1e2e04e`
+    `sonar-scanner -Dsonar.host.url=https://myserver.com -Dsonar.token=019d1e2e04e`
 
 ## Usage: run analyses with npx
 
