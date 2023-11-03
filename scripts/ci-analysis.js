@@ -39,7 +39,7 @@ const options = {
 };
 
 if (!isMasterBranch()) {
-  options['sonar.pullrequest.base'] = 'master';
+  options['sonar.pullrequest.key'] = process.env.CIRRUS_PR;
 }
 
 scanner({
