@@ -58,8 +58,8 @@ scanner(
 
 * `parameters` *Map*
   * `serverUrl` *String* (optional) The URL of the SonarQube server. Defaults to http://localhost:9000
-  * `login` *String* (optional) The login used to connect to the SonarQube < 10 server. Empty by default.
-  * `token` *String* (optional) The token used to connect to the SonarQube >= 10/SonarCloud server. Empty by default.
+  * `login` *String* (optional) The login used to connect to the SonarQube server up to version 9. Empty by default.
+  * `token` *String* (optional) The token used to connect to the SonarQube server v10+ or SonarCloud. Empty by default.
   * `options` *Map* (optional) Used to pass extra parameters for the analysis. See the [official documentation](http://redirect.sonarsource.com/doc/analysis-parameters.html) for more details.
 * `callback` *Function* (optional)
 Callback (the execution of the analysis is asynchronous).
