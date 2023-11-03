@@ -28,8 +28,7 @@ const logError = log.error;
 const path = require('path');
 const { getExecutableParams } = require('./config');
 
-module.exports.getSonarScannerExecutable = getSonarScannerExecutable;
-module.exports.getLocalSonarScannerExecutable = getLocalSonarScannerExecutable;
+module.exports.getScannerExecutable = getScannerExecutable;
 
 const bar = new ProgressBar('[:bar] :percent :etas', {
   complete: '=',
@@ -37,6 +36,21 @@ const bar = new ProgressBar('[:bar] :percent :etas', {
   width: 20,
   total: 0,
 });
+
+/**
+ * If localScanner is true, returns the command to use the local scanner executable.
+ * Otherwise, returns a promise to download the scanner executable and the command to use it.
+ *
+ * @param {*} localScanner
+ * @param {*} params
+ * @returns
+ */
+function getScannerExecutable(localScanner = false, params = {}) {
+  if (localScanner) {
+    return getLocalSonarScannerExecutable();
+  }
+  return getSonarScannerExecutable(params);
+}
 
 /*
  * Returns the SQ Scanner executable for the current platform

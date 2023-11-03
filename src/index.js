@@ -21,10 +21,7 @@
 const exec = require('child_process').execFileSync;
 const log = require('fancy-log');
 const { getScannerParams, extendWithExecParams } = require('./config');
-const {
-  getSonarScannerExecutable,
-  getLocalSonarScannerExecutable,
-} = require('./sonar-scanner-executable');
+const { getScannerExecutable } = require('./sonar-scanner-executable');
 const version = require('../package.json').version;
 
 /*
@@ -34,9 +31,7 @@ async function scan(params, cliArgs = [], localScanner = false) {
   log('Starting analysis...');
 
   // determine the command to run and execute it
-  const sqScannerCommand = await (localScanner
-    ? getLocalSonarScannerExecutable
-    : getSonarScannerExecutable)();
+  const sqScannerCommand = await getScannerExecutable(localScanner, params);
 
   // prepare the exec options, most notably with the SQ params
   const scannerParams = getScannerParams(process.cwd(), params);
