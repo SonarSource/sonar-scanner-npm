@@ -108,5 +108,11 @@ promote_task:
     <<: *CONTAINER_DEFINITION
     cpu: 1
     memory: 1G
-  qa_script:
-    - ./scripts/promote.sh
+  env:
+    ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
+    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
+  script:
+    - source cirrus-env PROMOTE
+    - cirrus_jfrog_promote
+    - github-notify-promotion
+    - burgr-notify-promotion
