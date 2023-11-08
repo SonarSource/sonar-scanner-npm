@@ -4,7 +4,7 @@ env:
   CIRRUS_VAULT_ROLE: cirrusci-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}
 
   SONAR_TOKEN: VAULT[development/kv/data/sonarcloud data.token]
-  ARTIFACTORY_URL: https://repox.jfrog.io/
+  ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
   ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
   ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
   ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
@@ -45,7 +45,7 @@ build_task:
   env:
     SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
   build_script:
-    - jfrog config add repox --url $ARTIFACTORY_URL --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
+    - jfrog config add repox --url https://repox.jfrog.io/ --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
     - jfrog npm-config --repo-resolve npm --repo-deploy sonarsource-npm-public-qa
     - npm run build
   sonarcloud_analysis_script:
