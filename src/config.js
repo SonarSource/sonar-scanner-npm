@@ -78,12 +78,10 @@ function getExecutableParams(params = {}) {
   let platformBinariesVersion = DEFAULT_SCANNER_VERSION;
 
   if (params.hasOwnProperty('version')) {
-    platformBinariesVersion = params.version
-  }
-  else if (env.hasOwnProperty('SONAR_SCANNER_VERSION')) {
+    platformBinariesVersion = params.version;
+  } else if (env.hasOwnProperty('SONAR_SCANNER_VERSION')) {
     platformBinariesVersion = env.SONAR_SCANNER_VERSION;
-  }
-  else if (env.hasOwnProperty('npm_config_sonar_scanner_version')) {
+  } else if (env.hasOwnProperty('npm_config_sonar_scanner_version')) {
     platformBinariesVersion = env.npm_config_sonar_scanner_version;
   }
 
@@ -92,25 +90,21 @@ function getExecutableParams(params = {}) {
   let basePath = os.homedir();
   if (params.hasOwnProperty('basePath')) {
     basePath = params.basePath;
-  }
-  else if (env.hasOwnProperty('SONAR_BINARY_CACHE')) {
+  } else if (env.hasOwnProperty('SONAR_BINARY_CACHE')) {
     basePath = env.SONAR_BINARY_CACHE;
-  }
-  else if (env.hasOwnProperty('npm_config_sonar_binary_cache')) {
+  } else if (env.hasOwnProperty('npm_config_sonar_binary_cache')) {
     basePath = env.npm_config_sonar_binary_cache;
   }
 
   const installFolder = (config.installFolder = buildInstallFolderPath(basePath));
   config.platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
 
-  let baseUrl = SONAR_SCANNER_MIRROR
+  let baseUrl = SONAR_SCANNER_MIRROR;
   if (params.hasOwnProperty('baseUrl')) {
     baseUrl = params.baseUrl;
-  }
-  else if (env.hasOwnProperty('SONAR_SCANNER_MIRROR')) {
+  } else if (env.hasOwnProperty('SONAR_SCANNER_MIRROR')) {
     baseUrl = env.SONAR_SCANNER_MIRROR;
-  }
-  else if (env.hasOwnProperty('npm_config_sonar_scanner_mirror')) {
+  } else if (env.hasOwnProperty('npm_config_sonar_scanner_mirror')) {
     baseUrl = env.npm_config_sonar_scanner_mirror;
   }
 
@@ -124,7 +118,11 @@ function getExecutableParams(params = {}) {
     proxy = env.http_proxy;
   }
   // Use https_proxy when available
-  if (env.hasOwnProperty('https_proxy') && typeof env.https_proxy === 'string' && finalUrl.protocol === 'https:') {
+  if (
+    env.hasOwnProperty('https_proxy') &&
+    typeof env.https_proxy === 'string' &&
+    finalUrl.protocol === 'https:'
+  ) {
     proxy = env.https_proxy;
   }
   if (proxy && proxy !== '') {
