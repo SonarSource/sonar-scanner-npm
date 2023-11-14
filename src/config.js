@@ -37,8 +37,6 @@ module.exports.DEFAULT_SCANNER_VERSION = DEFAULT_SCANNER_VERSION;
 const SONAR_SCANNER_MIRROR = 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 module.exports.SONAR_SCANNER_MIRROR = SONAR_SCANNER_MIRROR;
 
-const env = process.env;
-
 /**
  * Build the SONARQUBE_SCANNER_PARAMS which will be passed as an environment
  * variable to the scanner.
@@ -51,7 +49,7 @@ function getScannerParams(basePath, params = {}) {
   const sqScannerParams = sonarScannerParams(
     params,
     basePath,
-    env.hasOwnProperty('SONARQUBE_SCANNER_PARAMS') && env.SONARQUBE_SCANNER_PARAMS,
+    process.env.hasOwnProperty('SONARQUBE_SCANNER_PARAMS') && process.env.SONARQUBE_SCANNER_PARAMS,
   );
 
   // We need to merge the existing env variables (process.env) with the SQ ones
@@ -74,6 +72,8 @@ function getExecutableParams(params = {}) {
   const config = {
     httpOptions: {},
   };
+
+  const env = process.env;
 
   let platformBinariesVersion = DEFAULT_SCANNER_VERSION;
 
