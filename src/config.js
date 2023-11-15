@@ -85,6 +85,13 @@ function getExecutableParams(params = {}) {
     platformBinariesVersion = env.npm_config_sonar_scanner_version;
   }
 
+  if (!/^[\d.]+$/.test(platformBinariesVersion)) {
+    log(
+      `Version "${platformBinariesVersion}" does not have a correct format. Will use default version "${DEFAULT_SCANNER_VERSION}"`,
+    );
+    platformBinariesVersion = DEFAULT_SCANNER_VERSION;
+  }
+
   const targetOS = (config.targetOS = findTargetOS());
 
   let basePath = os.homedir();
@@ -110,7 +117,16 @@ function getExecutableParams(params = {}) {
 
   const fileName = (config.fileName =
     'sonar-scanner-cli-' + platformBinariesVersion + '-' + targetOS + '.zip');
-  const finalUrl = new URL(fileName, baseUrl);
+
+  let finalUrl;
+
+  try {
+    finalUrl = new URL(fileName, baseUrl);
+  } catch (e) {
+    log(`Invalid URL "${finalUrl}". Will use default mirror "${SONAR_SCANNER_MIRROR}"`);
+    finalUrl = new URL(fileName, SONAR_SCANNER_MIRROR);
+  }
+
   config.downloadUrl = finalUrl.href;
 
   let proxy = '';
@@ -126,9 +142,14 @@ function getExecutableParams(params = {}) {
     proxy = env.https_proxy;
   }
   if (proxy && proxy !== '') {
-    const proxyAgent = new HttpsProxyAgent(proxy);
-    config.httpOptions.httpRequestOptions = { agent: proxyAgent };
-    config.httpOptions.httpsRequestOptions = { agent: proxyAgent };
+    try {
+      new URL(proxy);
+      const proxyAgent = new HttpsProxyAgent(proxy);
+      config.httpOptions.httpRequestOptions = { agent: proxyAgent };
+      config.httpOptions.httpsRequestOptions = { agent: proxyAgent };
+    } catch (e) {
+      log(`Invalid proxy "${proxy}"`);
+    }
   }
 
   if (finalUrl.username !== '' || finalUrl.password !== '') {
