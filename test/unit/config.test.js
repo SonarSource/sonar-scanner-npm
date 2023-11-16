@@ -438,7 +438,7 @@ describe('config', function () {
       );
     });
 
-    it('should sanitize scanner version', function () {
+    it('should sanitize the scanner version', function () {
       process.env.npm_config_sonar_scanner_version = '4 && rm -rf';
       assert.equal(
         getExecutableParams().downloadUrl,
