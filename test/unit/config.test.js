@@ -389,7 +389,7 @@ describe('config', function () {
       );
     });
 
-    it('should not set http proxy if url is invalid', function () {
+    it('should not set the http proxy if url is invalid', function () {
       process.env = {
         http_proxy: 'http://user:password@httpp:roxy:3128',
       };
@@ -438,7 +438,7 @@ describe('config', function () {
       );
     });
 
-    it('should sanitize the scanner version', function () {
+    it('should not set the scanner version if invalid', function () {
       process.env.npm_config_sonar_scanner_version = '4 && rm -rf';
       assert.equal(
         getExecutableParams().downloadUrl,
