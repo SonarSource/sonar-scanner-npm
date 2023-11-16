@@ -120,6 +120,23 @@ describe('sqScannerExecutable', function () {
     });
   });
 
+  describe('when providing an invalid CA certificate', function () {
+    let caPath;
+    beforeAll(() => {
+      caPath = path.join(os.tmpdir(), 'ca.pem');
+      fs.writeFileSync(caPath, '-----ILLEGAL CERTIFICATE-----');
+    });
+
+    it('should fail if the provided path is invalid', async function () {
+      try {
+        await getScannerExecutable(false, { caPath });
+        assert.fail('should have thrown');
+      } catch (e) {
+        assert.equal(e.message, 'Invalid CA certificate');
+      }
+    });
+  });
+
   describe('local: getScannerExecutable(true)', () => {
     it('should fail when the executable is not found', async () => {
       assert.throws(

@@ -123,7 +123,7 @@ function getExecutableParams(params = {}) {
   try {
     finalUrl = new URL(fileName, baseUrl);
   } catch (e) {
-    log(`Invalid URL "${finalUrl}". Will use default mirror "${SONAR_SCANNER_MIRROR}"`);
+    log(`Invalid URL "${baseUrl}". Will use default mirror "${SONAR_SCANNER_MIRROR}"`);
     finalUrl = new URL(fileName, SONAR_SCANNER_MIRROR);
   }
 
