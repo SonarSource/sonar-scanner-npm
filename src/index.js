@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+const quote = require('shell-quote').quote;
 const exec = require('child_process').execFileSync;
 const log = require('fancy-log');
 const { getScannerParams, extendWithExecParams } = require('./config');
@@ -36,7 +37,7 @@ async function scan(params, cliArgs = [], localScanner = false) {
   // prepare the exec options, most notably with the SQ params
   const scannerParams = getScannerParams(process.cwd(), params);
   const execOptions = extendWithExecParams(scannerParams);
-  exec(sqScannerCommand, fromParam().concat(cliArgs), execOptions);
+  exec(quote([sqScannerCommand]), fromParam().concat(cliArgs), execOptions);
   log('Analysis finished.');
 }
 
