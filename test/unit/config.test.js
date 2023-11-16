@@ -37,8 +37,6 @@ function pathForProject(projectFolder) {
 }
 
 describe('config', function () {
-  const exclusions = DEFAULT_EXCLUSIONS;
-
   let envBackup = {};
   beforeEach(function () {
     envBackup = Object.assign({}, process.env);
@@ -52,7 +50,7 @@ describe('config', function () {
       const expectedResult = {
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
-        'sonar.exclusions': exclusions,
+        'sonar.exclusions': DEFAULT_EXCLUSIONS,
       };
 
       assert.deepEqual(
@@ -79,7 +77,7 @@ describe('config', function () {
         'sonar.token': 'my_token',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
-        'sonar.exclusions': exclusions,
+        'sonar.exclusions': DEFAULT_EXCLUSIONS,
       };
 
       const sqParams = getScannerParams(pathForProject('fake_project_with_no_package_file'), {
@@ -96,7 +94,7 @@ describe('config', function () {
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
         'sonar.tests': 'specs',
-        'sonar.exclusions': exclusions,
+        'sonar.exclusions': DEFAULT_EXCLUSIONS,
       };
 
       const sqParams = getScannerParams(pathForProject('fake_project_with_no_package_file'), {
@@ -154,7 +152,7 @@ describe('config', function () {
         'sonar.links.scm': 'git+https://github.com/fake/project.git',
         'sonar.sources': '.',
         'sonar.testExecutionReportPaths': 'xunit.xml',
-        'sonar.exclusions': exclusions,
+        'sonar.exclusions': DEFAULT_EXCLUSIONS,
       };
 
       const sqParams = getScannerParams(
@@ -170,7 +168,7 @@ describe('config', function () {
         'sonar.token': 'my_token',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
-        'sonar.exclusions': exclusions,
+        'sonar.exclusions': DEFAULT_EXCLUSIONS,
       };
 
       process.env = {
@@ -193,7 +191,7 @@ describe('config', function () {
         'sonar.login': 'my_token',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
-        'sonar.exclusions': exclusions,
+        'sonar.exclusions': DEFAULT_EXCLUSIONS,
       };
 
       process.env = {
@@ -252,7 +250,7 @@ describe('config', function () {
         SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.projectDescription': 'No description.',
           'sonar.sources': '.',
-          'sonar.exclusions': exclusions,
+          'sonar.exclusions': DEFAULT_EXCLUSIONS,
           'sonar.host.url': 'https://sonarcloud.io',
           'sonar.branch': 'dev',
         }),
@@ -388,6 +386,66 @@ describe('config', function () {
       assert.deepEqual(
         config.httpOptions.httpRequestOptions.agent,
         config.httpOptions.httpsRequestOptions.agent,
+      );
+    });
+
+    it('should not set http proxy if url is invalid', function () {
+      process.env = {
+        http_proxy: 'http://user:password@httpp:roxy:3128',
+      };
+      const config = getExecutableParams();
+      assert.notExists(config.httpOptions.httpRequestOptions);
+    });
+
+    it('should not set baseURL if url is invalid', function () {
+      const config = getExecutableParams({
+        baseUrl: 'http://example.com:80:80/sonarqube-repository/',
+      });
+      assert.equal(
+        config.downloadUrl,
+        new URL(
+          'sonar-scanner-cli-' + DEFAULT_SCANNER_VERSION + '-' + config.targetOS + '.zip',
+          SONAR_SCANNER_MIRROR,
+        ),
+      );
+    });
+
+    it('should take the version from env or params', function () {
+      process.env.npm_config_sonar_scanner_version = '4.8.1.3023';
+      assert.equal(
+        getExecutableParams().downloadUrl,
+        new URL(
+          'sonar-scanner-cli-' + '4.8.1.3023' + '-' + findTargetOS() + '.zip',
+          SONAR_SCANNER_MIRROR,
+        ),
+      );
+
+      process.env.SONAR_SCANNER_VERSION = '5.0.0.2966';
+      assert.equal(
+        getExecutableParams().downloadUrl,
+        new URL(
+          'sonar-scanner-cli-' + '5.0.0.2966' + '-' + findTargetOS() + '.zip',
+          SONAR_SCANNER_MIRROR,
+        ),
+      );
+
+      assert.equal(
+        getExecutableParams({ version: '4.7.0.2747' }).downloadUrl,
+        new URL(
+          'sonar-scanner-cli-' + '4.7.0.2747' + '-' + findTargetOS() + '.zip',
+          SONAR_SCANNER_MIRROR,
+        ),
+      );
+    });
+
+    it('should sanitize scanner version', function () {
+      process.env.npm_config_sonar_scanner_version = '4 && rm -rf';
+      assert.equal(
+        getExecutableParams().downloadUrl,
+        new URL(
+          'sonar-scanner-cli-' + DEFAULT_SCANNER_VERSION + '-' + findTargetOS() + '.zip',
+          SONAR_SCANNER_MIRROR,
+        ),
       );
     });
 
