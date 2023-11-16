@@ -63,7 +63,8 @@
     "check-format": "prettier --list-different .",
     "license": "eslint --ext js,ts src test tools scripts .",
     "license-fix": "eslint --fix --ext js,ts src test tools scripts .",
-    "precommit": "pretty-quick --staged"
+    "precommit": "pretty-quick --staged",
+    "prepare": "husky install .husky"
   },
   "prettier": {
     "printWidth": 100,
