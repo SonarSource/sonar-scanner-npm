@@ -4,11 +4,11 @@ env:
   CIRRUS_VAULT_ROLE: cirrusci-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}
 
   SONAR_TOKEN: VAULT[development/kv/data/sonarcloud data.token]
-  ARTIFACTORY_URL: https://repox.jfrog.io/
+  ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
   ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
   ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
   ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
-  ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
+  ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
   BURGR_URL: VAULT[development/kv/data/burgr data.url]
   BURGR_USERNAME: VAULT[development/kv/data/burgr data.cirrus_username]
   BURGR_PASSWORD: VAULT[development/kv/data/burgr data.cirrus_password]
@@ -57,8 +57,8 @@ build_task:
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
   build_script:
-    - jfrog config add repox --url $ARTIFACTORY_URL --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
-    - jfrog npm-config --repo-resolve npm --repo-deploy sonarsource-npm-public-qa
+    - jfrog config add repox --url https://repox.jfrog.io/ --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
+    - jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
     - npm run build
   sonarcloud_analysis_script:
     - node ./scripts/ci-analysis.js
@@ -119,5 +119,9 @@ promote_task:
     <<: *CONTAINER_DEFINITION
     cpu: 1
     memory: 1G
-  qa_script:
+  env:
+    ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
+    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
+    ARTIFACTS: sonarqube-scanner:tgz
+  script:
     - ./scripts/promote.sh
