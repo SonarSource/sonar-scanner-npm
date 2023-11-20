@@ -45,6 +45,17 @@ build_task:
     memory: 8G
   env:
     SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
+  clone_script: |
+    git config --system core.longpaths true
+    if [ -z "$CIRRUS_PR" ]; then
+      git clone --branch=$CIRRUS_BRANCH https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git reset --hard $CIRRUS_CHANGE_IN_REPO
+    else
+      git clone https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+      git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
+      git fetch origin $CIRRUS_BASE_BRANCH:$CIRRUS_BASE_BRANCH
+      git reset --hard $CIRRUS_CHANGE_IN_REPO
+    fi
   build_script:
     - jfrog config add repox --url $ARTIFACTORY_URL --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
     - jfrog npm-config --repo-resolve npm --repo-deploy sonarsource-npm-public-qa
