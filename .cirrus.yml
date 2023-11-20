@@ -52,7 +52,6 @@ build_task:
     else
       git clone https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
       git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
-      git fetch origin $CIRRUS_BASE_BRANCH:$CIRRUS_BASE_BRANCH
       git reset --hard $CIRRUS_CHANGE_IN_REPO
     fi
   build_script:
