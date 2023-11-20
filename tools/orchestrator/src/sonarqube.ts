@@ -113,6 +113,7 @@ async function waitForStart(sqProcess: ChildProcess, maxWaitMs: number = DEFAULT
 
   const startWaitMs = Date.now();
   let isReady = false;
+  let isStopped = false;
   while (!isReady) {
     try {
       if (isBeyondWaitingTime(startWaitMs, maxWaitMs)) {
@@ -123,8 +124,12 @@ async function waitForStart(sqProcess: ChildProcess, maxWaitMs: number = DEFAULT
       const [response] = await Promise.all([isSonarQubeReady(logs, logsIndex), sleep()]);
       isReady = response.isReady;
       logsIndex = response.readIndex;
+      isStopped = response.isStopped;
     } catch (error: any) {
       await sleep();
+    }
+    if (isStopped) {
+      throw new Error('Sonarqube crashed on startup');
     }
   }
 }
@@ -138,9 +143,13 @@ async function waitForStart(sqProcess: ChildProcess, maxWaitMs: number = DEFAULT
  */
 async function isSonarQubeReady(logs: string[], startIndex: number): Promise<any> {
   const SQ_READY_LINE = 'SonarQube is operational';
+  const SQ_STOPPED_LINE = 'SonarQube is stopped';
   for (let i = startIndex; i < logs.length; i++) {
     if (logs[i].includes(SQ_READY_LINE)) {
       return { isReady: true };
+    }
+    if (logs[i].includes(SQ_STOPPED_LINE)) {
+      return { isStopped: true };
     }
   }
   return { isReady: false, readIndex: logs.length };
@@ -166,7 +175,7 @@ export function stop(sqPath: string = DEFAULT_FOLDER) {
   function promiseFromChildProcess(child: ChildProcess) {
     return new Promise(function (resolve, reject) {
       child.addListener('error', reject);
-      child.addListener('exit', resolve);
+      child.addListener('close', resolve);
     });
   }
 }

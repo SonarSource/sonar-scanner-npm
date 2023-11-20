@@ -49,7 +49,7 @@ function getScannerParams(basePath, params = {}) {
   const sqScannerParams = sonarScannerParams(
     params,
     basePath,
-    process.env.SONARQUBE_SCANNER_PARAMS,
+    process.env.hasOwnProperty('SONARQUBE_SCANNER_PARAMS') && process.env.SONARQUBE_SCANNER_PARAMS,
   );
 
   // We need to merge the existing env variables (process.env) with the SQ ones
@@ -72,44 +72,84 @@ function getExecutableParams(params = {}) {
   const config = {
     httpOptions: {},
   };
+
   const env = process.env;
 
-  const platformBinariesVersion =
-    params.version ||
-    env.SONAR_SCANNER_VERSION ||
-    env.npm_config_sonar_scanner_version ||
-    DEFAULT_SCANNER_VERSION;
+  let platformBinariesVersion = DEFAULT_SCANNER_VERSION;
+
+  if (params.hasOwnProperty('version')) {
+    platformBinariesVersion = params.version;
+  } else if (env.hasOwnProperty('SONAR_SCANNER_VERSION')) {
+    platformBinariesVersion = env.SONAR_SCANNER_VERSION;
+  } else if (env.hasOwnProperty('npm_config_sonar_scanner_version')) {
+    platformBinariesVersion = env.npm_config_sonar_scanner_version;
+  }
+
+  if (!/^[\d.]+$/.test(platformBinariesVersion)) {
+    log(
+      `Version "${platformBinariesVersion}" does not have a correct format. Will use default version "${DEFAULT_SCANNER_VERSION}"`,
+    );
+    platformBinariesVersion = DEFAULT_SCANNER_VERSION;
+  }
 
   const targetOS = (config.targetOS = findTargetOS());
 
-  const basePath =
-    params.basePath || env.SONAR_BINARY_CACHE || env.npm_config_sonar_binary_cache || os.homedir();
+  let basePath = os.homedir();
+  if (params.hasOwnProperty('basePath')) {
+    basePath = params.basePath;
+  } else if (env.hasOwnProperty('SONAR_BINARY_CACHE')) {
+    basePath = env.SONAR_BINARY_CACHE;
+  } else if (env.hasOwnProperty('npm_config_sonar_binary_cache')) {
+    basePath = env.npm_config_sonar_binary_cache;
+  }
 
   const installFolder = (config.installFolder = buildInstallFolderPath(basePath));
   config.platformExecutable = buildExecutablePath(installFolder, platformBinariesVersion);
 
-  const baseUrl =
-    params.baseUrl ||
-    process.env.SONAR_SCANNER_MIRROR ||
-    process.env.npm_config_sonar_scanner_mirror ||
-    SONAR_SCANNER_MIRROR;
+  let baseUrl = SONAR_SCANNER_MIRROR;
+  if (params.hasOwnProperty('baseUrl')) {
+    baseUrl = params.baseUrl;
+  } else if (env.hasOwnProperty('SONAR_SCANNER_MIRROR')) {
+    baseUrl = env.SONAR_SCANNER_MIRROR;
+  } else if (env.hasOwnProperty('npm_config_sonar_scanner_mirror')) {
+    baseUrl = env.npm_config_sonar_scanner_mirror;
+  }
+
   const fileName = (config.fileName =
     'sonar-scanner-cli-' + platformBinariesVersion + '-' + targetOS + '.zip');
-  const finalUrl = new URL(fileName, baseUrl);
+
+  let finalUrl;
+
+  try {
+    finalUrl = new URL(fileName, baseUrl);
+  } catch (e) {
+    log(`Invalid URL "${baseUrl}". Will use default mirror "${SONAR_SCANNER_MIRROR}"`);
+    finalUrl = new URL(fileName, SONAR_SCANNER_MIRROR);
+  }
+
   config.downloadUrl = finalUrl.href;
 
   let proxy = '';
-  if (typeof process.env.http_proxy === 'string') {
-    proxy = process.env.http_proxy;
+  if (env.hasOwnProperty('http_proxy') && typeof env.http_proxy === 'string') {
+    proxy = env.http_proxy;
   }
   // Use https_proxy when available
-  if (typeof process.env.https_proxy === 'string' && finalUrl.protocol === 'https:') {
-    proxy = process.env.https_proxy;
+  if (
+    env.hasOwnProperty('https_proxy') &&
+    typeof env.https_proxy === 'string' &&
+    finalUrl.protocol === 'https:'
+  ) {
+    proxy = env.https_proxy;
   }
   if (proxy && proxy !== '') {
-    const proxyAgent = new HttpsProxyAgent(proxy);
-    config.httpOptions.httpRequestOptions = { agent: proxyAgent };
-    config.httpOptions.httpsRequestOptions = { agent: proxyAgent };
+    try {
+      new URL(proxy);
+      const proxyAgent = new HttpsProxyAgent(proxy);
+      config.httpOptions.httpRequestOptions = { agent: proxyAgent };
+      config.httpOptions.httpsRequestOptions = { agent: proxyAgent };
+    } catch (e) {
+      log(`Invalid proxy "${proxy}"`);
+    }
   }
 
   if (finalUrl.username !== '' || finalUrl.password !== '') {
