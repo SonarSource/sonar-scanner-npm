@@ -10,7 +10,7 @@ This module is analyzed on SonarCloud.
 
 ## Installation
 
-_Prerequisite: Node v14+ (otherwise use sonarqube-scanner v2.9.1)_
+_Prerequisite: Node v16+ (otherwise use sonarqube-scanner v2.9.1)_
 
 This package is available on npm as: `sonarqube-scanner`
 
