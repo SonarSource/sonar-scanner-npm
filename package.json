@@ -20,7 +20,7 @@
     "sonar-scanner": "src/bin/sonar-scanner"
   },
   "engines": {
-    "node": ">= 14"
+    "node": ">= 16"
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
