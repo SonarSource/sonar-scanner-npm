@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.6.5",
     "mkdirp": "^1.0.4"
   },
   "devDependencies": {
