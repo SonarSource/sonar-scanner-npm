@@ -30,6 +30,10 @@ container_definition: &CONTAINER_DEFINITION
   region: eu-central-1
   namespace: default
 
+npmrc_script_definition: &NPMRC_SCRIPT_DEFINITION
+  npmrc_script:
+    - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/.npmrc
+
 ec2_instance: &INSTANCE_DEFINITION
   experimental: true # see https://github.com/cirruslabs/cirrus-ci-docs/issues/1051
   region: eu-central-1
@@ -45,6 +49,7 @@ build_task:
     memory: 8G
   env:
     SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
+  <<: *NPMRC_SCRIPT_DEFINITION
   build_script:
     - if [ -n "${CIRRUS_BASE_BRANCH}" ]; then git fetch origin "${CIRRUS_BASE_BRANCH}"; fi
     - jfrog config add repox --url https://repox.jfrog.io/ --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
@@ -82,6 +87,7 @@ qa_task:
     <<: *CONTAINER_DEFINITION
     cpu: 4
     memory: 8G
+  <<: *NPMRC_SCRIPT_DEFINITION
   node_version_script:
     - node --version
     - npm --version
@@ -95,6 +101,7 @@ qa_win_task:
     - build
   <<: *ONLY_SONARSOURCE_QA
   <<: *INSTANCE_DEFINITION
+  <<: *NPMRC_SCRIPT_DEFINITION
   qa_script:
     - ./scripts/qa.sh
     - node ./scripts/build-orchestrator.js
