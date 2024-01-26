@@ -8,6 +8,7 @@ env:
   ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
   ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
   ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
+  ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
   # burgr notification
   BURGR_URL: VAULT[development/kv/data/burgr data.url]
   BURGR_USERNAME: VAULT[development/kv/data/burgr data.cirrus_username]
