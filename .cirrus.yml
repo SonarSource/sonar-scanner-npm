@@ -52,8 +52,6 @@ build_task:
   <<: *NPMRC_SCRIPT_DEFINITION
   build_script:
     - if [ -n "${CIRRUS_BASE_BRANCH}" ]; then git fetch origin "${CIRRUS_BASE_BRANCH}"; fi
-    - jfrog config add repox --url https://repox.jfrog.io/ --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
-    - jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
     - npm run build
   sonarcloud_analysis_script:
     - node ./scripts/ci-analysis.js
