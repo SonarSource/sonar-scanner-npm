@@ -13,5 +13,5 @@ source cirrus-env QA
 npm config set registry https://repox.jfrog.io/artifactory/api/npm/npmjs/
 
 cd test/integration
-npm install
+npm ci
 npm install --no-save "https://$ARTIFACTORY_PRIVATE_USERNAME:$ARTIFACTORY_PRIVATE_PASSWORD@repox.jfrog.io/artifactory/$ARTIFACTORY_DEPLOY_REPO/sonarqube-scanner/-/sonarqube-scanner-$VERSION-$BUILD_NUMBER.tgz"

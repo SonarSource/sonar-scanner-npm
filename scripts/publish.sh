@@ -9,6 +9,7 @@ npm version --no-git-tag-version --allow-same-version "$VERSION-$BUILD_NUMBER"
 
 jfrog c add repox --url https://repox.jfrog.io/ --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
 jfrog c use repox
+
 jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
 #upload to repox QA repository
 jfrog npm publish --build-name=$PROJECT --build-number="$BUILD_NUMBER"
