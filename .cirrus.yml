@@ -36,7 +36,6 @@ container_definition: &CONTAINER_DEFINITION
 npmrc_script_definition: &NPMRC_SCRIPT_DEFINITION
   npmrc_script:
     - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/.npmrc
-    - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/tools/orchestrator/.npmrc
 
 ec2_instance: &INSTANCE_DEFINITION
   experimental: true # see https://github.com/cirruslabs/cirrus-ci-docs/issues/1051
