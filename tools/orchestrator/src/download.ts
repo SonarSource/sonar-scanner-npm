@@ -21,17 +21,13 @@
 import * as https from 'https';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
-import * as urlLib from 'url';
 import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 import * as os from 'os';
 
 const DEFAULT_VERSION = '9.7.1.62043';
 const ARTIFACTORY_URL = process.env.ARTIFACTORY_URL || 'https://repox.jfrog.io';
-const VERSIONS_URL = new URL(
-  `/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*`,
-  ARTIFACTORY_URL,
-).href;
+const ARTIFACTORY_ACCESS_TOKEN = process.env.ARTIFACTORY_ACCESS_TOKEN;
 const CACHE_PATH = path.join(os.homedir(), '.sonar');
 const DEFAULT_SONARQUBE_PATH = path.join(CACHE_PATH, 'sonarqube');
 
@@ -59,18 +55,25 @@ export async function getLatestSonarQube(cacheFolder: string = DEFAULT_SONARQUBE
  *
  * @param url the URL where to get the existing community SQ versions
  */
-function getLatestVersion(url: string = VERSIONS_URL): Promise<string> {
+function getLatestVersion(): Promise<string> {
+  const options = buildHttpOptions(
+    `/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*`,
+  );
   return new Promise((resolve, reject) => {
-    https.get(url, response => {
+    https.get(options, response => {
       let responseData = '';
       response.on('data', data => {
         responseData += data;
       });
       response.on('close', () => {
-        const {
-          results: [{ version }],
-        } = JSON.parse(responseData);
-        resolve(version);
+        try {
+          const {
+            results: [{ version }],
+          } = JSON.parse(responseData);
+          resolve(version);
+        } catch (error) {
+          console.error('Error while parsing response', responseData);
+        }
       });
       response.on('error', error => {
         reject(error);
@@ -91,16 +94,15 @@ function download(
   downloadFolder: string = CACHE_PATH,
 ): Promise<string> {
   mkdirp.sync(downloadFolder);
-  const url = buildSonarQubeUrl(version);
-  const parsedUrl = urlLib.parse(url);
-  const filename = path.basename(parsedUrl.pathname as string);
+  const { options, url } = buildSonarQubeDownloadOptions(version);
+  const filename = path.basename(options.path);
   const zipFilePath = path.join(downloadFolder, filename);
   const outputFolderPath = path.join(downloadFolder, 'sonarqube');
 
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(zipFilePath);
     console.log(`Downloading ${url} and saving it into ${zipFilePath}`);
-    const request = https.get(url, response => {
+    https.get(options, response => {
       response.pipe(file);
       file.on('finish', () => {
         file.close();
@@ -111,17 +113,31 @@ function download(
         resolve(buildSonarQubePath(outputFolderPath, version));
       });
       file.on('error', (error: Error) => {
+        console.error('Error while downloading file', error);
         reject(error);
       });
     });
   });
 }
 
-function buildSonarQubeUrl(version: string) {
-  return new URL(
-    `repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`,
-    ARTIFACTORY_URL,
-  ).href;
+function buildSonarQubeDownloadOptions(version: string) {
+  const options = buildHttpOptions(
+    `/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`,
+  );
+  return {
+    options,
+    url: new URL(options.path, ARTIFACTORY_URL),
+  };
+}
+
+function buildHttpOptions(path: string) {
+  return {
+    host: ARTIFACTORY_URL.split('/')[2],
+    path,
+    headers: {
+      Authorization: `Bearer ${ARTIFACTORY_ACCESS_TOKEN}`,
+    },
+  };
 }
 
 function buildSonarQubePath(folder: string, version: string) {
