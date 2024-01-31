@@ -46,6 +46,15 @@ ec2_instance: &INSTANCE_DEFINITION
   image: base-windows-jdk17-v*
   platform: windows
 
+qa_script_definition: &QA_SCRIPT_DEFINITION
+  setup_script:
+    - ./scripts/qa.sh
+    - cd tools/orchestrator && npm run build"
+  test_script:
+    # required by orchestrator
+    - export ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN
+    - npm run test-integration
+
 build_task:
   eks_container:
     <<: *CONTAINER_DEFINITION
@@ -93,12 +102,7 @@ qa_task:
   node_version_script:
     - node --version
     - npm --version
-  qa_script:
-    - ./scripts/qa.sh
-    - node ./scripts/build-orchestrator.js
-    # required by orchestrator
-    - export ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN
-    - npm run test-integration
+  <<: *QA_SCRIPT_DEFINITION
 
 qa_win_task:
   depends_on:
@@ -106,12 +110,7 @@ qa_win_task:
   <<: *ONLY_SONARSOURCE_QA
   <<: *INSTANCE_DEFINITION
   <<: *NPMRC_SCRIPT_DEFINITION
-  qa_script:
-    - ./scripts/qa.sh
-    - node ./scripts/build-orchestrator.js
-    # required by orchestrator
-    - export ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN
-    - npm run test-integration
+  <<: *QA_SCRIPT_DEFINITION
 
 promote_task:
   depends_on:
