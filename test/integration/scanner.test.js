@@ -31,16 +31,14 @@ const {
   getIssues,
 } = require('../../tools/orchestrator/dist');
 
-const TIMEOUT_MS = 60_000;
+const TIMEOUT_MS = 300_000;
 
 describe('scanner', function () {
   describe('on local SonarQube', function () {
     let sqPath, token, projectKey;
     beforeAll(async function () {
       sqPath = await getLatestSonarQube();
-      console.log('got sonarqube path', sqPath);
       await startAndReady(sqPath, TIMEOUT_MS);
-      console.log('started qube');
       try {
         token = await generateToken();
         projectKey = await createProject();

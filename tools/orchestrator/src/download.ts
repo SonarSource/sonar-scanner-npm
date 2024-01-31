@@ -28,13 +28,6 @@ import * as os from 'os';
 const DEFAULT_VERSION = '9.7.1.62043';
 const ARTIFACTORY_URL = process.env.ARTIFACTORY_URL || 'https://repox.jfrog.io';
 const ARTIFACTORY_ACCESS_TOKEN = process.env.ARTIFACTORY_ACCESS_TOKEN;
-const VERSIONS_HTTP_OPTIONS = {
-  path: `/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*`,
-  host: ARTIFACTORY_URL.split('/')[2],
-  headers: {
-    Authorization: `Bearer ${ARTIFACTORY_ACCESS_TOKEN}`,
-  },
-};
 const CACHE_PATH = path.join(os.homedir(), '.sonar');
 const DEFAULT_SONARQUBE_PATH = path.join(CACHE_PATH, 'sonarqube');
 
@@ -62,7 +55,10 @@ export async function getLatestSonarQube(cacheFolder: string = DEFAULT_SONARQUBE
  *
  * @param url the URL where to get the existing community SQ versions
  */
-function getLatestVersion(options: {} = VERSIONS_HTTP_OPTIONS): Promise<string> {
+function getLatestVersion(): Promise<string> {
+  const { options } = buildHttpOptions(
+    `/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*`,
+  );
   return new Promise((resolve, reject) => {
     https.get(options, response => {
       let responseData = '';
@@ -125,9 +121,15 @@ function download(
 }
 
 function buildSonarQubeDownloadOptions(version: string) {
+  return buildHttpOptions(
+    `/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`,
+  );
+}
+
+function buildHttpOptions(path: string) {
   const options = {
     host: ARTIFACTORY_URL.split('/')[2],
-    path: `/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`,
+    path,
     headers: {
       Authorization: `Bearer ${ARTIFACTORY_ACCESS_TOKEN}`,
     },
