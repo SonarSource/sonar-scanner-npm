@@ -99,9 +99,6 @@ qa_task:
     cpu: 4
     memory: 8G
   <<: *NPMRC_SCRIPT_DEFINITION
-  node_version_script:
-    - node --version
-    - npm --version
   <<: *QA_SCRIPT_DEFINITION
 
 qa_win_task:
