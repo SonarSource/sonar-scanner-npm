@@ -67,10 +67,14 @@ function getLatestVersion(url: string = VERSIONS_URL): Promise<string> {
         responseData += data;
       });
       response.on('close', () => {
-        const {
-          results: [{ version }],
-        } = JSON.parse(responseData);
-        resolve(version);
+        try {
+          const {
+            results: [{ version }],
+          } = JSON.parse(responseData);
+          resolve(version);
+        } catch (error) {
+          console.error('Error while parsing response', responseData);
+        }
       });
       response.on('error', error => {
         reject(error);
