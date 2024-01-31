@@ -96,6 +96,7 @@ qa_task:
   qa_script:
     - ./scripts/qa.sh
     - node ./scripts/build-orchestrator.js
+    # required by orchestrator
     - export ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN
     - npm run test-integration
 
@@ -108,6 +109,7 @@ qa_win_task:
   qa_script:
     - ./scripts/qa.sh
     - node ./scripts/build-orchestrator.js
+    # required by orchestrator
     - export ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN
     - npm run test-integration
 

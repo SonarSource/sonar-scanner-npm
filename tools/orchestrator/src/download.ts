@@ -21,7 +21,6 @@
 import * as https from 'https';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
-import * as urlLib from 'url';
 import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 import * as os from 'os';
@@ -99,16 +98,15 @@ function download(
   downloadFolder: string = CACHE_PATH,
 ): Promise<string> {
   mkdirp.sync(downloadFolder);
-  const url = buildSonarQubeUrl(version);
-  const parsedUrl = urlLib.parse(url);
-  const filename = path.basename(parsedUrl.pathname as string);
+  const { options, url } = buildSonarQubeDownloadOptions(version);
+  const filename = path.basename(options.path);
   const zipFilePath = path.join(downloadFolder, filename);
   const outputFolderPath = path.join(downloadFolder, 'sonarqube');
 
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(zipFilePath);
     console.log(`Downloading ${url} and saving it into ${zipFilePath}`);
-    const request = https.get(url, response => {
+    https.get(options, response => {
       response.pipe(file);
       file.on('finish', () => {
         file.close();
@@ -119,17 +117,25 @@ function download(
         resolve(buildSonarQubePath(outputFolderPath, version));
       });
       file.on('error', (error: Error) => {
+        console.error('Error while downloading file', error);
         reject(error);
       });
     });
   });
 }
 
-function buildSonarQubeUrl(version: string) {
-  return new URL(
-    `repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`,
-    ARTIFACTORY_URL,
-  ).href;
+function buildSonarQubeDownloadOptions(version: string) {
+  const options = {
+    host: ARTIFACTORY_URL.split('/')[2],
+    path: `/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`,
+    headers: {
+      Authorization: `Bearer ${ARTIFACTORY_ACCESS_TOKEN}`,
+    },
+  };
+  return {
+    options,
+    url: new URL(options.path, ARTIFACTORY_URL),
+  };
 }
 
 function buildSonarQubePath(folder: string, version: string) {
