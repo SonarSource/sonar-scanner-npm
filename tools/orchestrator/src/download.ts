@@ -56,7 +56,7 @@ export async function getLatestSonarQube(cacheFolder: string = DEFAULT_SONARQUBE
  * @param url the URL where to get the existing community SQ versions
  */
 function getLatestVersion(): Promise<string> {
-  const { options } = buildHttpOptions(
+  const options = buildHttpOptions(
     `/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*`,
   );
   return new Promise((resolve, reject) => {
@@ -121,22 +121,22 @@ function download(
 }
 
 function buildSonarQubeDownloadOptions(version: string) {
-  return buildHttpOptions(
+  const options = buildHttpOptions(
     `/repox/sonarsource/org/sonarsource/sonarqube/sonar-application/${version}/sonar-application-${version}.zip`,
   );
+  return {
+    options,
+    url: new URL(options.path, ARTIFACTORY_URL),
+  };
 }
 
 function buildHttpOptions(path: string) {
-  const options = {
+  return {
     host: ARTIFACTORY_URL.split('/')[2],
     path,
     headers: {
       Authorization: `Bearer ${ARTIFACTORY_ACCESS_TOKEN}`,
     },
-  };
-  return {
-    options,
-    url: new URL(options.path, ARTIFACTORY_URL),
   };
 }
 
