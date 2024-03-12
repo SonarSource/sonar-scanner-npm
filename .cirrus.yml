@@ -48,7 +48,6 @@ ec2_instance: &INSTANCE_DEFINITION
 
 qa_script_definition: &QA_SCRIPT_DEFINITION
   setup_script:
-    - export ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN
     - ./scripts/qa.sh
     - cd tools/orchestrator && npm run build
   test_script:
