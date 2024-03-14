@@ -10,7 +10,6 @@ source cirrus-env QA
 # We should have a virtual repo that include npmjs and sonarsource-npm-public-qa (ARTIFACTORY_DEPLOY_REPO)
 # and an other one that include npmjs and sonarsource-npm-public-builds
 # The repo npm is wrongly configured and should only include npmjs and sonarsource-npm-public-releases
-npm config set registry https://repox.jfrog.io/artifactory/api/npm/npmjs/
 
 cd test/integration
 npm install
