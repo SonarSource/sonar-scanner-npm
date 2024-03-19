@@ -1,7 +1,0 @@
-tools/orchestrator/test/cache/
-tools/orchestrator/dist/
-coverage/
-package-lock.json
-
-# CI files
-.jfrog/

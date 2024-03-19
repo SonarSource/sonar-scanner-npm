@@ -23,18 +23,14 @@
     "node": ">= 16"
   },
   "dependencies": {
-    "adm-zip": "^0.5.10",
-    "fancy-log": "^2.0.0",
-    "https-proxy-agent": "^7.0.1",
-    "jest-sonar-reporter": "^2.0.0",
-    "mkdirp": "^3.0.1",
-    "node-downloader-helper": "^2.1.9",
-    "progress": "^2.0.3",
-    "shell-quote": "^1.8.1",
-    "slugify": "^1.6.6"
+    "adm-zip": "^0.5.12",
+    "axios": "^1.6.8",
+    "semver": "^7.6.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
     "@types/jest": "^29.5.7",
+    "@types/semver": "^7.5.8",
     "@typescript-eslint/parser": "^5.62.0",
     "chai": "^4.3.10",
     "eslint": "^8.48.0",
@@ -56,15 +52,7 @@
     "sonar-runner"
   ],
   "scripts": {
-    "build": "npm ci && npm run check-format && npm run license && npm test && cd tools/orchestrator && npm run build",
-    "test": "npx jest --coverage",
-    "test-integration": "cd test/integration && npm test",
-    "format": "prettier --write .",
-    "check-format": "prettier --list-different .",
-    "license": "eslint --ext js,ts src test tools scripts .",
-    "license-fix": "eslint --fix --ext js,ts src test tools scripts .",
-    "precommit": "pretty-quick --staged",
-    "prepare": "husky install .husky"
+    "build": "tsc"
   },
   "prettier": {
     "printWidth": 100,

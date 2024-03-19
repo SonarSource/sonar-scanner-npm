@@ -7,4 +7,3 @@ scan({}, options)
   .catch(() => {
     process.exitCode = 1;
   })
-
