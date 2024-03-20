@@ -42,7 +42,10 @@ async function scan(params, cliArgs = [], localScanner = false) {
 }
 
 function scanWithCallback(params, cliArgs, localScanner, callback) {
-  scan(params).then(() => {
+  // here we make the code unit-testable - i.e. by making the scan property stub-able
+  // this is not nice - and anyway when we move to ESM it won't work anymore because the module will be read-only -
+  // but for now, it allows us to unit test the module
+  module.exports.scan(params, cliArgs, localScanner).then(() => {
     callback();
   });
 }

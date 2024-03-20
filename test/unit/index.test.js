@@ -20,11 +20,63 @@
 
 const assert = require('assert');
 const index = require('../../src/index');
+const { spy, stub, restore } = require('sinon');
 
-describe('fromParam', function () {
-  it('should provide the correct identity', function () {
-    assert.deepEqual(index.fromParam(), [
-      '--from=ScannerNpm/' + require('../../package.json').version,
-    ]);
+describe('index', function () {
+  afterEach(restore);
+
+  describe('::fromParam', () => {
+    it('should provide the correct identity', function () {
+      assert.deepEqual(index.fromParam(), [
+        '--from=ScannerNpm/' + require('../../package.json').version,
+      ]);
+    });
+  });
+
+  describe('::cli', () => {
+    it('pass the expected arguments to the scan method', () => {
+      const parameters = {
+        foo: 'bar',
+      };
+      const cliArguments = ['--foo', 'bar'];
+
+      const scanStub = stub(index, 'scan').resolves();
+      const callbackSpy = spy(() => {
+        assert.equal(scanStub.callCount, 1);
+        assert.equal(scanStub.firstCall.args[0], parameters);
+        assert.equal(scanStub.firstCall.args[1], cliArguments);
+        assert.equal(
+          scanStub.firstCall.args[2],
+          false,
+          'the localScanner argument is passed as false',
+        );
+        assert.equal(callbackSpy.callCount, 1);
+      });
+
+      index.cli(cliArguments, parameters, callbackSpy);
+    });
+  });
+
+  describe('::customScanner', () => {
+    it('pass the expected arguments to the scan method', () => {
+      const parameters = {
+        foo: 'bar',
+      };
+
+      const scanStub = stub(index, 'scan').resolves(null);
+      const callbackSpy = spy(() => {
+        assert.equal(scanStub.callCount, 1);
+        assert.equal(scanStub.firstCall.args[0], parameters);
+        assert.equal(scanStub.firstCall.args[1].length, 0, 'no CLI arguments are passed');
+        assert.equal(
+          scanStub.firstCall.args[2],
+          true,
+          'the localScanner argument is passed as true',
+        );
+        assert.equal(callbackSpy.callCount, 1);
+      });
+
+      index.customScanner(parameters, callbackSpy);
+    });
   });
 });
