@@ -80,7 +80,7 @@ export async function fetchJre(
   serverVersion: SemVer,
   platformInfo: PlatformInfo,
 ): Promise<string> {
-  if (!supportsJreProvisioning(serverUrl, serverVersion)) {
+  if (supportsJreProvisioning(serverUrl, serverVersion)) {
     const { jrePath } = await downloadJre(serverUrl, platformInfo);
     return jrePath;
   }
