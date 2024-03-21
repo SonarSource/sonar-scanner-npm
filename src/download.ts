@@ -2,6 +2,10 @@ import AdmZip from 'adm-zip';
 import axios, { AxiosRequestConfig } from 'axios';
 import fs from 'fs';
 import * as stream from 'stream';
+import { join, dirname } from 'path';
+import zlib from 'zlib';
+import tarStream from 'tar-stream';
+import * as fsExtra from 'fs-extra';
 import { promisify } from 'util';
 import { LogLevel, log } from './logging';
 
@@ -29,11 +33,46 @@ export async function downloadFile(url: string, destPath: string, options?: Axio
   await finished(writer);
 }
 
-export function extractArchive(archivePath: string, destPath: string) {
-  // TODO: Add support for .tar.gz (only ,zip supported for now)
-  log(LogLevel.INFO, `Extracting ${archivePath} to ${destPath}`);
-  const zip = new AdmZip(archivePath);
-  zip.extractAllTo(destPath, true);
+export async function extractArchive(archivePath: string, destPath: string) {
+  if (archivePath.endsWith('.tar.gz')) {
+    const tarFilePath = archivePath;
+    const targetDirectory = destPath;
+    const extract = tarStream.extract();
+
+    const extractionPromise = new Promise((resolve, reject) => {
+      extract.on('entry', async (header, stream, next) => {
+        const filePath = join(targetDirectory, header.name);
+        // Ensure the directory exists
+        await fsExtra.ensureDir(dirname(filePath));
+
+        stream.pipe(fs.createWriteStream(filePath));
+
+        stream.on('end', function () {
+          next(); // ready for next entry
+        });
+
+        stream.resume(); // just auto drain the stream
+      });
+
+      extract.on('finish', () => {
+        log(LogLevel.INFO, 'tar.gz Extraction complete');
+        resolve(null);
+      });
+
+      extract.on('error', err => {
+        log(LogLevel.ERROR, 'Error extracting tar.gz', err);
+        reject(err);
+      });
+    });
+
+    fs.createReadStream(tarFilePath).pipe(zlib.createGunzip()).pipe(extract);
+
+    await extractionPromise;
+  } else {
+    log(LogLevel.INFO, `Extracting ${archivePath} to ${destPath}`);
+    const zip = new AdmZip(archivePath);
+    zip.extractAllTo(destPath, true);
+  }
 }
 
 export function allowExecution(filePath: string) {

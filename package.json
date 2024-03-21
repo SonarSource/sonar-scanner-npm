@@ -15,22 +15,26 @@
     "url": "https://github.com/SonarSource/sonar-scanner-npm/issues"
   },
   "license": "LGPL-3.0-only",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "bin": {
     "sonar-scanner": "src/bin/sonar-scanner"
   },
   "engines": {
-    "node": ">= 16"
+    "node": ">= 18"
   },
   "dependencies": {
     "adm-zip": "^0.5.12",
     "axios": "^1.6.8",
-    "semver": "^7.6.0"
+    "fs-extra": "^11.2.0",
+    "semver": "^7.6.0",
+    "tar-stream": "^3.1.7"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.5",
+    "@types/fs-extra": "^11.0.4",
     "@types/jest": "^29.5.7",
     "@types/semver": "^7.5.8",
+    "@types/tar-stream": "^3.1.3",
     "@typescript-eslint/parser": "^5.62.0",
     "chai": "^4.3.10",
     "eslint": "^8.48.0",

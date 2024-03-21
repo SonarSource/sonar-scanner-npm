@@ -56,17 +56,16 @@ async function downloadJre(
 
   const archivePath = path.join(SONAR_CACHE_DIR, data.checksum, data.filename);
   const jreDirPath = path.join(SONAR_CACHE_DIR, data.checksum, data.filename + '_unzip');
-  // TODO: This hotfix is needed because backend has been hotfixed to return the full path on windows format
-  // const hotFixedFilePath = data.filename;
-  const hotFixedFilePath = path.join(__dirname, `tmp`, data.filename);
+
   await downloadFile(
-    `${serverUrl}/api/v2/scanner/jre/download?filename=${hotFixedFilePath}`,
+    `${serverUrl}/api/v2/scanner/jre/download?filename=${data.filename}`,
     archivePath,
   );
-  extractArchive(archivePath, jreDirPath);
+  await extractArchive(archivePath, jreDirPath);
 
   const jreBinPath = path.join(jreDirPath, data.javaPath);
   log(LogLevel.DEBUG, `JRE downloaded to ${jreDirPath}. Allowing execution on ${jreBinPath}`);
+  // TODO: check if this is needed, we can also check the file permissions before
   allowExecution(jreBinPath);
 
   return {
