@@ -16,7 +16,8 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.5",
-    "mkdirp": "^1.0.4"
+    "mkdirp": "^1.0.4",
+    "follow-redirects": "1.15.6"
   },
   "devDependencies": {
     "@types/mkdirp": "^1.0.2",
