@@ -252,14 +252,14 @@ describe('config', function () {
           'sonar.sources': '.',
           'sonar.exclusions': DEFAULT_EXCLUSIONS,
           'sonar.host.url': 'https://sonarcloud.io',
-          'sonar.branch': 'dev',
+          'sonar.branch.name': 'dev',
         }),
       };
 
       process.env = {
         SONARQUBE_SCANNER_PARAMS: JSON.stringify({
           'sonar.host.url': 'https://sonarcloud.io',
-          'sonar.branch': 'dev',
+          'sonar.branch.name': 'dev',
         }),
       };
 
