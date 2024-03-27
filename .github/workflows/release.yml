@@ -12,13 +12,14 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name }}
       REPOX_URL: 'https://repox.jfrog.io/artifactory'
+      ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
       NPM_REPOSITORY: 'sonarsource-npm-public'
       SCOPE: ''
       PACKAGE: 'sonarqube-scanner'
     steps:
       - name: Vault
         id: secrets
-        uses: SonarSource/vault-action-wrapper@d1c1ab4ca5ad07fd9cdfe1eff038a39673dfca64 # tag=2.4.2-1
+        uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets:
             development/artifactory/token/SonarSource-sonar-scanner-npm-qa-deployer access_token  | qa_deployer_access_token;
@@ -26,11 +27,11 @@ jobs:
             development/kv/data/npmjs sonartech_npm_token  | npm_token;
             development/kv/data/repox url  | repox_url;
       - name: Setup JFrog for deploy
-        uses: SonarSource/jfrog-setup-wrapper@eb712d76540e5d1f3756303f30387657fb204e52 # tag=2.4.1-1
+        uses: SonarSource/jfrog-setup-wrapper@907e87c # tag=3.2.3
         with:
           jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).qa_deployer_access_token }}
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
       - run: mv .github/workflows/.npmrc .npmrc
