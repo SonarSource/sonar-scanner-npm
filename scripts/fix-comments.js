@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2023 SonarSource SA
+ * Copyright (C) 2022-2024 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -18,26 +18,25 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+const fs = require('fs');
 const path = require('path');
-const { isWindows, findTargetOS } = require('./platform');
 
-module.exports.buildExecutablePath = function (installFolder, platformBinariesVersion) {
-  return path.join(
-    installFolder,
-    `sonar-scanner-${platformBinariesVersion}-${findTargetOS()}`,
-    'bin',
-    `sonar-scanner${getBinaryExtension()}`,
-  );
-};
+const directoryPath = path.resolve(__dirname, '../build');
 
-module.exports.buildInstallFolderPath = function (basePath) {
-  return path.join(basePath, '.sonar', 'native-sonar-scanner');
-};
+fs.readdirSync(directoryPath).forEach(file => {
+  const filePath = path.join(directoryPath, file);
+  const fileContent = fs.readFileSync(filePath, 'utf8');
 
-function getBinaryExtension() {
-  if (isWindows()) {
-    return '.bat';
-  } else {
-    return '';
+  const commentStart = fileContent.indexOf('/*');
+  const commentEnd = fileContent.indexOf('*/', commentStart) + 2; // +2 to include the end of the comment
+
+  if (commentStart > 0 && commentEnd > 0) {
+    const beforeComment = fileContent.slice(0, commentStart);
+    const comment = fileContent.slice(commentStart, commentEnd);
+    const afterComment = fileContent.slice(commentEnd);
+
+    const newFileContent = comment + '\n' + beforeComment + afterComment;
+
+    fs.writeFileSync(filePath, newFileContent);
   }
-}
+});
