@@ -19,12 +19,14 @@
  */
 
 module.exports = {
-  collectCoverageFrom: ['src/**/*.js'],
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  collectCoverageFrom: ['src/**/*.{js,ts}'],
   coverageReporters: ['lcov', 'text'],
   coveragePathIgnorePatterns: ['.fixture.', '/fixtures/'],
   moduleFileExtensions: ['js', 'ts', 'json'],
   moduleDirectories: ['node_modules'],
   testResultsProcessor: 'jest-sonar-reporter',
-  testMatch: ['<rootDir>/test/unit/**/*.test.js'],
+  testMatch: ['<rootDir>/test/unit/**/*.test.{js,ts}'],
   testTimeout: 20000,
 };

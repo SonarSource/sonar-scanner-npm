@@ -39,3 +39,13 @@ export type ScannerLogEntry = {
 };
 
 export type ScannerParams = { [key: string]: string };
+
+export type ScanOptions = {
+  serverUrl: string;
+  token: string;
+  jvmOptions: string[];
+  options?: { [key: string]: string };
+  caPath: string;
+  logLevel?: string;
+  verbose?: boolean;
+};
