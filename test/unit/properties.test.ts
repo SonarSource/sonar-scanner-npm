@@ -1,0 +1,480 @@
+/*
+ * sonar-scanner-npm
+ * Copyright (C) 2022-2024 SonarSource SA
+ * mailto:info AT sonarsource DOT com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+import { DEFAULT_SONAR_EXCLUSIONS, SCANNER_BOOTSTRAPPER_NAME } from '../../src/constants';
+import { LogLevel, log } from '../../src/logging';
+import { getProperties } from '../../src/properties';
+import { FakeProjectMock } from './mocks/FakeProjectMock';
+
+jest.mock('../../src/logging');
+
+jest.mock('../../package.json', () => ({
+  version: '1.2.3',
+}));
+
+const projectHandler = new FakeProjectMock();
+
+afterEach(() => {
+  projectHandler.reset();
+});
+
+describe('getProperties', () => {
+  describe('should handle JS API scan options params correctly', () => {
+    it('should detect and use user-provided scan option params', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+          token: 'dummy-token',
+          verbose: true,
+          options: {
+            'sonar.projectKey': 'use-this-project-key',
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.token': 'dummy-token',
+        'sonar.verbose': 'true',
+        'sonar.projectKey': 'use-this-project-key',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+      });
+    });
+
+    it('should not set verbose mode when explicitly turned off', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+          verbose: false,
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties['sonar.verbose']).toBe('false');
+    });
+  });
+
+  describe('should handle package.json correctly', () => {
+    it('should generate default properties with package.json', () => {
+      projectHandler.reset('fake_project_with_basic_package_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.javascript.lcov.reportPaths': 'coverage/lcov.info',
+        'sonar.projectKey': 'fake-basic-project',
+        'sonar.projectName': 'fake-basic-project',
+        'sonar.projectDescription': 'No description.',
+        'sonar.projectVersion': '1.0.0',
+        'sonar.sources': '.',
+        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',coverage/**',
+        'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
+        'sonar.scanner.appVersion': '1.2.3',
+      });
+    });
+
+    it('should use all available information from package.json', () => {
+      projectHandler.reset('fake_project_with_complete_package_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.projectKey': 'fake-project',
+        'sonar.projectName': 'fake-project',
+        'sonar.projectDescription': 'A fake project',
+        'sonar.projectVersion': '1.0.0',
+        'sonar.links.homepage': 'https://github.com/fake/project',
+        'sonar.links.issue': 'https://github.com/fake/project/issues',
+        'sonar.links.scm': 'git+https://github.com/fake/project.git',
+        'sonar.sources': '.',
+        'sonar.testExecutionReportPaths': 'xunit.xml',
+        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
+      });
+    });
+
+    it('should allow package.json not to exist', () => {
+      projectHandler.reset('fake_project_with_no_package_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.projectDescription': 'No description.',
+        'sonar.sources': '.',
+        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
+      });
+    });
+
+    it('should slugify scoped package names', () => {
+      projectHandler.reset('fake_project_with_scoped_package_name');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.projectDescription': 'No description.',
+        'sonar.sources': '.',
+        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
+        'sonar.projectKey': 'myfake-basic-project',
+        'sonar.projectName': '@my/fake-basic-project',
+        'sonar.projectVersion': '1.0.0',
+      });
+    });
+
+    it('should detect jest report file', () => {
+      projectHandler.reset('fake_project_with_jest_report_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.javascript.lcov.reportPaths': 'jest-coverage/lcov.info',
+        'sonar.projectKey': 'fake-basic-project',
+        'sonar.projectName': 'fake-basic-project',
+        'sonar.projectDescription': 'No description.',
+        'sonar.projectVersion': '1.0.0',
+        'sonar.sources': '.',
+        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',jest-coverage/**',
+      });
+    });
+
+    it('should detect nyc report file', () => {
+      projectHandler.reset('fake_project_with_nyc_report_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.javascript.lcov.reportPaths': 'nyc-coverage/lcov.info',
+        'sonar.projectKey': 'fake-basic-project',
+        'sonar.projectName': 'fake-basic-project',
+        'sonar.projectDescription': 'No description.',
+        'sonar.projectVersion': '1.0.0',
+        'sonar.sources': '.',
+        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',nyc-coverage/**',
+      });
+    });
+  });
+
+  describe('should handle sonar-project.properties correctly', () => {
+    it('should parse sonar-project.properties properly', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties['sonar.token']).toBeUndefined();
+    });
+    it('should not set default values if sonar-project.properties file exists', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+      });
+    });
+  });
+
+  describe('should handle environment variables', () => {
+    it('should detect known environment variables', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_TOKEN: 'my-token',
+        SONAR_HOST_URL: 'https://sonarqube.com/',
+        SONAR_USER_HOME: '/tmp/.sonar/',
+        SONAR_ORGANIZATION: 'my-org',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.host.url': 'https://sonarqube.com/',
+        'sonar.token': 'my-token',
+        'sonar.userHome': '/tmp/.sonar/',
+        'sonar.organization': 'my-org',
+      });
+    });
+
+    it('should detect generic environment variables', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_SOME_VAR: 'some-value',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.scanner.someVar': 'some-value',
+      });
+    });
+
+    it('should use SONAR_SCANNER_JSON_PARAMS', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_JSON_PARAMS: JSON.stringify({
+          'sonar.token': 'this-is-another-token',
+        }),
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.token': 'this-is-another-token',
+      });
+    });
+
+    it('should not throw if SONAR_SCANNER_JSON_PARAMS is incorrectly formatted', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_JSON_PARAMS: 'this is def not JSON',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+      });
+      expect(log).toHaveBeenLastCalledWith(
+        LogLevel.WARN,
+        expect.stringMatching(/Failed to parse JSON parameters/),
+      );
+    });
+
+    it('should use deprecated SONARQUBE_SCANNER_PARAMS', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONARQUBE_SCANNER_PARAMS: JSON.stringify({
+          'sonar.token': 'this-is-another-token',
+        }),
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.token': 'this-is-another-token',
+      });
+      expect(log).toHaveBeenCalledWith(
+        LogLevel.WARN,
+        'SONARQUBE_SCANNER_PARAMS is deprecated, please use SONAR_SCANNER_JSON_PARAMS instead',
+      );
+    });
+  });
+
+  describe('should handle command line properties', () => {
+    it('should use command line properties', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+        ['-Dsonar.token=my-token', '-javaagent:/ignored-value.jar'],
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.token': 'my-token',
+      });
+    });
+  });
+
+  describe('should handle priorities properly', () => {
+    it('priority should respect CLI > Project conf > Global conf > Env', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_TOKEN: 'ignored',
+        SONAR_HOST_URL: 'http://ignored',
+        SONAR_USER_HOME: '/tmp/used',
+        SONAR_ORGANIZATION: 'ignored',
+        SONAR_SCANNER_JSON_PARAMS: JSON.stringify({
+          'sonar.userHome': 'ignored',
+          'sonar.scanner.someVar': 'used',
+        }),
+      });
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+          options: {
+            'sonar.token': 'ignored',
+            'sonar.organization': 'used',
+          },
+        },
+        projectHandler.getStartTime(),
+        ['-Dsonar.token=only-this-will-be-used'],
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.token': 'only-this-will-be-used',
+        'sonar.userHome': '/tmp/used',
+        'sonar.organization': 'used',
+        'sonar.scanner.someVar': 'used',
+      });
+    });
+
+    it('does not let user override bootstrapper-only properties', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_APP: 'ignored',
+        SONAR_SCANNER_APP_VERSION: '3.2.1',
+        SONAR_SCANNER_WAS_JRE_CACHE_HIT: 'true',
+        SONAR_SCANNER_WAS_ENGINE_CACHE_HIT: 'true',
+        SONAR_SCANNER_JSON_PARAMS: JSON.stringify({
+          'sonar.scanner.app': 'ignored',
+          'sonar.scanner.appVersion': 'ignored',
+          'sonar.scanner.bootstrapStartTime': '0000',
+          'sonar.scanner.wasJreCacheHit': 'true',
+          'sonar.scanner.wasEngineCacheHit': 'true',
+        }),
+      });
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+          options: {
+            'sonar.scanner.app': 'ignored',
+            'sonar.scanner.appVersion': 'ignored',
+            'sonar.scanner.bootstrapStartTime': '0000',
+            'sonar.scanner.wasJreCacheHit': 'true',
+            'sonar.scanner.wasEngineCacheHit': 'true',
+          },
+        },
+        projectHandler.getStartTime(),
+        ['-Dsonar.scanner.app=ignored'],
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+      });
+    });
+  });
+});
