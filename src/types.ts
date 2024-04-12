@@ -38,14 +38,27 @@ export type ScannerLogEntry = {
   throwable?: string;
 };
 
-export type ScannerParams = { [key: string]: string };
+export enum ScannerProperty {
+  SonarVerbose = 'sonar.verbose',
+  SonarToken = 'sonar.token',
+  SonarExclusions = 'sonar.exclusions',
+  SonarHostUrl = 'sonar.host.url',
+  SonarUserHome = 'sonar.userHome',
+  SonarOrganization = 'sonar.organization',
+  SonarProjectBaseDir = 'sonar.projectBaseDir',
+  SonarScannerWasEngineCacheHit = 'sonar.scanner.wasEngineCacheHit',
+}
+
+export type ScannerProperties = {
+  [key: string]: string;
+};
 
 export type ScanOptions = {
-  serverUrl: string;
-  token: string;
-  jvmOptions: string[];
+  serverUrl?: string;
+  token?: string;
+  jvmOptions?: string[];
   options?: { [key: string]: string };
-  caPath: string;
+  caPath?: string;
   logLevel?: string;
   verbose?: boolean;
 };

@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import path from 'path';
+import { ScannerProperty } from './types';
 
 export const SCANNER_BOOTSTRAPPER_NAME = 'ScannerNpm';
 
@@ -33,3 +34,17 @@ export const SONAR_CACHE_DIR = path.join(
 );
 
 export const UNARCHIVE_SUFFIX = '_extracted';
+
+export const ENV_VAR_PREFIX = 'SONAR_SCANNER_';
+
+export const ENV_TO_PROPERTY_NAME: [string, ScannerProperty][] = [
+  ['SONAR_TOKEN', ScannerProperty.SonarToken],
+  ['SONAR_HOST_URL', ScannerProperty.SonarHostUrl],
+  ['SONAR_USER_HOME', ScannerProperty.SonarUserHome],
+  ['SONAR_ORGANIZATION', ScannerProperty.SonarOrganization],
+];
+
+export const SONAR_PROJECT_FILENAME = 'sonar-project.properties';
+
+export const DEFAULT_SONAR_EXCLUSIONS =
+  'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
