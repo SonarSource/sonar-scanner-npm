@@ -136,3 +136,6 @@ xunit.xml
 
 # MacOS
 .DS_Store
+
+# TS build artifacts
+build/

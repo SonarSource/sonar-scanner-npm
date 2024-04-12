@@ -17,32 +17,4 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
-const { getLatestSonarQube } = require('../dist/download');
-const {
-  createProject,
-  generateToken,
-  startAndReady,
-  stop,
-  waitForAnalysisFinished,
-  getIssues,
-} = require('../dist/sonarqube');
-
-(async () => {
-  try {
-    const latest = await getLatestSonarQube();
-    console.log('finished', latest);
-    await startAndReady(latest);
-    const token = await generateToken();
-    console.log('got token', token);
-    const projectKey = await createProject();
-    console.log('got project', projectKey);
-    await waitForAnalysisFinished();
-    console.log('no analysis waiting');
-    const issues = await getIssues(projectKey);
-    console.log('got issues', issues);
-    await stop(latest);
-  } catch (error) {
-    console.log('got err', error.response.data);
-  }
-})();
+export { scan } from './scan';

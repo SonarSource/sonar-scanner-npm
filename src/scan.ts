@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2023 SonarSource SA
+ * Copyright (C) 2022-2024 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -18,34 +18,16 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-function isWindows() {
-  return /^win/.test(process.platform);
-}
-
-function isMac() {
-  return /^darwin/.test(process.platform);
-}
-
-function isLinux() {
-  return /^linux/.test(process.platform);
-}
-
-/*
- * Get the target OS based on the platform name
- */
-module.exports.findTargetOS = function () {
-  if (isWindows()) {
-    return 'windows';
-  }
-  if (isLinux()) {
-    return 'linux';
-  }
-  if (isMac()) {
-    return 'macosx';
-  }
-  throw Error(`Your platform '${process.platform}' is currently not supported.`);
+export type ScanOptions = {
+  serverUrl: string;
+  token: string;
+  jvmOptions: string[];
+  options?: { [key: string]: string };
+  caPath: string;
+  logLevel?: string;
+  verbose?: boolean;
 };
 
-module.exports.isWindows = isWindows;
-module.exports.isMac = isMac;
-module.exports.isLinux = isLinux;
+export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
+  // TODO: NPMSCAN-2 new bootstrapper sequence
+}
