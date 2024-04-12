@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2023 SonarSource SA
+ * Copyright (C) 2022-2024 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -18,26 +18,26 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+const fs = require('fs');
 const path = require('path');
-const { isWindows, findTargetOS } = require('./platform');
 
-module.exports.buildExecutablePath = function (installFolder, platformBinariesVersion) {
-  return path.join(
-    installFolder,
-    `sonar-scanner-${platformBinariesVersion}-${findTargetOS()}`,
-    'bin',
-    `sonar-scanner${getBinaryExtension()}`,
-  );
-};
+const LICENSE_HEADER = fs.readFileSync(path.resolve(__dirname, 'file-header.ts')).toString().trim();
 
-module.exports.buildInstallFolderPath = function (basePath) {
-  return path.join(basePath, '.sonar', 'native-sonar-scanner');
-};
+// Read every .js file in the ../build directory
+const directoryPath = path.resolve(__dirname, '../build/src');
 
-function getBinaryExtension() {
-  if (isWindows()) {
-    return '.bat';
-  } else {
-    return '';
+const fileNames = fs.readdirSync(directoryPath);
+for (const fileName of fileNames) {
+  // Skip if not a .js file
+  if (!fileName.endsWith('.js')) {
+    continue;
   }
+
+  // Read the file, drop the license header, re-prepend it and write the file
+  const filePath = path.join(directoryPath, fileName);
+  const fileContent = fs.readFileSync(filePath, 'utf8');
+  const fileWithoutHeader = fileContent.replace(LICENSE_HEADER, '');
+  const newFileContent = `${LICENSE_HEADER}\n${fileWithoutHeader}`;
+
+  fs.writeFileSync(filePath, newFileContent);
 }
