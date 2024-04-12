@@ -18,11 +18,19 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { log, LogLevel } from './logging';
+import { log, LogLevel, setLogLevel } from './logging';
 import { getPlatformInfo } from './platform';
-import { ScanOptions } from './types';
+import { getProperties } from './properties';
+import { ScannerProperty, ScanOptions } from './types';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
+  const startTimestampMs = Date.now();
+  const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
+  if (properties[ScannerProperty.SonarVerbose] === 'true') {
+    setLogLevel(LogLevel.DEBUG);
+    log(LogLevel.DEBUG, 'Setting the log level to DEBUG due to verbose mode');
+  }
+
   log(LogLevel.DEBUG, 'Finding platform info');
   const platformInfo = getPlatformInfo();
   log(LogLevel.INFO, 'Platform: ', platformInfo);
@@ -32,4 +40,7 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   //TODO: verifyScannerEngine
   //TODO: fetchScannerEngine
   //TODO:
+  // ...
+  properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
+  // ...
 }
