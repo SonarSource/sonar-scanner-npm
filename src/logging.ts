@@ -40,7 +40,7 @@ let logLevel = DEFAULT_LOG_LEVEL;
 
 export function log(level: LogLevel, ...message: unknown[]) {
   if (logLevelValues[level] <= logLevelValues[logLevel]) {
-    console.log(`[${level}] Bootstrapper ${message}`);
+    console.log(`[${level}] Bootstrapper:: `, ...message);
   }
 }
 

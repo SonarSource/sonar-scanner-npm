@@ -18,16 +18,18 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-export type ScanOptions = {
-  serverUrl: string;
-  token: string;
-  jvmOptions: string[];
-  options?: { [key: string]: string };
-  caPath: string;
-  logLevel?: string;
-  verbose?: boolean;
-};
+import { log, LogLevel } from './logging';
+import { getPlatformInfo } from './platform';
+import { ScanOptions } from './types';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
-  // TODO: NPMSCAN-2 new bootstrapper sequence
+  log(LogLevel.DEBUG, 'Finding platform info');
+  const platformInfo = getPlatformInfo();
+  log(LogLevel.INFO, 'Platform: ', platformInfo);
+
+  //TODO: verifyJRE based on platform
+  //TODO: fetchJRE
+  //TODO: verifyScannerEngine
+  //TODO: fetchScannerEngine
+  //TODO:
 }
