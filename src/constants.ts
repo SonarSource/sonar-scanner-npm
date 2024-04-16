@@ -54,3 +54,6 @@ export const SONAR_PROJECT_FILENAME = 'sonar-project.properties';
 
 export const DEFAULT_SONAR_EXCLUSIONS =
   'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
+
+export const API_V2_VERSION_ENDPOINT = '/api/v2/analysis/version';
+export const API_OLD_VERSION_ENDPOINT = '/api/server/version';

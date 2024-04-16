@@ -19,9 +19,11 @@
  */
 
 import { log, LogLevel } from './logging';
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import semver, { SemVer } from 'semver';
 import {
+  API_OLD_VERSION_ENDPOINT,
+  API_V2_VERSION_ENDPOINT,
   SONARCLOUD_PRODUCTION_URL,
   SONARCLOUD_URL,
   SONARCLOUD_URL_REGEX,
@@ -29,6 +31,7 @@ import {
 } from './constants';
 import { downloadFile } from './download';
 import { JreMetaData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
+import { fetch } from './request';
 
 function getEndpoint(parameters: ScannerProperties): {
   isSonarCloud: boolean;
@@ -59,7 +62,10 @@ export async function serverSupportsJREProvisioning(
 
   // SonarQube
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
-  const SQServerInfo = await fetchServerVersion(sonarHostUrl);
+  const SQServerInfo = await fetchServerVersion(
+    sonarHostUrl,
+    parameters[ScannerProperty.SonarToken],
+  );
   log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
@@ -78,14 +84,33 @@ export async function fetchLatestSupportedJRE(serverUrl: string, platformInfo: P
   return data;
 }
 
-async function fetchServerVersion(serverUrl: string): Promise<SemVer> {
+async function fetchServerVersion(sonarHostUrl: string, token: string): Promise<SemVer> {
+  let version: SemVer | null = null;
   try {
-    log(LogLevel.DEBUG, 'Fetch URL: ', `${serverUrl}/api/server/version`);
-    const { data } = await axios.get(`${serverUrl}/api/server/version`);
-    log(LogLevel.DEBUG, 'Server version:', data);
-    return semver.coerce(data) ?? Promise.reject('Unsupported SQ version');
-  } catch (e) {
-    log(LogLevel.ERROR, 'Failed to fetch server version');
-    return Promise.reject(e);
+    // Try and fetch the new version endpoint first
+    log(LogLevel.DEBUG, `Fetching API V2 ${API_V2_VERSION_ENDPOINT}`);
+    const response = await fetch(token, { url: sonarHostUrl + API_V2_VERSION_ENDPOINT });
+    version = semver.coerce(response.data);
+  } catch (error: unknown) {
+    try {
+      // If it fails, fallback on deprecated server version endpoint
+      log(
+        LogLevel.DEBUG,
+        `Unable to fetch API V2 ${API_V2_VERSION_ENDPOINT}: ${error}. Falling back on ${API_OLD_VERSION_ENDPOINT}`,
+      );
+      const response = await fetch(token, { url: sonarHostUrl + API_OLD_VERSION_ENDPOINT });
+      version = semver.coerce(response.data);
+    } catch (error: unknown) {
+      // If it also failed, give up
+      log(LogLevel.ERROR, `Failed to fetch server version: ${error}`);
+      throw error;
+    }
   }
+
+  // If we couldn't parse the version
+  if (!version) {
+    throw new Error(`Failed to parse server version "${version}"`);
+  }
+
+  return version;
 }
