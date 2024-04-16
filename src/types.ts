@@ -19,7 +19,7 @@
  */
 import { LogLevel } from './logging';
 
-export type SupportedOS = 'windows' | 'linux' | 'alpine' | 'macos' | 'aix';
+export type SupportedOS = NodeJS.Platform | 'alpine';
 
 export type PlatformInfo = {
   os: SupportedOS | null;
@@ -39,3 +39,13 @@ export type ScannerLogEntry = {
 };
 
 export type ScannerParams = { [key: string]: string };
+
+export type ScanOptions = {
+  serverUrl: string;
+  token: string;
+  jvmOptions: string[];
+  options?: { [key: string]: string };
+  caPath: string;
+  logLevel?: string;
+  verbose?: boolean;
+};
