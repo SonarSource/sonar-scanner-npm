@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  * sonar-scanner-npm
  * Copyright (C) 2022-2024 SonarSource SA
@@ -18,10 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-const scan = require('../../build/src/index').scan;
 
-const options = process.argv.length > 2 ? process.argv.slice(2) : [];
+import { AxiosRequestConfig } from 'axios';
 
-scan({}, options).catch(() => {
-  process.exitCode = 1;
-});
+export function downloadFile(
+  url: string,
+  destPath: string,
+  expectedChecksum?: string,
+  options?: Partial<AxiosRequestConfig>,
+) {
+  throw new Error('Not implemented');
+}

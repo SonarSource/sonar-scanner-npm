@@ -22,8 +22,14 @@ import { ScannerProperty } from './types';
 
 export const SCANNER_BOOTSTRAPPER_NAME = 'ScannerNpm';
 
+export const SONARCLOUD_URL = 'https://sonarcloud.io';
+
+export const SONARCLOUD_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarcloud\.io)/;
+
 export const SONARCLOUD_ENV_REGEX =
   /^(https?:\/\/)?(www\.)?([a-zA-Z0-9-]+\.)?(sc-dev\.io|sc-staging\.io|sonarcloud\.io)/;
+
+export const SONARCLOUD_PRODUCTION_URL = 'https://sonarcloud.io';
 
 export const SONARQUBE_JRE_PROVISIONING_MIN_VERSION = '10.5';
 
