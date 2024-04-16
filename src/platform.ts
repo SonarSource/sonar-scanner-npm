@@ -27,26 +27,7 @@ export function getArch(): NodeJS.Architecture {
 }
 
 function isLinux(): boolean {
-  return /^linux/.test(process.platform);
-}
-
-function isSupportedLinux(): SupportedOS | false {
-  const linuxMapping: { [nodePlatform: string]: SupportedOS } = {
-    linux: isAlpineLinux() ? 'alpine' : 'linux',
-    openbsd: 'linux',
-    sunos: 'linux',
-    freebsd: 'linux',
-  };
-
-  return linuxMapping[process.platform] || false;
-}
-
-function isWindows(): boolean {
-  return /^win/.test(process.platform);
-}
-
-function isMac(): boolean {
-  return /^darwin/.test(process.platform);
+  return process.platform.startsWith('linux');
 }
 
 /**
@@ -66,27 +47,14 @@ function isAlpineLinux(): boolean {
       const fileContent = fs.readFileSync('/usr/lib/os-release');
       content = fileContent.toString();
     } catch (error) {
-      log(LogLevel.ERROR, 'Failed to read /etc/os-release or /usr/lib/os-release');
+      log(LogLevel.WARN, 'Failed to read /etc/os-release or /usr/lib/os-release');
     }
   }
   return !!content && (content.match(/^ID=([^\u001b\r\n]*)/m) || [])[1] === 'alpine';
 }
 
 function getSupportedOS(): SupportedOS {
-  if (isWindows()) {
-    return 'windows';
-  }
-
-  if (isMac()) {
-    return 'macos';
-  }
-
-  const supportedLinux = isSupportedLinux();
-  if (supportedLinux) {
-    return supportedLinux;
-  }
-
-  throw new Error(`Unsupported platform: ${process.platform}`);
+  return isAlpineLinux() ? 'alpine' : process.platform;
 }
 
 export function getPlatformInfo(): PlatformInfo {

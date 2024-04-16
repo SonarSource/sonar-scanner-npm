@@ -23,15 +23,13 @@ import * as logging from '../../src/logging';
 import fs from 'fs';
 import sinon from 'sinon';
 
-// Mock the getPlatform function
-
 describe('getPlatformInfo', () => {
   it('detect macos', () => {
     const platformStub = sinon.stub(process, 'platform').value('darwin');
     const archStub = sinon.stub(process, 'arch').value('arm64');
 
     expect(platform.getPlatformInfo()).toEqual({
-      os: 'macos',
+      os: 'darwin',
       arch: 'arm64',
     });
 
@@ -44,7 +42,7 @@ describe('getPlatformInfo', () => {
     const archStub = sinon.stub(process, 'arch').value('x64');
 
     expect(platform.getPlatformInfo()).toEqual({
-      os: 'windows',
+      os: 'win32',
       arch: 'x64',
     });
 
@@ -52,12 +50,12 @@ describe('getPlatformInfo', () => {
     archStub.restore();
   });
 
-  it('detect supported linux', () => {
+  it('detect linux flavor', () => {
     const platformStub = sinon.stub(process, 'platform').value('openbsd');
     const archStub = sinon.stub(process, 'arch').value('x64');
 
     expect(platform.getPlatformInfo()).toEqual({
-      os: 'linux',
+      os: 'openbsd',
       arch: 'x64',
     });
 
@@ -117,12 +115,5 @@ describe('getPlatformInfo', () => {
     platformStub.restore();
     archStub.restore();
     logSpy.restore();
-  });
-
-  it('throw if unsupported', () => {
-    const stub = sinon.stub(process, 'platform').value('android');
-
-    expect(() => platform.getPlatformInfo()).toThrow('Unsupported platform: android');
-    stub.restore();
   });
 });

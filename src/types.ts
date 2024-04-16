@@ -19,7 +19,7 @@
  */
 import { LogLevel } from './logging';
 
-export type SupportedOS = 'windows' | 'linux' | 'alpine' | 'macos' | 'aix';
+export type SupportedOS = NodeJS.Platform | 'alpine';
 
 export type PlatformInfo = {
   os: SupportedOS | null;
