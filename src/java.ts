@@ -18,29 +18,30 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import fs from 'fs';
-import * as fsExtra from 'fs-extra';
 import AdmZip from 'adm-zip';
-import zlib from 'zlib';
-import path from 'path';
 import axios from 'axios';
 import crypto from 'crypto';
+import fs from 'fs';
+import * as fsExtra from 'fs-extra';
+import path from 'path';
+import semver, { SemVer } from 'semver';
 import * as stream from 'stream';
 import tarStream from 'tar-stream';
 import { promisify } from 'util';
-import semver, { SemVer } from 'semver';
-import { log, LogLevel } from './logging';
+import zlib from 'zlib';
 import {
   API_OLD_VERSION_ENDPOINT,
   API_V2_JRE_ENDPOINT,
   API_V2_VERSION_ENDPOINT,
   SONAR_CACHE_DIR,
   SONARCLOUD_PRODUCTION_URL,
-  SONARCLOUD_URL,
-  SONARCLOUD_URL_REGEX,
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
+import { getHttpAgents } from './http-agent';
+import { log, LogLevel } from './logging';
+import { getProxyUrl } from './proxy';
+import { fetch } from './request';
 import {
   JREFullData,
   JreMetaData,
@@ -48,42 +49,22 @@ import {
   ScannerProperties,
   ScannerProperty,
 } from './types';
-import { fetch } from './request';
 
 const finished = promisify(stream.finished);
-
-export function getEndpoint(parameters: ScannerProperties): {
-  isSonarCloud: boolean;
-  sonarHostUrl: string;
-} {
-  let sonarHostUrl = parameters[ScannerProperty.SonarHostUrl] ?? '';
-  if (!sonarHostUrl || SONARCLOUD_URL_REGEX.exec(sonarHostUrl)) {
-    return {
-      isSonarCloud: true,
-      sonarHostUrl: parameters[ScannerProperty.SonarScannerSonarCloudURL] ?? SONARCLOUD_URL,
-    };
-  }
-  return {
-    isSonarCloud: false,
-    sonarHostUrl,
-  };
-}
 
 export async function serverSupportsJREProvisioning(
   parameters: ScannerProperties,
   platformInfo: PlatformInfo,
 ): Promise<boolean> {
-  const { isSonarCloud, sonarHostUrl } = getEndpoint(parameters);
-
-  if (isSonarCloud) {
+  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] !== 'true') {
     return true;
   }
 
   // SonarQube
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
   const SQServerInfo = await fetchServerVersion(
-    sonarHostUrl,
-    parameters[ScannerProperty.SonarToken],
+    parameters[ScannerProperty.SonarHostUrl],
+    parameters,
   );
   log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
 
@@ -121,6 +102,8 @@ export async function handleJREProvisioning(
     latestJREData.filename + UNARCHIVE_SUFFIX,
   );
 
+  const proxyUrl = getProxyUrl(properties);
+
   if (cachedJRE) {
     return {
       ...latestJREData,
@@ -152,6 +135,7 @@ export async function handleJREProvisioning(
       url,
       method: 'GET',
       responseType: 'stream',
+      ...getHttpAgents(proxyUrl),
     });
 
     const totalLength = response.headers['content-length'];
@@ -269,12 +253,21 @@ async function getCachedFileLocation(md5: string, filename: string) {
   }
 }
 
-export async function fetchServerVersion(sonarHostUrl: string, token: string): Promise<SemVer> {
+export async function fetchServerVersion(
+  sonarHostUrl: string,
+  parameters: ScannerProperties,
+): Promise<SemVer> {
+  const token = parameters[ScannerProperty.SonarToken];
+  const proxyUrl = getProxyUrl(parameters);
+
   let version: SemVer | null = null;
   try {
     // Try and fetch the new version endpoint first
     log(LogLevel.DEBUG, `Fetching API V2 ${API_V2_VERSION_ENDPOINT}`);
-    const response = await fetch(token, { url: sonarHostUrl + API_V2_VERSION_ENDPOINT });
+    const response = await fetch(token, {
+      url: sonarHostUrl + API_V2_VERSION_ENDPOINT,
+      ...getHttpAgents(proxyUrl),
+    });
     version = semver.coerce(response.data);
   } catch (error: unknown) {
     try {
@@ -283,7 +276,10 @@ export async function fetchServerVersion(sonarHostUrl: string, token: string): P
         LogLevel.DEBUG,
         `Unable to fetch API V2 ${API_V2_VERSION_ENDPOINT}: ${error}. Falling back on ${API_OLD_VERSION_ENDPOINT}`,
       );
-      const response = await fetch(token, { url: sonarHostUrl + API_OLD_VERSION_ENDPOINT });
+      const response = await fetch(token, {
+        url: sonarHostUrl + API_OLD_VERSION_ENDPOINT,
+        ...getHttpAgents(proxyUrl),
+      });
       version = semver.coerce(response.data);
     } catch (error: unknown) {
       // If it also failed, give up
