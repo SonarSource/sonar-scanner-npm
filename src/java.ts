@@ -50,7 +50,7 @@ import { fetch } from './request';
 
 const finished = promisify(stream.finished);
 
-function getEndpoint(parameters: ScannerProperties): {
+export function getEndpoint(parameters: ScannerProperties): {
   isSonarCloud: boolean;
   sonarHostUrl: string;
 } {
@@ -146,7 +146,7 @@ export async function handleJREProvisioning(
 
     await validateChecksum(archivePath, latestJREData.md5);
 
-    await extractArchive(archivePath, jreDirPath);
+    // await extractArchive(archivePath, jreDirPath);
 
     const jreBinPath = path.join(jreDirPath, latestJREData.javaPath);
     log(LogLevel.DEBUG, `JRE downloaded to ${jreDirPath}. Allowing execution on ${jreBinPath}`);

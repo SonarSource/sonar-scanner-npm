@@ -34,7 +34,7 @@ export class ServerMock {
   responses: (Partial<AxiosResponse> | Error)[] = [];
 
   constructor() {
-    jest.mocked(fetch).mockImplementation(this.handleFetch);
+    jest.mocked(fetch).mockImplementation(this.handleFetch.bind(this));
   }
 
   mockServerVersionResponse(version: string) {
