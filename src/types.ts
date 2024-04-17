@@ -32,6 +32,10 @@ export type JreMetaData = {
   javaPath: string;
 };
 
+export type JREFullData = JreMetaData & {
+  jrePath: string;
+};
+
 export type ScannerLogEntry = {
   level: LogLevel;
   formattedMessage: string;
@@ -40,12 +44,15 @@ export type ScannerLogEntry = {
 
 export enum ScannerProperty {
   SonarVerbose = 'sonar.verbose',
+  SonarLogLevel = 'sonar.log.level',
   SonarToken = 'sonar.token',
   SonarExclusions = 'sonar.exclusions',
   SonarHostUrl = 'sonar.host.url',
   SonarUserHome = 'sonar.userHome',
   SonarOrganization = 'sonar.organization',
   SonarProjectBaseDir = 'sonar.projectBaseDir',
+  SonarScannerSonarCloudURL = 'sonar.scanner.sonarcloudUrl',
+  SonarScannerJavaExePath = 'sonar.scanner.javaExePath',
   SonarScannerWasEngineCacheHit = 'sonar.scanner.wasEngineCacheHit',
 }
 
