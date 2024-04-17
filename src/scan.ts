@@ -18,27 +18,56 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { handleJREProvisioning, serverSupportsJREProvisioning } from './java';
 import { log, LogLevel, setLogLevel } from './logging';
 import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
-import { ScannerProperty, ScanOptions } from './types';
+import { ScannerProperty, JreMetaData, ScanOptions } from './types';
+import { version } from '../package.json';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
+
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
+  const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
+
   if (properties[ScannerProperty.SonarVerbose] === 'true') {
     setLogLevel(LogLevel.DEBUG);
     log(LogLevel.DEBUG, 'Setting the log level to DEBUG due to verbose mode');
   }
 
+  if (properties[ScannerProperty.SonarLogLevel]) {
+    setLogLevel(properties[ScannerProperty.SonarLogLevel]);
+    log(LogLevel.DEBUG, `Overriding the log level to ${properties[ScannerProperty.SonarLogLevel]}`);
+  }
+
+  log(LogLevel.INFO, 'Version: ', version);
+
   log(LogLevel.DEBUG, 'Finding platform info');
   const platformInfo = getPlatformInfo();
   log(LogLevel.INFO, 'Platform: ', platformInfo);
 
-  //TODO: verifyJRE based on platform
-  //TODO: fetchJRE
+  log(LogLevel.DEBUG, 'Check if Server supports JRE Provisioning');
+  const supportsJREProvisioning = await serverSupportsJREProvisioning(properties, platformInfo);
+  log(
+    LogLevel.INFO,
+    `JRE Provisioning ${supportsJREProvisioning ? 'is ' : 'is NOT '}supported on ${serverUrl}`,
+  );
+
+  // TODO: also check if JRE is explicitly set by properties
+  let latestJRE: string | JreMetaData = explicitJREPathOverride || 'java';
+  if (!explicitJREPathOverride && supportsJREProvisioning) {
+    await handleJREProvisioning(properties, platformInfo);
+  } else {
+    // TODO: old SQ, support old CLI fetch
+    // https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
+  }
+
   //TODO: verifyScannerEngine
+
   //TODO: fetchScannerEngine
+
   //TODO:
   // ...
   properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
