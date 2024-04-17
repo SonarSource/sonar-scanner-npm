@@ -49,7 +49,7 @@ export class ServerMock {
     this.responses.push(new Error('Not found'));
   }
 
-  async handleFetch(token: string, config: AxiosRequestConfig) {
+  async handleFetch(_token: string, _config: AxiosRequestConfig) {
     if (this.responses.length === 0) {
       return { ...DEFAULT_AXIOS_RESPONSE };
     }
@@ -60,5 +60,9 @@ export class ServerMock {
     } else {
       return { ...DEFAULT_AXIOS_RESPONSE, ...response };
     }
+  }
+
+  reset() {
+    this.responses = [];
   }
 }

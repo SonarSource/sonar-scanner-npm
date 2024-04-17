@@ -32,6 +32,10 @@ export type JreMetaData = {
   javaPath: string;
 };
 
+export type JREFullData = JreMetaData & {
+  jrePath: string;
+};
+
 export type ScannerLogEntry = {
   level: LogLevel;
   formattedMessage: string;

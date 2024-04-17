@@ -22,9 +22,19 @@ import { scan } from '../../src/scan';
 import * as java from '../../src/java';
 import * as logging from '../../src/logging';
 import { ServerMock } from './mocks/ServerMock';
+import { fetchServerVersion } from '../../src/java';
 
 const serverHandler = new ServerMock();
 
+beforeEach(() => {
+  serverHandler.reset();
+});
+
 describe('java', () => {
-  it('should do stuff', () => {});
+  it('the SonarQube version should be fetched correctly', async () => {
+    serverHandler.mockServerVersionResponse('3.2.1.12313');
+
+    const serverSemver = await fetchServerVersion('http://sonarqube.com', 'dummy-token');
+    expect(serverSemver).toEqual('3.2.1.12313');
+  });
 });

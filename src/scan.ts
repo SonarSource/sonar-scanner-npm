@@ -18,18 +18,19 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { fetchLatestSupportedJRE, serverSupportsJREProvisioning } from './java';
+import { handleJREProvisioning, serverSupportsJREProvisioning } from './java';
 import { log, LogLevel, setLogLevel } from './logging';
 import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
 import { ScannerProperty, JreMetaData, ScanOptions } from './types';
 import { version } from '../package.json';
-import { downloadFile } from './download';
+import { fetch } from './request';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
 
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
   const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
 
   if (properties[ScannerProperty.SonarVerbose] === 'true') {
@@ -47,24 +48,13 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const supportsJREProvisioning = await serverSupportsJREProvisioning(properties, platformInfo);
   log(
     LogLevel.INFO,
-    `JRE Provisioning ${supportsJREProvisioning ? 'is ' : 'is NOT '}supported on ${properties[ScannerProperty.SonarHostUrl]}`,
+    `JRE Provisioning ${supportsJREProvisioning ? 'is ' : 'is NOT '}supported on ${serverUrl}`,
   );
 
   // TODO: also check if JRE is explicitly set by properties
   let latestJRE: string | JreMetaData = explicitJREPathOverride || 'java';
   if (!explicitJREPathOverride && supportsJREProvisioning) {
-    log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-    latestJRE = await fetchLatestSupportedJRE(
-      properties[ScannerProperty.SonarHostUrl],
-      platformInfo,
-    );
-    log(LogLevel.INFO, 'Latest Supported JRE: ', latestJRE);
-
-    log(LogLevel.DEBUG, 'Looking for Cached JRE');
-    // TODO: detect if JRE is already cached
-    log(LogLevel.INFO, latestJRE, '');
-
-    // TODO: download JRE
+    await handleJREProvisioning(properties, platformInfo);
   } else {
     // TODO: old SQ, support old CLI fetch
     // https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
