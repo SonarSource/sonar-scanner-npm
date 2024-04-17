@@ -68,26 +68,26 @@ describe('scan', () => {
     it('should not fetch the JRE version', async () => {
       (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
       await scan({}, []);
-      expect(java.fetchLatestSupportedJRE).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('when the user provides a SonarQube URL and the version supports provisioning', () => {
-    it('should fetch the JRE version', async () => {
-      (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(true);
-      jest.spyOn(java, 'fetchLatestSupportedJRE');
-      await scan({ serverUrl: 'http://localhost:9000' }, []);
-      expect(java.fetchLatestSupportedJRE).toHaveBeenCalled();
+      expect(java.handleJREProvisioning).not.toHaveBeenCalled();
     });
   });
 
   describe('when the user provides a JRE exe path override', () => {
     it('should not fetch the JRE version', async () => {
       (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
-      await scan({}, []);
-      expect(java.fetchLatestSupportedJRE).not.toHaveBeenCalled();
+      await scan({ options: { 'sonar.scanner.javaExePath': 'path/to/java' } }, []);
+      expect(java.handleJREProvisioning).not.toHaveBeenCalled();
 
       // TODO: test that the JRE exe path is used when running the scanner engine
+    });
+  });
+
+  describe('when the user provides a SonarQube URL and the version supports provisioning', () => {
+    it('should fetch the JRE version', async () => {
+      (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(true);
+      jest.spyOn(java, 'handleJREProvisioning');
+      await scan({ serverUrl: 'http://localhost:9000' }, []);
+      expect(java.handleJREProvisioning).toHaveBeenCalled();
     });
   });
 });

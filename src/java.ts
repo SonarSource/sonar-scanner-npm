@@ -20,8 +20,10 @@
 
 import fs from 'fs';
 import * as fsExtra from 'fs-extra';
+import AdmZip from 'adm-zip';
+import zlib from 'zlib';
 import path from 'path';
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
 import crypto from 'crypto';
 import * as stream from 'stream';
 import tarStream from 'tar-stream';
@@ -90,7 +92,7 @@ export async function serverSupportsJREProvisioning(
   return supports;
 }
 
-export async function fetchLatestSupportedJRE(serverUrl: string, platformInfo: PlatformInfo) {
+async function fetchLatestSupportedJRE(serverUrl: string, platformInfo: PlatformInfo) {
   const jreInfoUrl = `${serverUrl}/api/v2/analysis/jres?os=${platformInfo.os}&arch=${platformInfo.arch}`;
   log(LogLevel.DEBUG, `Downloading JRE from: ${jreInfoUrl}`);
 
@@ -104,7 +106,7 @@ export async function fetchLatestSupportedJRE(serverUrl: string, platformInfo: P
 export async function handleJREProvisioning(
   properties: ScannerProperties,
   platformInfo: PlatformInfo,
-): Promise<JREFullData> {
+): Promise<JREFullData | undefined> {
   // TODO: use correct mapping to SC/SQ
   const serverUrl = properties[ScannerProperty.SonarHostUrl] ?? SONARCLOUD_PRODUCTION_URL;
   const token = properties[ScannerProperty.SonarToken];
@@ -131,22 +133,54 @@ export async function handleJREProvisioning(
       latestJREData.md5,
       latestJREData.filename + UNARCHIVE_SUFFIX,
     );
+
+    log(LogLevel.DEBUG, `Extracting JRE from: ${archivePath}`);
+    log(LogLevel.DEBUG, `Extracting JRE to: ${jreDirPath}`);
+    // Create destination directory if it doesn't exist
+    const parentCacheDirectory = jreDirPath.substring(0, jreDirPath.lastIndexOf('/'));
+    if (!fs.existsSync(parentCacheDirectory)) {
+      log(LogLevel.DEBUG, `Cache directory doesn't exist: ${parentCacheDirectory}`);
+      log(LogLevel.DEBUG, `Creating cache directory`);
+      fs.mkdirSync(parentCacheDirectory, { recursive: true });
+    }
     const writer = fs.createWriteStream(archivePath);
 
-    // TODO: fetch JRE
     const url = serverUrl + API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
     log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
+
     const response = await fetch(token, {
       url,
+      method: 'GET',
+      responseType: 'stream',
     });
+
+    const totalLength = response.headers['content-length'];
+    let progress = 0;
+
+    response.data.on('data', (chunk: any) => {
+      progress += chunk.length;
+      process.stdout.write(
+        `\r[INFO] Bootstrapper::  Downloaded ${Math.round((progress / totalLength) * 100)}%`,
+      );
+    });
+
+    response.data.on('end', () => {
+      console.log();
+      log(LogLevel.INFO, 'JRE Download complete');
+    });
+
+    const streamPipeline = promisify(stream.pipeline);
+    await streamPipeline(response.data, writer);
 
     response.data.pipe(writer);
 
     await finished(writer);
+    log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
 
     await validateChecksum(archivePath, latestJREData.md5);
 
-    // await extractArchive(archivePath, jreDirPath);
+    log(LogLevel.INFO, `Extracting JRE to ${jreDirPath}`);
+    await extractArchive(archivePath, jreDirPath);
 
     const jreBinPath = path.join(jreDirPath, latestJREData.javaPath);
     log(LogLevel.DEBUG, `JRE downloaded to ${jreDirPath}. Allowing execution on ${jreBinPath}`);
@@ -184,13 +218,55 @@ async function validateChecksum(filePath: string, expectedChecksum: string) {
   }
 }
 
+async function extractArchive(fromPath: string, toPath: string) {
+  log(LogLevel.INFO, `Extracting ${fromPath} to ${toPath}`);
+  if (fromPath.endsWith('.tar.gz')) {
+    const tarFilePath = fromPath;
+    const extract = tarStream.extract();
+
+    const extractionPromise = new Promise((resolve, reject) => {
+      extract.on('entry', async (header, stream, next) => {
+        // Create the full path for the file
+        const filePath = path.join(toPath, header.name);
+
+        // Ensure the directory exists
+        await fsExtra.ensureDir(path.dirname(filePath));
+
+        stream.pipe(fs.createWriteStream(filePath, { mode: header.mode }));
+
+        stream.on('end', next);
+
+        stream.resume(); // just auto drain the stream
+      });
+
+      extract.on('finish', () => {
+        resolve(null);
+      });
+
+      extract.on('error', err => {
+        log(LogLevel.ERROR, 'Error extracting tar.gz', err);
+        reject(err);
+      });
+    });
+
+    fs.createReadStream(tarFilePath).pipe(zlib.createGunzip()).pipe(extract);
+
+    await extractionPromise;
+  } else {
+    const zip = new AdmZip(fromPath);
+    zip.extractAllTo(toPath, true);
+  }
+}
+
 async function getCachedFileLocation(md5: string, filename: string) {
   const filePath = path.join(SONAR_CACHE_DIR, md5, filename);
-  if (fs.existsSync(path.join(SONAR_CACHE_DIR, md5, filename))) {
+  if (fs.existsSync(filePath)) {
     log(LogLevel.INFO, 'Found Cached JRE: ', filePath);
     return filePath;
+  } else {
+    log(LogLevel.INFO, 'No Cached JRE found');
+    return null;
   }
-  log(LogLevel.INFO, 'No Cached JRE found');
 }
 
 export async function fetchServerVersion(sonarHostUrl: string, token: string): Promise<SemVer> {

@@ -44,6 +44,7 @@ export type ScannerLogEntry = {
 
 export enum ScannerProperty {
   SonarVerbose = 'sonar.verbose',
+  SonarLogLevel = 'sonar.log.level',
   SonarToken = 'sonar.token',
   SonarExclusions = 'sonar.exclusions',
   SonarHostUrl = 'sonar.host.url',

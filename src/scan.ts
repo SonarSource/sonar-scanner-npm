@@ -24,7 +24,6 @@ import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
 import { ScannerProperty, JreMetaData, ScanOptions } from './types';
 import { version } from '../package.json';
-import { fetch } from './request';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
@@ -36,6 +35,11 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   if (properties[ScannerProperty.SonarVerbose] === 'true') {
     setLogLevel(LogLevel.DEBUG);
     log(LogLevel.DEBUG, 'Setting the log level to DEBUG due to verbose mode');
+  }
+
+  if (properties[ScannerProperty.SonarLogLevel]) {
+    setLogLevel(properties[ScannerProperty.SonarLogLevel]);
+    log(LogLevel.DEBUG, `Overriding the log level to ${properties[ScannerProperty.SonarLogLevel]}`);
   }
 
   log(LogLevel.INFO, 'Version: ', version);
