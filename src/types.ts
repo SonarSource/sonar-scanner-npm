@@ -54,6 +54,11 @@ export enum ScannerProperty {
   SonarScannerSonarCloudURL = 'sonar.scanner.sonarcloudUrl',
   SonarScannerJavaExePath = 'sonar.scanner.javaExePath',
   SonarScannerWasEngineCacheHit = 'sonar.scanner.wasEngineCacheHit',
+  SonarScannerProxyHost = 'sonar.scanner.proxyHost',
+  SonarScannerProxyPort = 'sonar.scanner.proxyPort',
+  SonarScannerProxyUser = 'sonar.scanner.proxyUser',
+  SonarScannerProxyPassword = 'sonar.scanner.proxyPassword',
+  SonarScannerInternalIsSonarCloud = 'sonar.scanner.internal.isSonarCloud',
 }
 
 export type ScannerProperties = {

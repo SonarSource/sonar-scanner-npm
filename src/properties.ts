@@ -26,6 +26,8 @@ import {
   ENV_TO_PROPERTY_NAME,
   ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
+  SONARCLOUD_URL,
+  SONARCLOUD_URL_REGEX,
   SONAR_PROJECT_FILENAME,
 } from './constants';
 import { LogLevel, log } from './logging';
@@ -269,6 +271,25 @@ function getBootstrapperProperties(startTimestampMs: number): ScannerProperties 
   };
 }
 
+/**
+ * Get endpoint properties from scanner properties.
+ */
+export function getHostProperties(properties: ScannerProperties): ScannerProperties {
+  let sonarHostUrl = properties[ScannerProperty.SonarHostUrl] ?? '';
+
+  if (!sonarHostUrl || SONARCLOUD_URL_REGEX.exec(sonarHostUrl)) {
+    return {
+      [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
+      [ScannerProperty.SonarHostUrl]:
+        properties[ScannerProperty.SonarScannerSonarCloudURL] ?? SONARCLOUD_URL,
+    };
+  }
+  return {
+    [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
+    [ScannerProperty.SonarHostUrl]: sonarHostUrl,
+  };
+}
+
 export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
@@ -308,7 +329,7 @@ export function getProperties(
   }
 
   // Merge properties respecting order of precedence
-  return [
+  const properties = [
     { 'sonar.projectBaseDir': projectBaseDir }, // Manually computed, can't be overridden
     bootstrapperProperties, // Can't be overridden
     cliProperties, // Highest precedence
@@ -318,4 +339,9 @@ export function getProperties(
   ]
     .reverse()
     .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+  return {
+    ...properties,
+    ...getHostProperties(properties),
+  };
 }
