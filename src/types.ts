@@ -23,7 +23,7 @@ export type SupportedOS = NodeJS.Platform | 'alpine';
 
 export type PlatformInfo = {
   os: SupportedOS | null;
-  arch: string;
+  arch: NodeJS.Architecture | null;
 };
 
 export type JreMetaData = {
@@ -53,6 +53,7 @@ export enum ScannerProperty {
   SonarProjectBaseDir = 'sonar.projectBaseDir',
   SonarScannerSonarCloudURL = 'sonar.scanner.sonarcloudUrl',
   SonarScannerJavaExePath = 'sonar.scanner.javaExePath',
+  SonarScannerWasJRECacheHit = 'sonar.scanner.wasJRECacheHit',
   SonarScannerWasEngineCacheHit = 'sonar.scanner.wasEngineCacheHit',
   SonarScannerProxyHost = 'sonar.scanner.proxyHost',
   SonarScannerProxyPort = 'sonar.scanner.proxyPort',
