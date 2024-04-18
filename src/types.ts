@@ -59,6 +59,7 @@ export enum ScannerProperty {
   SonarScannerProxyUser = 'sonar.scanner.proxyUser',
   SonarScannerProxyPassword = 'sonar.scanner.proxyPassword',
   SonarScannerInternalIsSonarCloud = 'sonar.scanner.internal.isSonarCloud',
+  SonarScannerInternalSqVersion = 'sonar.scanner.internal.sqVersion',
 }
 
 export type ScannerProperties = {

@@ -62,10 +62,9 @@ export async function serverSupportsJREProvisioning(
 
   // SonarQube
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
-  const SQServerInfo = await fetchServerVersion(
-    parameters[ScannerProperty.SonarHostUrl],
-    parameters,
-  );
+  const SQServerInfo =
+    semver.coerce(parameters[ScannerProperty.SonarScannerInternalSqVersion]) ??
+    (await fetchServerVersion(parameters[ScannerProperty.SonarHostUrl], parameters));
   log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
