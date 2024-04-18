@@ -18,14 +18,16 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { version } from '../package.json';
+import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
 import { fetchJRE, serverSupportsJREProvisioning } from './java';
-import { fetchScannerEngine } from './scanner-engine';
-import { log, LogLevel, setLogLevel } from './logging';
+import { LogLevel, log, setLogLevel } from './logging';
 import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
-import { ScannerProperty, ScanOptions, JREFullData } from './types';
-import { version } from '../package.json';
 import { initializeAxios } from './request';
+import { downloadScannerCli, runScannerCli, tryLocalSonarScannerExecutable } from './scanner-cli';
+import { fetchScannerEngine } from './scanner-engine';
+import { ScanOptions, ScannerProperty } from './types';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
@@ -43,9 +45,6 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
 
   initializeAxios(properties);
 
-  const serverUrl = properties[ScannerProperty.SonarHostUrl];
-  const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
-
   log(LogLevel.INFO, 'Version: ', version);
 
   log(LogLevel.DEBUG, 'Finding platform info');
@@ -54,25 +53,29 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
 
   log(LogLevel.DEBUG, 'Check if Server supports JRE Provisioning');
   const supportsJREProvisioning = await serverSupportsJREProvisioning(properties);
-  log(
-    LogLevel.INFO,
-    `JRE Provisioning ${supportsJREProvisioning ? 'is ' : 'is NOT '}supported on ${serverUrl}`,
-  );
+  log(LogLevel.INFO, `JRE Provisioning ${supportsJREProvisioning ? 'is' : 'is NOT'} supported`);
+
+  if (!supportsJREProvisioning) {
+    log(LogLevel.INFO, 'Will download and use sonar-scanner-cli');
+    if (scanOptions.localScannerCli) {
+      log(LogLevel.INFO, 'Local scanner is requested, will not download sonar-scanner-cli');
+      if (!(await tryLocalSonarScannerExecutable(SCANNER_CLI_DEFAULT_BIN_NAME))) {
+        throw new Error('Local scanner is requested but not found');
+      }
+      await runScannerCli(scanOptions, properties, SCANNER_CLI_DEFAULT_BIN_NAME);
+    } else {
+      const binPath = await downloadScannerCli(properties);
+      await runScannerCli(scanOptions, properties, binPath);
+    }
+    return;
+  }
 
   // TODO: also check if JRE is explicitly set by properties
-  let latestJRE: string | JREFullData = explicitJREPathOverride || 'java';
-  let latestScannerEngine;
-  if (!supportsJREProvisioning) {
-    // TODO: old SQ, support old CLI fetch
-    // https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
-  }
-
-  if (!explicitJREPathOverride) {
-    latestJRE = await fetchJRE(properties, platformInfo);
-  }
-
-  latestScannerEngine = await fetchScannerEngine(properties);
+  const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
+  const latestJRE = explicitJREPathOverride ?? (await fetchJRE(properties, platformInfo));
+  const latestScannerEngine = await fetchScannerEngine(properties);
 
   //TODO: run the scanner..
+
   log(LogLevel.INFO, 'Running the scanner ...');
 }

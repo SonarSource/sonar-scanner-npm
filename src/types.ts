@@ -61,6 +61,8 @@ export enum ScannerProperty {
   SonarScannerProxyPassword = 'sonar.scanner.proxyPassword',
   SonarScannerInternalIsSonarCloud = 'sonar.scanner.internal.isSonarCloud',
   SonarScannerInternalSqVersion = 'sonar.scanner.internal.sqVersion',
+  SonarScannerCliVersion = 'sonar.scanner.version',
+  SonarScannerCliMirror = 'sonar.scanner.mirror',
 }
 
 export type ScannerProperties = {
@@ -71,6 +73,7 @@ export type ScanOptions = {
   serverUrl?: string;
   token?: string;
   jvmOptions?: string[];
+  localScannerCli?: boolean;
   options?: { [key: string]: string };
   caPath?: string;
   logLevel?: string;

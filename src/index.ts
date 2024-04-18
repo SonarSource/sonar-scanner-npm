@@ -17,4 +17,18 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-export { scan } from './scan';
+import { scan } from './scan';
+import { ScanOptions } from './types';
+
+export { scan };
+
+/**
+ * TODO: SCANNPM-8 Ensure backwards compatibility and assess what to re-export
+ */
+
+export function customScanner(scanOptions: ScanOptions) {
+  return scan({
+    ...scanOptions,
+    localScannerCli: true,
+  });
+}
