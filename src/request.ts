@@ -18,13 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
-import { promisify } from 'util';
-import * as stream from 'stream';
 import fs from 'fs';
+import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import * as stream from 'stream';
+import { promisify } from 'util';
+import { LogLevel, log } from './logging';
 import { getProxyUrl } from './proxy';
 import { ScannerProperties, ScannerProperty } from './types';
-import { log, LogLevel } from './logging';
 
 const finished = promisify(stream.finished);
 
