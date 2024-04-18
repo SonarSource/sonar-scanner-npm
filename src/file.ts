@@ -18,13 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import crypto from 'crypto';
-import * as fsExtra from 'fs-extra';
 import AdmZip from 'adm-zip';
-import zlib from 'zlib';
-import tarStream from 'tar-stream';
+import crypto from 'crypto';
 import fs from 'fs';
+import * as fsExtra from 'fs-extra';
 import path from 'path';
+import tarStream from 'tar-stream';
+import zlib from 'zlib';
 import { SONAR_CACHE_DIR } from './constants';
 import { log, LogLevel } from './logging';
 
@@ -75,7 +75,7 @@ export async function extractArchive(fromPath: string, toPath: string) {
     await extractionPromise;
   } else {
     const zip = new AdmZip(fromPath);
-    zip.extractAllTo(toPath, true);
+    zip.extractAllTo(toPath, true, true);
   }
 }
 
