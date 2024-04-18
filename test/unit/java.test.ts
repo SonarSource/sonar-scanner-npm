@@ -19,7 +19,11 @@
  */
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { fetchServerVersion, fetchJRE, serverSupportsJREProvisioning } from '../../src/java';
+import fs from 'fs';
+import path from 'path';
+import { SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
+import * as file from '../../src/file';
+import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
 import * as request from '../../src/request';
 import { JreMetaData, PlatformInfo, ScannerProperties, ScannerProperty } from '../../src/types';
 
@@ -35,6 +39,7 @@ beforeEach(() => {
   request.initializeAxios(MOCKED_PROPERTIES);
   mock.reset();
   jest.spyOn(request, 'fetch');
+  jest.spyOn(request, 'download');
 });
 
 describe('java', () => {
@@ -142,6 +147,7 @@ describe('java', () => {
         );
 
         expect(request.fetch).toHaveBeenCalledTimes(1);
+        expect(request.download).not.toHaveBeenCalled();
 
         // check for the cache
         expect(file.getCachedFileLocation).toHaveBeenCalledTimes(1);
@@ -164,7 +170,8 @@ describe('java', () => {
           platformInfo,
         );
 
-        expect(request.fetch).toHaveBeenCalledTimes(2);
+        expect(request.fetch).toHaveBeenCalledTimes(1);
+        expect(request.download).toHaveBeenCalledTimes(1);
 
         // check for the cache
         expect(file.getCachedFileLocation).toHaveBeenCalledTimes(1);

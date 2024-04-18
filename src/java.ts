@@ -29,10 +29,10 @@ import {
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
-import { log, LogLevel } from './logging';
-import { fetch, download } from './request';
-import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
 import { extractArchive, getCachedFileLocation, validateChecksum } from './file';
+import { log, LogLevel } from './logging';
+import { download, fetch } from './request';
+import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
 
 export async function fetchServerVersion(): Promise<SemVer> {
   let version: SemVer | null = null;
@@ -125,9 +125,8 @@ export async function fetchJRE(
       fs.mkdirSync(parentCacheDirectory, { recursive: true });
     }
 
-    const url = API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
-
-    await download(url, archivePath);
+    await download(`${API_V2_JRE_ENDPOINT}/${latestJREData.filename}`, archivePath);
+    log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
 
     await validateChecksum(archivePath, latestJREData.md5);
 

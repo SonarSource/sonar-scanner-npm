@@ -33,11 +33,9 @@ export const SONARCLOUD_PRODUCTION_URL = 'https://sonarcloud.io';
 
 export const SONARQUBE_JRE_PROVISIONING_MIN_VERSION = '10.6';
 
-export const SONAR_CACHE_DIR = path.join(
-  process.env.HOME ?? process.env.USERPROFILE ?? '',
-  '.sonar',
-  'cache',
-);
+export const SONAR_DIR = path.join(process.env.HOME ?? process.env.USERPROFILE ?? '', '.sonar');
+
+export const SONAR_CACHE_DIR = path.join(SONAR_DIR, 'cache');
 
 export const UNARCHIVE_SUFFIX = '_extracted';
 
@@ -59,3 +57,9 @@ export const API_V2_VERSION_ENDPOINT = '/api/v2/analysis/version';
 export const API_OLD_VERSION_ENDPOINT = '/api/server/version';
 export const API_V2_JRE_ENDPOINT = '/api/v2/analysis/jres';
 export const API_V2_SCANNER_ENGINE_ENDPOINT = '/api/v2/analysis/engine';
+
+export const SCANNER_CLI_DEFAULT_BIN_NAME = 'sonar-scanner';
+export const SCANNER_CLI_VERSION = '5.0.1.3006';
+export const SCANNER_CLI_MIRROR =
+  'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
+export const SCANNER_CLI_INSTALL_PATH = 'native-sonar-scanner';

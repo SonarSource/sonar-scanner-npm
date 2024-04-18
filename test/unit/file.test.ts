@@ -17,13 +17,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
-import AdmZip from 'adm-zip';
-import { extractArchive, getCachedFileLocation, validateChecksum } from '../../src/file';
-import { SONAR_CACHE_DIR } from '../../src/constants';
 import { Readable } from 'stream';
-import { readFile } from 'fs-extra';
+import { SONAR_CACHE_DIR } from '../../src/constants';
+import { extractArchive, getCachedFileLocation, validateChecksum } from '../../src/file';
 
 // Mock the filesystem
 jest.mock('fs', () => ({
@@ -61,7 +60,7 @@ describe('extractArchive', () => {
     await extractArchive(archivePath, extractPath);
 
     const mockAdmZipInstance = (AdmZip as jest.MockedClass<typeof AdmZip>).mock.instances[0];
-    expect(mockAdmZipInstance.extractAllTo).toHaveBeenCalledWith(extractPath, true);
+    expect(mockAdmZipInstance.extractAllTo).toHaveBeenCalledWith(extractPath, true, true);
   });
 });
 
