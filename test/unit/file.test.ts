@@ -18,13 +18,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import fs from 'fs';
-import * as fsExtra from 'fs-extra';
 import path from 'path';
 import AdmZip from 'adm-zip';
-import zlib from 'zlib';
-import tarStream from 'tar-stream';
 import { extractArchive, getCachedFileLocation } from '../../src/file';
-import { log, LogLevel } from '../../src/logging';
 import { SONAR_CACHE_DIR } from '../../src/constants';
 import { Readable } from 'stream';
 
@@ -51,16 +47,6 @@ jest.mock('adm-zip', () => {
   return MockAdmZip;
 });
 
-jest.mock('tar-stream', () => ({
-  extract: jest.fn().mockReturnValue({
-    on: jest.fn(),
-  }),
-}));
-
-jest.mock('zlib', () => ({
-  createGunzip: jest.fn(),
-}));
-
 describe('extractArchive', () => {
   it('should extract zip files to the specified directory', async () => {
     const archivePath = 'path/to/archive.zip';
@@ -70,10 +56,6 @@ describe('extractArchive', () => {
 
     const mockAdmZipInstance = (AdmZip as jest.MockedClass<typeof AdmZip>).mock.instances[0];
     expect(mockAdmZipInstance.extractAllTo).toHaveBeenCalledWith(extractPath, true);
-  });
-
-  it('should extract tar.gz files to the specified directory', async () => {
-    //TODO: think if a good way to test this
   });
 });
 

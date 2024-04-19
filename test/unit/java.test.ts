@@ -48,15 +48,9 @@ describe('java', () => {
   describe('version should be detected correctly', () => {
     it('the SonarQube version should be fetched correctly when new endpoint does not exist', async () => {
       const token = 'dummy-token';
-      mock.onGet('http://sonarqube.com/api/server/version').reply(config => {
-        console.log({ config });
-        return [200, '3.2.2'];
-      });
+      mock.onGet('http://sonarqube.com/api/server/version').reply(200, '3.2.2');
 
-      mock.onGet('http://sonarqube.com/api/v2/analysis/version').reply(config => {
-        console.log({ config });
-        return [404, 'Not Found'];
-      });
+      mock.onGet('http://sonarqube.com/api/v2/analysis/version').reply(404, 'Not Found');
 
       const serverSemver = await fetchServerVersion('http://sonarqube.com', MOCKED_PROPERTIES);
       expect(serverSemver.toString()).toEqual('3.2.2');

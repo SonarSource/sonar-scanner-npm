@@ -69,8 +69,7 @@ export async function serverSupportsJREProvisioning(
 }
 
 async function fetchLatestSupportedJRE(properties: ScannerProperties, platformInfo: PlatformInfo) {
-  // TODO: enforce correct mapping to SC/SQ
-  const serverUrl = properties[ScannerProperty.SonarHostUrl] ?? SONARCLOUD_PRODUCTION_URL;
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
   const token = properties[ScannerProperty.SonarToken];
 
   const jreInfoUrl = `${serverUrl}/api/v2/analysis/jres?os=${platformInfo.os}&arch=${platformInfo.arch}`;
@@ -87,8 +86,7 @@ export async function handleJREProvisioning(
   properties: ScannerProperties,
   platformInfo: PlatformInfo,
 ): Promise<JREFullData | undefined> {
-  // TODO: use correct mapping to SC/SQ
-  const serverUrl = properties[ScannerProperty.SonarHostUrl] ?? SONARCLOUD_PRODUCTION_URL;
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
   const token = properties[ScannerProperty.SonarToken];
 
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
