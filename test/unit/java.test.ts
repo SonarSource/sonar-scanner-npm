@@ -86,8 +86,13 @@ describe('java', () => {
 
   describe('JRE provisioning should be detected correctly', () => {
     it('should return true for sonarcloud', async () => {
-      expect(await serverSupportsJREProvisioning({})).toBe(true);
+      expect(
+        await serverSupportsJREProvisioning({
+          [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
+        }),
+      ).toBe(true);
     });
+
     it(`should return true for SQ version >= ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
       mock.onGet('https://next.sonarqube.com/api/server/version').reply(200, '10.5.0');
       expect(
@@ -96,6 +101,7 @@ describe('java', () => {
         }),
       ).toBe(true);
     });
+
     it(`should return false for SQ version < ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
       // Define the behavior of the GET request
       mock.onGet('https://next.sonarqube.com/api/server/version').reply(200, '9.9.9');
@@ -138,7 +144,13 @@ describe('java', () => {
 
     describe('when the JRE is cached', () => {
       it('should fetch the latest supported JRE and use the cached version', async () => {
-        await handleJREProvisioning({ [ScannerProperty.SonarToken]: 'mock-token' }, platformInfo);
+        await handleJREProvisioning(
+          {
+            [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+            [ScannerProperty.SonarToken]: 'mock-token',
+          },
+          platformInfo,
+        );
 
         expect(request.fetch).toHaveBeenCalledTimes(1);
 
@@ -157,7 +169,13 @@ describe('java', () => {
         });
       });
       it('should download the JRE', async () => {
-        await handleJREProvisioning({ [ScannerProperty.SonarToken]: 'mock-token' }, platformInfo);
+        await handleJREProvisioning(
+          {
+            [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+            [ScannerProperty.SonarToken]: 'mock-token',
+          },
+          platformInfo,
+        );
 
         expect(request.fetch).toHaveBeenCalledTimes(2);
 

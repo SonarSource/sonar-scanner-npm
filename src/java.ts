@@ -24,13 +24,11 @@ import path from 'path';
 import semver, { SemVer } from 'semver';
 import * as stream from 'stream';
 import { promisify } from 'util';
-import zlib from 'zlib';
 import {
   API_OLD_VERSION_ENDPOINT,
   API_V2_JRE_ENDPOINT,
   API_V2_VERSION_ENDPOINT,
   SONAR_CACHE_DIR,
-  SONARCLOUD_PRODUCTION_URL,
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
@@ -38,13 +36,7 @@ import { getHttpAgents } from './http-agent';
 import { log, LogLevel } from './logging';
 import { getProxyUrl } from './proxy';
 import { fetch } from './request';
-import {
-  JREFullData,
-  JreMetaData,
-  PlatformInfo,
-  ScannerProperties,
-  ScannerProperty,
-} from './types';
+import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
 import { extractArchive, getCachedFileLocation } from './file';
 
 const finished = promisify(stream.finished);
@@ -52,7 +44,7 @@ const finished = promisify(stream.finished);
 export async function serverSupportsJREProvisioning(
   parameters: ScannerProperties,
 ): Promise<boolean> {
-  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] !== 'true') {
+  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
     return true;
   }
 
