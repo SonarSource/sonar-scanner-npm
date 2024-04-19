@@ -49,7 +49,7 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   log(LogLevel.INFO, 'Platform: ', platformInfo);
 
   log(LogLevel.DEBUG, 'Check if Server supports JRE Provisioning');
-  const supportsJREProvisioning = await serverSupportsJREProvisioning(properties, platformInfo);
+  const supportsJREProvisioning = await serverSupportsJREProvisioning(properties);
   log(
     LogLevel.INFO,
     `JRE Provisioning ${supportsJREProvisioning ? 'is ' : 'is NOT '}supported on ${serverUrl}`,

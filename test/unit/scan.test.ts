@@ -56,11 +56,11 @@ describe('scan', () => {
   it('should output the current platform', async () => {
     (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
     jest.spyOn(logging, 'log');
-    jest.spyOn(platform, 'getPlatformInfo').mockReturnValue({ os: 'alpine', arch: 'mock-arch' });
+    jest.spyOn(platform, 'getPlatformInfo').mockReturnValue({ os: 'alpine', arch: 'arm64' });
     await scan({}, []);
     expect(logging.log).toHaveBeenNthCalledWith(3, 'INFO', 'Platform: ', {
       os: 'alpine',
-      arch: 'mock-arch',
+      arch: 'arm64',
     });
   });
 

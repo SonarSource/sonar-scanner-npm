@@ -18,23 +18,17 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import AdmZip from 'adm-zip';
-import axios from 'axios';
 import crypto from 'crypto';
 import fs from 'fs';
-import * as fsExtra from 'fs-extra';
 import path from 'path';
 import semver, { SemVer } from 'semver';
 import * as stream from 'stream';
-import tarStream from 'tar-stream';
 import { promisify } from 'util';
-import zlib from 'zlib';
 import {
   API_OLD_VERSION_ENDPOINT,
   API_V2_JRE_ENDPOINT,
   API_V2_VERSION_ENDPOINT,
   SONAR_CACHE_DIR,
-  SONARCLOUD_PRODUCTION_URL,
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
@@ -42,21 +36,15 @@ import { getHttpAgents } from './http-agent';
 import { log, LogLevel } from './logging';
 import { getProxyUrl } from './proxy';
 import { fetch } from './request';
-import {
-  JREFullData,
-  JreMetaData,
-  PlatformInfo,
-  ScannerProperties,
-  ScannerProperty,
-} from './types';
+import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
+import { extractArchive, getCachedFileLocation } from './file';
 
 const finished = promisify(stream.finished);
 
 export async function serverSupportsJREProvisioning(
   parameters: ScannerProperties,
-  platformInfo: PlatformInfo,
 ): Promise<boolean> {
-  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] !== 'true') {
+  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
     return true;
   }
 
@@ -72,11 +60,14 @@ export async function serverSupportsJREProvisioning(
   return supports;
 }
 
-async function fetchLatestSupportedJRE(serverUrl: string, platformInfo: PlatformInfo) {
+async function fetchLatestSupportedJRE(properties: ScannerProperties, platformInfo: PlatformInfo) {
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
+  const token = properties[ScannerProperty.SonarToken];
+
   const jreInfoUrl = `${serverUrl}/api/v2/analysis/jres?os=${platformInfo.os}&arch=${platformInfo.arch}`;
   log(LogLevel.DEBUG, `Downloading JRE from: ${jreInfoUrl}`);
 
-  const { data } = await axios.get<JreMetaData>(jreInfoUrl);
+  const { data } = await fetch(token, { url: jreInfoUrl });
 
   log(LogLevel.DEBUG, 'file info: ', data);
 
@@ -87,12 +78,11 @@ export async function handleJREProvisioning(
   properties: ScannerProperties,
   platformInfo: PlatformInfo,
 ): Promise<JREFullData | undefined> {
-  // TODO: use correct mapping to SC/SQ
-  const serverUrl = properties[ScannerProperty.SonarHostUrl] ?? SONARCLOUD_PRODUCTION_URL;
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
   const token = properties[ScannerProperty.SonarToken];
 
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-  const latestJREData = await fetchLatestSupportedJRE(serverUrl, platformInfo);
+  const latestJREData = await fetchLatestSupportedJRE(properties, platformInfo);
   log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
@@ -104,6 +94,9 @@ export async function handleJREProvisioning(
   const proxyUrl = getProxyUrl(properties);
 
   if (cachedJRE) {
+    log(LogLevel.INFO, 'Using Cached JRE');
+    properties[ScannerProperty.SonarScannerWasJRECacheHit] = 'true';
+
     return {
       ...latestJREData,
       jrePath: path.join(cachedJRE, cachedJRE),
@@ -166,7 +159,6 @@ export async function handleJREProvisioning(
     await extractArchive(archivePath, jreDirPath);
 
     const jreBinPath = path.join(jreDirPath, latestJREData.javaPath);
-    log(LogLevel.DEBUG, `JRE downloaded to ${jreDirPath}. Allowing execution on ${jreBinPath}`);
 
     return {
       ...latestJREData,
@@ -201,64 +193,12 @@ async function validateChecksum(filePath: string, expectedChecksum: string) {
   }
 }
 
-async function extractArchive(fromPath: string, toPath: string) {
-  log(LogLevel.INFO, `Extracting ${fromPath} to ${toPath}`);
-  if (fromPath.endsWith('.tar.gz')) {
-    const tarFilePath = fromPath;
-    const extract = tarStream.extract();
-
-    const extractionPromise = new Promise((resolve, reject) => {
-      extract.on('entry', async (header, stream, next) => {
-        // Create the full path for the file
-        const filePath = path.join(toPath, header.name);
-
-        // Ensure the directory exists
-        await fsExtra.ensureDir(path.dirname(filePath));
-
-        stream.pipe(fs.createWriteStream(filePath, { mode: header.mode }));
-
-        stream.on('end', next);
-
-        stream.resume(); // just auto drain the stream
-      });
-
-      extract.on('finish', () => {
-        resolve(null);
-      });
-
-      extract.on('error', err => {
-        log(LogLevel.ERROR, 'Error extracting tar.gz', err);
-        reject(err);
-      });
-    });
-
-    fs.createReadStream(tarFilePath).pipe(zlib.createGunzip()).pipe(extract);
-
-    await extractionPromise;
-  } else {
-    const zip = new AdmZip(fromPath);
-    zip.extractAllTo(toPath, true);
-  }
-}
-
-async function getCachedFileLocation(md5: string, filename: string) {
-  const filePath = path.join(SONAR_CACHE_DIR, md5, filename);
-  if (fs.existsSync(filePath)) {
-    log(LogLevel.INFO, 'Found Cached JRE: ', filePath);
-    return filePath;
-  } else {
-    log(LogLevel.INFO, 'No Cached JRE found');
-    return null;
-  }
-}
-
 export async function fetchServerVersion(
   sonarHostUrl: string,
   parameters: ScannerProperties,
 ): Promise<SemVer> {
   const token = parameters[ScannerProperty.SonarToken];
   const proxyUrl = getProxyUrl(parameters);
-
   let version: SemVer | null = null;
   try {
     // Try and fetch the new version endpoint first
