@@ -18,13 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { version } from '../package.json';
-import { handleJREProvisioning, serverSupportsJREProvisioning } from './java';
-import { LogLevel, log, setLogLevel } from './logging';
+import { fetchJRE, serverSupportsJREProvisioning } from './java';
+import { fetchScannerEngine } from './scanner-engine';
+import { log, LogLevel, setLogLevel } from './logging';
 import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
-import { initializeAxios } from './request';
-import { JreMetaData, ScanOptions, ScannerProperty } from './types';
+import { ScannerProperty, ScanOptions, JREFullData } from './types';
+import { version } from '../package.json';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
@@ -59,17 +59,18 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   );
 
   // TODO: also check if JRE is explicitly set by properties
-  let latestJRE: string | JreMetaData = explicitJREPathOverride || 'java';
+  let latestJRE: string | JREFullData = explicitJREPathOverride || 'java';
+  let latestScannerEngine;
   if (!explicitJREPathOverride && supportsJREProvisioning) {
-    await handleJREProvisioning(properties, platformInfo);
+    latestJRE = await fetchJRE(properties, platformInfo);
+
+    latestScannerEngine = await fetchScannerEngine(properties);
+
+    // TODO: run SE using JRE
   } else {
     // TODO: old SQ, support old CLI fetch
     // https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
   }
-
-  //TODO: verifyScannerEngine
-
-  //TODO: fetchScannerEngine
 
   //TODO:
   // ...

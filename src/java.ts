@@ -18,12 +18,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import semver, { SemVer } from 'semver';
-import * as stream from 'stream';
-import { promisify } from 'util';
 import {
   API_OLD_VERSION_ENDPOINT,
   API_V2_JRE_ENDPOINT,
@@ -32,162 +29,10 @@ import {
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
-import { extractArchive, getCachedFileLocation } from './file';
 import { log, LogLevel } from './logging';
 import { fetch } from './request';
 import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
-
-const finished = promisify(stream.finished);
-
-export async function serverSupportsJREProvisioning(
-  parameters: ScannerProperties,
-): Promise<boolean> {
-  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
-    return true;
-  }
-
-  // SonarQube
-  log(LogLevel.DEBUG, 'Detecting SonarQube server version');
-  const SQServerInfo =
-    semver.coerce(parameters[ScannerProperty.SonarScannerInternalSqVersion]) ??
-    (await fetchServerVersion());
-  log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
-
-  const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
-  log(LogLevel.DEBUG, `SonarQube Server v${SQServerInfo} supports JRE provisioning: ${supports}`);
-  return supports;
-}
-
-async function fetchLatestSupportedJRE(platformInfo: PlatformInfo) {
-  log(
-    LogLevel.DEBUG,
-    `Downloading JRE for ${platformInfo.os} ${platformInfo.arch} from ${API_V2_JRE_ENDPOINT}`,
-  );
-
-  const { data } = await fetch({
-    url: API_V2_JRE_ENDPOINT,
-    params: {
-      os: platformInfo.os,
-      arch: platformInfo.arch,
-    },
-  });
-
-  log(LogLevel.DEBUG, 'JRE information: ', data);
-
-  return data;
-}
-
-export async function handleJREProvisioning(
-  properties: ScannerProperties,
-  platformInfo: PlatformInfo,
-): Promise<JREFullData | undefined> {
-  log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-  const latestJREData = await fetchLatestSupportedJRE(platformInfo);
-  log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
-
-  log(LogLevel.DEBUG, 'Looking for Cached JRE');
-  const cachedJRE = await getCachedFileLocation(
-    latestJREData.md5,
-    latestJREData.filename + UNARCHIVE_SUFFIX,
-  );
-
-  if (cachedJRE) {
-    log(LogLevel.INFO, 'Using Cached JRE');
-    properties[ScannerProperty.SonarScannerWasJRECacheHit] = 'true';
-
-    return {
-      ...latestJREData,
-      jrePath: path.join(cachedJRE, cachedJRE),
-    };
-  } else {
-    const archivePath = path.join(SONAR_CACHE_DIR, latestJREData.md5, latestJREData.filename);
-    const jreDirPath = path.join(
-      SONAR_CACHE_DIR,
-      latestJREData.md5,
-      latestJREData.filename + UNARCHIVE_SUFFIX,
-    );
-
-    log(LogLevel.DEBUG, `Extracting JRE from: ${archivePath}`);
-    log(LogLevel.DEBUG, `Extracting JRE to: ${jreDirPath}`);
-    // Create destination directory if it doesn't exist
-    const parentCacheDirectory = jreDirPath.substring(0, jreDirPath.lastIndexOf('/'));
-    if (!fs.existsSync(parentCacheDirectory)) {
-      log(LogLevel.DEBUG, `Cache directory doesn't exist: ${parentCacheDirectory}`);
-      log(LogLevel.DEBUG, `Creating cache directory`);
-      fs.mkdirSync(parentCacheDirectory, { recursive: true });
-    }
-    const writer = fs.createWriteStream(archivePath);
-
-    const url = `${API_V2_JRE_ENDPOINT}/${latestJREData.filename}`;
-    log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
-
-    const response = await fetch({
-      url,
-      responseType: 'stream',
-    });
-
-    const totalLength = response.headers['content-length'];
-    let progress = 0;
-
-    response.data.on('data', (chunk: any) => {
-      progress += chunk.length;
-      process.stdout.write(
-        `\r[INFO] Bootstrapper::  Downloaded ${Math.round((progress / totalLength) * 100)}%`,
-      );
-    });
-
-    response.data.on('end', () => {
-      console.log();
-      log(LogLevel.INFO, 'JRE Download complete');
-    });
-
-    const streamPipeline = promisify(stream.pipeline);
-    await streamPipeline(response.data, writer);
-
-    response.data.pipe(writer);
-
-    await finished(writer);
-    log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
-
-    await validateChecksum(archivePath, latestJREData.md5);
-
-    log(LogLevel.INFO, `Extracting JRE to ${jreDirPath}`);
-    await extractArchive(archivePath, jreDirPath);
-
-    const jreBinPath = path.join(jreDirPath, latestJREData.javaPath);
-
-    return {
-      ...latestJREData,
-      jrePath: jreBinPath,
-    };
-  }
-}
-
-async function generateChecksum(filepath: string) {
-  return new Promise((resolve, reject) => {
-    fs.readFile(filepath, (err, data) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      resolve(crypto.createHash('md5').update(data).digest('hex'));
-    });
-  });
-}
-
-async function validateChecksum(filePath: string, expectedChecksum: string) {
-  if (expectedChecksum) {
-    log(LogLevel.INFO, `Verifying checksum ${expectedChecksum}`);
-    const checksum = await generateChecksum(filePath);
-
-    log(LogLevel.DEBUG, `Checksum Value: ${checksum}`);
-    if (checksum !== expectedChecksum) {
-      throw new Error(
-        `Checksum verification failed for ${filePath}. Expected checksum ${expectedChecksum} but got ${checksum}`,
-      );
-    }
-  }
-}
+import { downloadFile, extractArchive, getCachedFileLocation } from './file';
 
 export async function fetchServerVersion(): Promise<SemVer> {
   let version: SemVer | null = null;
@@ -222,4 +67,96 @@ export async function fetchServerVersion(): Promise<SemVer> {
   }
 
   return version;
+}
+
+export async function serverSupportsJREProvisioning(
+  parameters: ScannerProperties,
+): Promise<boolean> {
+  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
+    return true;
+  }
+
+  // SonarQube
+  log(LogLevel.DEBUG, 'Detecting SonarQube server version');
+  const SQServerInfo =
+    semver.coerce(parameters[ScannerProperty.SonarScannerInternalSqVersion]) ??
+    (await fetchServerVersion(parameters[ScannerProperty.SonarHostUrl], parameters));
+  log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
+
+  const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
+  log(LogLevel.DEBUG, `SonarQube Server v${SQServerInfo} supports JRE provisioning: ${supports}`);
+  return supports;
+}
+
+export async function fetchJRE(
+  properties: ScannerProperties,
+  platformInfo: PlatformInfo,
+): Promise<JREFullData> {
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
+  const token = properties[ScannerProperty.SonarToken];
+
+  log(LogLevel.DEBUG, 'Detecting latest version of JRE');
+  const latestJREData = await fetchLatestSupportedJRE(properties, platformInfo);
+  log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
+
+  log(LogLevel.DEBUG, 'Looking for Cached JRE');
+  const cachedJRE = await getCachedFileLocation(
+    latestJREData.md5,
+    latestJREData.filename + UNARCHIVE_SUFFIX,
+  );
+
+  if (cachedJRE) {
+    log(LogLevel.INFO, 'Using Cached JRE');
+    properties[ScannerProperty.SonarScannerWasJRECacheHit] = 'true';
+
+    return {
+      ...latestJREData,
+      jrePath: path.join(cachedJRE, cachedJRE),
+    };
+  } else {
+    const archivePath = path.join(SONAR_CACHE_DIR, latestJREData.md5, latestJREData.filename);
+    const jreDirPath = path.join(
+      SONAR_CACHE_DIR,
+      latestJREData.md5,
+      latestJREData.filename + UNARCHIVE_SUFFIX,
+    );
+
+    // Create destination directory if it doesn't exist
+    const parentCacheDirectory = jreDirPath.substring(0, jreDirPath.lastIndexOf('/'));
+    if (!fs.existsSync(parentCacheDirectory)) {
+      log(LogLevel.DEBUG, `Cache directory doesn't exist: ${parentCacheDirectory}`);
+      log(LogLevel.DEBUG, `Creating cache directory`);
+      fs.mkdirSync(parentCacheDirectory, { recursive: true });
+    }
+
+    const url = serverUrl + API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
+
+    log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
+    await downloadFile(properties, url, latestJREData);
+    log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
+
+    log(LogLevel.INFO, `Extracting JRE to ${jreDirPath}`);
+    await extractArchive(archivePath, jreDirPath);
+
+    const jreBinPath = path.join(jreDirPath, latestJREData.javaPath);
+
+    return {
+      ...latestJREData,
+      jrePath: jreBinPath,
+    };
+  }
+}
+
+async function fetchLatestSupportedJRE(properties: ScannerProperties, platformInfo: PlatformInfo) {
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
+  const token = properties[ScannerProperty.SonarToken];
+
+  const jreInfoUrl = `${serverUrl}${API_V2_JRE_ENDPOINT}?os=${platformInfo.os}&arch=${platformInfo.arch}`;
+  log(LogLevel.DEBUG, `Downloading JRE from: ${jreInfoUrl}`);
+
+  const { data } = await fetch(token, { url: jreInfoUrl });
+
+  log(LogLevel.DEBUG, 'file info: ', data);
+
+  return data;
 }
