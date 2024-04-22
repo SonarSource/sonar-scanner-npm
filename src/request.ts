@@ -17,13 +17,47 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import { getProxyUrl } from './proxy';
+import { ScannerProperties, ScannerProperty } from './types';
 
-export function fetch(token: string, config: AxiosRequestConfig) {
-  return axios({
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    ...config,
-  });
+// The axios instance is private to this module
+let _axiosInstance: AxiosInstance | null = null;
+
+export function getHttpAgents(
+  properties: ScannerProperties,
+): Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent'> {
+  const agents: Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent'> = {};
+  const proxyUrl = getProxyUrl(properties);
+
+  if (proxyUrl) {
+    agents.httpsAgent = new HttpsProxyAgent({ proxy: proxyUrl.toString() });
+    agents.httpAgent = new HttpProxyAgent({ proxy: proxyUrl.toString() });
+  }
+  return agents;
+}
+
+export function initializeAxios(properties: ScannerProperties) {
+  const token = properties[ScannerProperty.SonarToken];
+  const baseURL = properties[ScannerProperty.SonarHostUrl];
+  const agents = getHttpAgents(properties);
+
+  if (!_axiosInstance) {
+    _axiosInstance = axios.create({
+      baseURL,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      ...agents,
+    });
+  }
+}
+
+export function fetch(config: AxiosRequestConfig) {
+  if (!_axiosInstance) {
+    throw new Error('Axios instance is not initialized');
+  }
+
+  return _axiosInstance.request(config);
 }
