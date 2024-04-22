@@ -32,7 +32,7 @@ import {
 import { log, LogLevel } from './logging';
 import { fetch } from './request';
 import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
-import { downloadFile, extractArchive, getCachedFileLocation } from './file';
+import { download, extractArchive, getCachedFileLocation } from './file';
 
 export async function fetchServerVersion(): Promise<SemVer> {
   let version: SemVer | null = null;
@@ -132,7 +132,7 @@ export async function fetchJRE(
     const url = serverUrl + API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
 
     log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
-    await downloadFile(properties, url, latestJREData);
+    await download(properties, url, latestJREData);
     log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
 
     log(LogLevel.INFO, `Extracting JRE to ${jreDirPath}`);

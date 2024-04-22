@@ -36,7 +36,7 @@ import * as stream from 'stream';
 
 const finished = promisify(stream.finished);
 
-export async function downloadFile(
+export async function download(
   properties: ScannerProperties,
   url: string,
   fileData: { filename: string; md5: string },
@@ -67,7 +67,7 @@ export async function downloadFile(
     });
 
     response.data.on('end', () => {
-      console.log();
+      process.stdout.write('\n');
       log(LogLevel.INFO, 'Download complete');
     });
 

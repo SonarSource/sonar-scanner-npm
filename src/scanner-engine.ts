@@ -22,7 +22,7 @@ import path from 'path';
 import { log, LogLevel } from './logging';
 import { fetch } from './request';
 import { ScannerProperties, ScannerProperty } from './types';
-import { downloadFile, getCachedFileLocation } from './file';
+import { download, extractArchive, getCachedFileLocation } from './file';
 import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
@@ -47,11 +47,7 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
     log(LogLevel.INFO, 'Using Cached Scanner Engine');
     properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'true';
 
-    return {
-      filename,
-      md5,
-      enginePath: path.join(cachedScannerEngine, filename),
-    };
+    return cachedScannerEngine;
   }
 
   const archivePath = path.join(SONAR_CACHE_DIR, md5, filename);
@@ -65,14 +61,12 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
     fs.mkdirSync(parentCacheDirectory, { recursive: true });
   }
 
-  try {
-    // TODO: replace with /api/v2/analysis/engine/<filename>
-    log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
-    await downloadFile(properties, `${serverUrl}/batch/file?name=${filename}`, { md5, filename });
-    log(LogLevel.INFO, `Downloaded Scanner Engine to ${scannerEnginePath}`);
-    return scannerEnginePath;
-  } catch (error: unknown) {
-    log(LogLevel.ERROR, 'Error during download', error);
-    throw error;
-  }
+  // TODO: replace with /api/v2/analysis/engine/<filename>
+  log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
+  await download(properties, `${serverUrl}/batch/file?name=${filename}`, { md5, filename });
+  log(LogLevel.INFO, `Downloaded Scanner Engine to ${scannerEnginePath}`);
+
+  log(LogLevel.INFO, `Extracting Scanner Engine to ${scannerEnginePath}`);
+  await extractArchive(archivePath, scannerEnginePath);
+  return scannerEnginePath;
 }

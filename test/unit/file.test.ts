@@ -47,6 +47,10 @@ jest.mock('adm-zip', () => {
   return MockAdmZip;
 });
 
+afterEach(() => {
+  jest.resetAllMocks();
+});
+
 describe('extractArchive', () => {
   it('should extract zip files to the specified directory', async () => {
     const archivePath = 'path/to/archive.zip';
@@ -65,7 +69,7 @@ describe('getCachedFileLocation', () => {
     const filename = 'file.txt';
     const filePath = path.join(SONAR_CACHE_DIR, md5, filename);
 
-    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
     const result = await getCachedFileLocation(md5, filename);
 
@@ -76,7 +80,7 @@ describe('getCachedFileLocation', () => {
     const md5 = 'md5hash';
     const filename = 'file.txt';
 
-    (fs.existsSync as jest.Mock).mockReturnValue(false);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
 
     const result = await getCachedFileLocation(md5, filename);
 

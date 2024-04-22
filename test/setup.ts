@@ -18,16 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  collectCoverageFrom: ['src/**/*.{js,ts}'],
-  coverageReporters: ['lcov', 'text'],
-  coveragePathIgnorePatterns: ['.fixture.', '/fixtures/'],
-  moduleFileExtensions: ['js', 'ts', 'json'],
-  moduleDirectories: ['node_modules'],
-  testResultsProcessor: 'jest-sonar-reporter',
-  testMatch: ['<rootDir>/test/unit/**/*.test.{js,ts}'],
-  testTimeout: 20000,
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-};
+// this is to avoid log outputs throughout the tests
+jest.mock('../src/logging', () => ({
+  ...jest.requireActual('../src/logging'),
+  log: jest.fn(),
+  getLogLevel: jest.fn(),
+  stringToLogLevel: jest.fn(),
+}));

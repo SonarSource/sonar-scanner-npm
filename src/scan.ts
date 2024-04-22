@@ -61,15 +61,15 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   // TODO: also check if JRE is explicitly set by properties
   let latestJRE: string | JREFullData = explicitJREPathOverride || 'java';
   let latestScannerEngine;
-  if (!explicitJREPathOverride && supportsJREProvisioning) {
-    latestJRE = await fetchJRE(properties, platformInfo);
-
-    latestScannerEngine = await fetchScannerEngine(properties);
-
-    // TODO: run SE using JRE
-  } else {
+  if (!supportsJREProvisioning) {
     // TODO: old SQ, support old CLI fetch
     // https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
+  } else {
+    if (!explicitJREPathOverride) {
+      latestJRE = await fetchJRE(properties, platformInfo);
+    }
+
+    latestScannerEngine = await fetchScannerEngine(properties);
   }
 
   //TODO:
