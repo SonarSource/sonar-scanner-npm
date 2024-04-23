@@ -26,7 +26,7 @@ import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
 import { initializeAxios } from './request';
 import { downloadScannerCli, runScannerCli, tryLocalSonarScannerExecutable } from './scanner-cli';
-import { fetchScannerEngine } from './scanner-engine';
+import { fetchScannerEngine, runScannerEngine } from './scanner-engine';
 import { ScanOptions, ScannerProperty } from './types';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
@@ -86,7 +86,6 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const latestJRE = explicitJREPathOverride ?? (await fetchJRE(properties, platformInfo));
   const latestScannerEngine = await fetchScannerEngine(properties);
 
-  //TODO: run the scanner..
-
-  log(LogLevel.INFO, 'Running the scanner ...');
+  log(LogLevel.INFO, 'Running the Scanner Engine');
+  await runScannerEngine(latestJRE, latestScannerEngine, scanOptions, properties);
 }

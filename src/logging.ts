@@ -39,9 +39,16 @@ const DEFAULT_LOG_LEVEL = LogLevel.INFO;
 let logLevel = DEFAULT_LOG_LEVEL;
 
 export function log(level: LogLevel, ...message: unknown[]) {
-  if (logLevelValues[level] <= logLevelValues[logLevel]) {
-    console.log(`[${level}] Bootstrapper:: `, ...message);
+  logWithPrefix(level, 'Bootstrapper', ...message);
+}
+
+export function logWithPrefix(level: LogLevel, prefix: string, ...message: unknown[]) {
+  if (logLevelValues[level] > logLevelValues[logLevel]) {
+    return;
   }
+
+  const levelStr = `[${level}]`.padEnd(7);
+  console.log(levelStr, `${prefix}:`, ...message);
 }
 
 export function getLogLevel() {
