@@ -17,19 +17,19 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import path from 'path';
-import fs from 'fs';
+import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
+import fs from 'fs';
+import path from 'path';
+import { SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
+import * as file from '../../src/file';
 import {
   fetchServerVersion,
   handleJREProvisioning,
   serverSupportsJREProvisioning,
 } from '../../src/java';
 import * as request from '../../src/request';
-import * as file from '../../src/file';
 import { JreMetaData, PlatformInfo, ScannerProperties, ScannerProperty } from '../../src/types';
-import { SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
-import axios from 'axios';
 
 const mock = new MockAdapter(axios);
 
@@ -40,6 +40,7 @@ const MOCKED_PROPERTIES: ScannerProperties = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  request.initializeAxios(MOCKED_PROPERTIES);
   mock.reset();
   jest.spyOn(request, 'fetch');
 });
@@ -47,29 +48,28 @@ beforeEach(() => {
 describe('java', () => {
   describe('version should be detected correctly', () => {
     it('the SonarQube version should be fetched correctly when new endpoint does not exist', async () => {
-      const token = 'dummy-token';
-      mock.onGet('http://sonarqube.com/api/server/version').reply(200, '3.2.2');
+      mock.onGet('/api/server/version').reply(200, '3.2.2');
 
-      mock.onGet('http://sonarqube.com/api/v2/analysis/version').reply(404, 'Not Found');
+      mock.onGet('/api/v2/analysis/version').reply(404, 'Not Found');
 
-      const serverSemver = await fetchServerVersion('http://sonarqube.com', MOCKED_PROPERTIES);
+      const serverSemver = await fetchServerVersion();
       expect(serverSemver.toString()).toEqual('3.2.2');
       expect(request.fetch).toHaveBeenCalledTimes(2);
     });
 
     it('the SonarQube version should be fetched correctly using the new endpoint', async () => {
-      mock.onGet('http://sonarqube.com/api/server/version').reply(200, '3.2.1.12313');
+      mock.onGet('/api/server/version').reply(200, '3.2.1.12313');
 
-      const serverSemver = await fetchServerVersion('http://sonarqube.com', MOCKED_PROPERTIES);
+      const serverSemver = await fetchServerVersion();
       expect(serverSemver.toString()).toEqual('3.2.1');
     });
 
     it('should fail if both endpoints do not work', async () => {
-      mock.onGet('http://sonarqube.com/api/server/version').reply(404, 'Not Found');
-      mock.onGet('http://sonarqube.com/api/v2/server/version').reply(404, 'Not Found');
+      mock.onGet('/api/server/version').reply(404, 'Not Found');
+      mock.onGet('/api/v2/server/version').reply(404, 'Not Found');
 
       expect(async () => {
-        await fetchServerVersion('http://sonarqube.com', MOCKED_PROPERTIES);
+        await fetchServerVersion();
       }).rejects.toBeDefined();
     });
 
@@ -79,7 +79,7 @@ describe('java', () => {
         .reply(200, '<!DOCTYPE><HTML><BODY>FORBIDDEN</BODY></HTML>');
 
       expect(async () => {
-        await fetchServerVersion('http://sonarqube.com', MOCKED_PROPERTIES);
+        await fetchServerVersion();
       }).rejects.toBeDefined();
     });
   });
@@ -94,7 +94,7 @@ describe('java', () => {
     });
 
     it(`should return true for SQ version >= ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
-      mock.onGet('https://next.sonarqube.com/api/server/version').reply(200, '10.5.0');
+      mock.onGet('/api/server/version').reply(200, '10.5.0');
       expect(
         await serverSupportsJREProvisioning({
           [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
@@ -104,7 +104,7 @@ describe('java', () => {
 
     it(`should return false for SQ version < ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
       // Define the behavior of the GET request
-      mock.onGet('https://next.sonarqube.com/api/server/version').reply(200, '9.9.9');
+      mock.onGet('/api/server/version').reply(200, '9.9.9');
       expect(
         await serverSupportsJREProvisioning({
           [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
@@ -121,24 +121,21 @@ describe('java', () => {
       md5: 'd41d8cd98f00b204e9800998ecf8427e',
     };
     beforeEach(() => {
-      jest.spyOn(file, 'getCachedFileLocation').mockImplementation((md5, filename) => {
-        // Your mock implementation here
-        return Promise.resolve('mocked/path/to/file');
-      });
+      jest.spyOn(file, 'getCachedFileLocation').mockResolvedValue('mocked/path/to/file');
 
-      jest.spyOn(file, 'extractArchive').mockImplementation((fromPath, toPath) => {
-        // Your mock implementation here
-        return Promise.resolve();
-      });
+      jest.spyOn(file, 'extractArchive').mockResolvedValue(undefined);
 
       mock
-        .onGet(
-          `https://sonarcloud.io/api/v2/analysis/jres?os=${platformInfo.os}&arch=${platformInfo.arch}`,
-        )
+        .onGet(`/api/v2/analysis/jres`, {
+          params: {
+            os: platformInfo.os,
+            arch: platformInfo.arch,
+          },
+        })
         .reply(200, serverResponse);
 
       mock
-        .onGet(`https://sonarcloud.io/api/v2/analysis/jres/${serverResponse.filename}`)
+        .onGet(`/api/v2/analysis/jres/${serverResponse.filename}`)
         .reply(200, fs.createReadStream(path.resolve(__dirname, '../unit/mocks/mock-jre.tar.gz')));
     });
 
@@ -163,11 +160,9 @@ describe('java', () => {
 
     describe('when the JRE is not cached', () => {
       beforeEach(() => {
-        jest.spyOn(file, 'getCachedFileLocation').mockImplementation((md5, filename) => {
-          // Your mock implementation here
-          return Promise.resolve(null);
-        });
+        jest.spyOn(file, 'getCachedFileLocation').mockResolvedValue(null);
       });
+
       it('should download the JRE', async () => {
         await handleJREProvisioning(
           {

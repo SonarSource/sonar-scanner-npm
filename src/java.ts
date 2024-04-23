@@ -32,12 +32,10 @@ import {
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
-import { getHttpAgents } from './http-agent';
+import { extractArchive, getCachedFileLocation } from './file';
 import { log, LogLevel } from './logging';
-import { getProxyUrl } from './proxy';
 import { fetch } from './request';
 import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
-import { extractArchive, getCachedFileLocation } from './file';
 
 const finished = promisify(stream.finished);
 
@@ -52,7 +50,7 @@ export async function serverSupportsJREProvisioning(
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
   const SQServerInfo =
     semver.coerce(parameters[ScannerProperty.SonarScannerInternalSqVersion]) ??
-    (await fetchServerVersion(parameters[ScannerProperty.SonarHostUrl], parameters));
+    (await fetchServerVersion());
   log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
@@ -60,16 +58,21 @@ export async function serverSupportsJREProvisioning(
   return supports;
 }
 
-async function fetchLatestSupportedJRE(properties: ScannerProperties, platformInfo: PlatformInfo) {
-  const serverUrl = properties[ScannerProperty.SonarHostUrl];
-  const token = properties[ScannerProperty.SonarToken];
+async function fetchLatestSupportedJRE(platformInfo: PlatformInfo) {
+  log(
+    LogLevel.DEBUG,
+    `Downloading JRE for ${platformInfo.os} ${platformInfo.arch} from ${API_V2_JRE_ENDPOINT}`,
+  );
 
-  const jreInfoUrl = `${serverUrl}/api/v2/analysis/jres?os=${platformInfo.os}&arch=${platformInfo.arch}`;
-  log(LogLevel.DEBUG, `Downloading JRE from: ${jreInfoUrl}`);
+  const { data } = await fetch({
+    url: API_V2_JRE_ENDPOINT,
+    params: {
+      os: platformInfo.os,
+      arch: platformInfo.arch,
+    },
+  });
 
-  const { data } = await fetch(token, { url: jreInfoUrl });
-
-  log(LogLevel.DEBUG, 'file info: ', data);
+  log(LogLevel.DEBUG, 'JRE information: ', data);
 
   return data;
 }
@@ -78,11 +81,8 @@ export async function handleJREProvisioning(
   properties: ScannerProperties,
   platformInfo: PlatformInfo,
 ): Promise<JREFullData | undefined> {
-  const serverUrl = properties[ScannerProperty.SonarHostUrl];
-  const token = properties[ScannerProperty.SonarToken];
-
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-  const latestJREData = await fetchLatestSupportedJRE(properties, platformInfo);
+  const latestJREData = await fetchLatestSupportedJRE(platformInfo);
   log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
@@ -90,8 +90,6 @@ export async function handleJREProvisioning(
     latestJREData.md5,
     latestJREData.filename + UNARCHIVE_SUFFIX,
   );
-
-  const proxyUrl = getProxyUrl(properties);
 
   if (cachedJRE) {
     log(LogLevel.INFO, 'Using Cached JRE');
@@ -120,14 +118,12 @@ export async function handleJREProvisioning(
     }
     const writer = fs.createWriteStream(archivePath);
 
-    const url = serverUrl + API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
+    const url = `${API_V2_JRE_ENDPOINT}/${latestJREData.filename}`;
     log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
 
-    const response = await fetch(token, {
+    const response = await fetch({
       url,
-      method: 'GET',
       responseType: 'stream',
-      ...getHttpAgents(proxyUrl),
     });
 
     const totalLength = response.headers['content-length'];
@@ -193,19 +189,13 @@ async function validateChecksum(filePath: string, expectedChecksum: string) {
   }
 }
 
-export async function fetchServerVersion(
-  sonarHostUrl: string,
-  parameters: ScannerProperties,
-): Promise<SemVer> {
-  const token = parameters[ScannerProperty.SonarToken];
-  const proxyUrl = getProxyUrl(parameters);
+export async function fetchServerVersion(): Promise<SemVer> {
   let version: SemVer | null = null;
   try {
     // Try and fetch the new version endpoint first
     log(LogLevel.DEBUG, `Fetching API V2 ${API_V2_VERSION_ENDPOINT}`);
-    const response = await fetch(token, {
-      url: sonarHostUrl + API_V2_VERSION_ENDPOINT,
-      ...getHttpAgents(proxyUrl),
+    const response = await fetch({
+      url: API_V2_VERSION_ENDPOINT,
     });
     version = semver.coerce(response.data);
   } catch (error: unknown) {
@@ -215,9 +205,8 @@ export async function fetchServerVersion(
         LogLevel.DEBUG,
         `Unable to fetch API V2 ${API_V2_VERSION_ENDPOINT}: ${error}. Falling back on ${API_OLD_VERSION_ENDPOINT}`,
       );
-      const response = await fetch(token, {
-        url: sonarHostUrl + API_OLD_VERSION_ENDPOINT,
-        ...getHttpAgents(proxyUrl),
+      const response = await fetch({
+        url: API_OLD_VERSION_ENDPOINT,
       });
       version = semver.coerce(response.data);
     } catch (error: unknown) {

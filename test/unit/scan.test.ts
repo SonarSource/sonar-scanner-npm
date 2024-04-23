@@ -18,10 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { scan } from '../../src/scan';
 import * as java from '../../src/java';
-import * as platform from '../../src/platform';
 import * as logging from '../../src/logging';
+import * as platform from '../../src/platform';
+import { scan } from '../../src/scan';
 
 jest.mock('../../src/java');
 jest.mock('../../src/platform');
@@ -50,7 +50,7 @@ describe('scan', () => {
     (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
     jest.spyOn(logging, 'log');
     await scan({}, []);
-    expect(logging.log).toHaveBeenNthCalledWith(1, 'INFO', 'Version: ', 'MOCK.VERSION');
+    expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: ', 'MOCK.VERSION');
   });
 
   it('should output the current platform', async () => {
@@ -58,7 +58,7 @@ describe('scan', () => {
     jest.spyOn(logging, 'log');
     jest.spyOn(platform, 'getPlatformInfo').mockReturnValue({ os: 'alpine', arch: 'arm64' });
     await scan({}, []);
-    expect(logging.log).toHaveBeenNthCalledWith(3, 'INFO', 'Platform: ', {
+    expect(logging.log).toHaveBeenCalledWith('INFO', 'Platform: ', {
       os: 'alpine',
       arch: 'arm64',
     });
