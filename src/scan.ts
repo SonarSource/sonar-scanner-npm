@@ -25,6 +25,7 @@ import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
 import { ScannerProperty, ScanOptions, JREFullData } from './types';
 import { version } from '../package.json';
+import { initializeAxios } from './request';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
@@ -64,16 +65,13 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   if (!supportsJREProvisioning) {
     // TODO: old SQ, support old CLI fetch
     // https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${version}-${os}.zip
-  } else {
-    if (!explicitJREPathOverride) {
-      latestJRE = await fetchJRE(properties, platformInfo);
-    }
-
-    latestScannerEngine = await fetchScannerEngine(properties);
   }
 
-  //TODO:
-  // ...
-  properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
-  // ...
+  if (!explicitJREPathOverride) {
+    latestJRE = await fetchJRE(properties, platformInfo);
+  }
+
+  latestScannerEngine = await fetchScannerEngine(properties);
+
+  //TODO: run the scanner..
 }

@@ -26,12 +26,10 @@ import { download, extractArchive, getCachedFileLocation } from './file';
 import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
-  const serverUrl = properties[ScannerProperty.SonarHostUrl];
-
   log(LogLevel.DEBUG, 'Detecting latest version of Scanner Engine');
-  const { data } = await fetch(properties[ScannerProperty.SonarToken], {
+  const { data } = await fetch({
     // TODO: replace with /api/v2/analysis/engine
-    url: `${properties[ScannerProperty.SonarHostUrl]}/batch/index`,
+    url: '/batch/index',
   });
   const [filename, md5] = data.trim().split('|');
   log(LogLevel.INFO, 'Latest Supported Scanner Engine: ', filename);
@@ -50,6 +48,7 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
     return cachedScannerEngine;
   }
 
+  properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
   const archivePath = path.join(SONAR_CACHE_DIR, md5, filename);
   const scannerEnginePath = path.join(SONAR_CACHE_DIR, md5, filename + UNARCHIVE_SUFFIX);
 
@@ -63,7 +62,7 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
 
   // TODO: replace with /api/v2/analysis/engine/<filename>
   log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
-  await download(properties, `${serverUrl}/batch/file?name=${filename}`, { md5, filename });
+  await download(properties, `/batch/file?name=${filename}`, { md5, filename });
   log(LogLevel.INFO, `Downloaded Scanner Engine to ${scannerEnginePath}`);
 
   log(LogLevel.INFO, `Extracting Scanner Engine to ${scannerEnginePath}`);

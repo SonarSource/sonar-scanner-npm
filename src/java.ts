@@ -80,7 +80,7 @@ export async function serverSupportsJREProvisioning(
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
   const SQServerInfo =
     semver.coerce(parameters[ScannerProperty.SonarScannerInternalSqVersion]) ??
-    (await fetchServerVersion(parameters[ScannerProperty.SonarHostUrl], parameters));
+    (await fetchServerVersion());
   log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
@@ -92,11 +92,8 @@ export async function fetchJRE(
   properties: ScannerProperties,
   platformInfo: PlatformInfo,
 ): Promise<JREFullData> {
-  const serverUrl = properties[ScannerProperty.SonarHostUrl];
-  const token = properties[ScannerProperty.SonarToken];
-
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-  const latestJREData = await fetchLatestSupportedJRE(properties, platformInfo);
+  const latestJREData = await fetchLatestSupportedJRE(platformInfo);
   log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
@@ -129,7 +126,7 @@ export async function fetchJRE(
       fs.mkdirSync(parentCacheDirectory, { recursive: true });
     }
 
-    const url = serverUrl + API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
+    const url = API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
 
     log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
     await download(properties, url, latestJREData);
@@ -147,16 +144,20 @@ export async function fetchJRE(
   }
 }
 
-async function fetchLatestSupportedJRE(properties: ScannerProperties, platformInfo: PlatformInfo) {
-  const serverUrl = properties[ScannerProperty.SonarHostUrl];
-  const token = properties[ScannerProperty.SonarToken];
+async function fetchLatestSupportedJRE(platformInfo: PlatformInfo) {
+  log(
+    LogLevel.DEBUG,
+    `Downloading JRE for ${platformInfo.os} ${platformInfo.arch} from ${API_V2_JRE_ENDPOINT}`,
+  );
 
-  const jreInfoUrl = `${serverUrl}${API_V2_JRE_ENDPOINT}?os=${platformInfo.os}&arch=${platformInfo.arch}`;
-  log(LogLevel.DEBUG, `Downloading JRE from: ${jreInfoUrl}`);
+  const { data } = await fetch({
+    url: API_V2_JRE_ENDPOINT,
+    params: {
+      os: platformInfo.os,
+      arch: platformInfo.arch,
+    },
+  });
 
-  const { data } = await fetch(token, { url: jreInfoUrl });
-
-  log(LogLevel.DEBUG, 'file info: ', data);
-
+  log(LogLevel.DEBUG, 'JRE information: ', data);
   return data;
 }

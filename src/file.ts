@@ -28,8 +28,6 @@ import path from 'path';
 import { SONAR_CACHE_DIR } from './constants';
 import { log, LogLevel } from './logging';
 import { ScannerProperties, ScannerProperty } from './types';
-import { getHttpAgents } from './http-agent';
-import { getProxyUrl } from './proxy';
 import { fetch } from './request';
 import { promisify } from 'util';
 import * as stream from 'stream';
@@ -44,16 +42,12 @@ export async function download(
   const archivePath = path.join(SONAR_CACHE_DIR, fileData.md5, fileData.filename);
 
   try {
-    const token = properties[ScannerProperty.SonarToken];
-    const proxyUrl = getProxyUrl(properties);
-
     log(LogLevel.INFO, `Downloading from ${url} to ${archivePath}`);
     const writer = fs.createWriteStream(archivePath);
 
-    const response = await fetch(token, {
+    const response = await fetch({
       url,
       responseType: 'stream',
-      ...getHttpAgents(proxyUrl),
     });
 
     const totalLength = response.headers['content-length'];
