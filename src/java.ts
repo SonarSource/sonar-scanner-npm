@@ -30,9 +30,9 @@ import {
   UNARCHIVE_SUFFIX,
 } from './constants';
 import { log, LogLevel } from './logging';
-import { fetch } from './request';
+import { fetch, download } from './request';
 import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
-import { download, extractArchive, getCachedFileLocation } from './file';
+import { extractArchive, getCachedFileLocation, validateChecksum } from './file';
 
 export async function fetchServerVersion(): Promise<SemVer> {
   let version: SemVer | null = null;
@@ -131,6 +131,8 @@ export async function fetchJRE(
     log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
     await download(properties, url, latestJREData);
     log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
+
+    await validateChecksum(archivePath, latestJREData.md5);
 
     log(LogLevel.INFO, `Extracting JRE to ${jreDirPath}`);
     await extractArchive(archivePath, jreDirPath);

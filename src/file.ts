@@ -27,57 +27,6 @@ import fs from 'fs';
 import path from 'path';
 import { SONAR_CACHE_DIR } from './constants';
 import { log, LogLevel } from './logging';
-import { ScannerProperties, ScannerProperty } from './types';
-import { fetch } from './request';
-import { promisify } from 'util';
-import * as stream from 'stream';
-
-const finished = promisify(stream.finished);
-
-export async function download(
-  properties: ScannerProperties,
-  url: string,
-  fileData: { filename: string; md5: string },
-) {
-  const archivePath = path.join(SONAR_CACHE_DIR, fileData.md5, fileData.filename);
-
-  try {
-    log(LogLevel.INFO, `Downloading from ${url} to ${archivePath}`);
-    const writer = fs.createWriteStream(archivePath);
-
-    const response = await fetch({
-      url,
-      responseType: 'stream',
-    });
-
-    const totalLength = response.headers['content-length'];
-    let progress = 0;
-
-    response.data.on('data', (chunk: any) => {
-      progress += chunk.length;
-      process.stdout.write(
-        `\r[INFO] Bootstrapper::  Downloaded ${Math.round((progress / totalLength) * 100)}%`,
-      );
-    });
-
-    response.data.on('end', () => {
-      process.stdout.write('\n');
-      log(LogLevel.INFO, 'Download complete');
-    });
-
-    const streamPipeline = promisify(stream.pipeline);
-    await streamPipeline(response.data, writer);
-
-    response.data.pipe(writer);
-
-    await finished(writer);
-  } catch (error: unknown) {
-    log(LogLevel.ERROR, 'Error during download', error);
-    throw error;
-  }
-
-  await validateChecksum(archivePath, fileData.md5);
-}
 
 export async function getCachedFileLocation(md5: string, filename: string) {
   const filePath = path.join(SONAR_CACHE_DIR, md5, filename);
@@ -142,7 +91,7 @@ async function generateChecksum(filepath: string) {
   });
 }
 
-async function validateChecksum(filePath: string, expectedChecksum: string) {
+export async function validateChecksum(filePath: string, expectedChecksum: string) {
   if (expectedChecksum) {
     log(LogLevel.INFO, `Verifying checksum ${expectedChecksum}`);
     const checksum = await generateChecksum(filePath);

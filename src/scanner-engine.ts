@@ -20,9 +20,9 @@
 import fs from 'fs';
 import path from 'path';
 import { log, LogLevel } from './logging';
-import { fetch } from './request';
+import { fetch, download } from './request';
 import { ScannerProperties, ScannerProperty } from './types';
-import { download, extractArchive, getCachedFileLocation } from './file';
+import { extractArchive, getCachedFileLocation, validateChecksum } from './file';
 import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
@@ -62,8 +62,10 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
 
   // TODO: replace with /api/v2/analysis/engine/<filename>
   log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
-  await download(properties, `/batch/file?name=${filename}`, { md5, filename });
+  await download(properties, `/batch/file?name=${filename}`, archivePath);
   log(LogLevel.INFO, `Downloaded Scanner Engine to ${scannerEnginePath}`);
+
+  await validateChecksum(archivePath, md5);
 
   log(LogLevel.INFO, `Extracting Scanner Engine to ${scannerEnginePath}`);
   await extractArchive(archivePath, scannerEnginePath);
