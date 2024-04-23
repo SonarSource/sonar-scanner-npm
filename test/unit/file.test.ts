@@ -20,9 +20,10 @@
 import fs from 'fs';
 import path from 'path';
 import AdmZip from 'adm-zip';
-import { extractArchive, getCachedFileLocation } from '../../src/file';
+import { extractArchive, getCachedFileLocation, validateChecksum } from '../../src/file';
 import { SONAR_CACHE_DIR } from '../../src/constants';
 import { Readable } from 'stream';
+import { readFile } from 'fs-extra';
 
 // Mock the filesystem
 jest.mock('fs', () => ({
@@ -37,6 +38,7 @@ jest.mock('fs', () => ({
   }),
   createWriteStream: jest.fn(),
   existsSync: jest.fn(),
+  readFile: jest.fn(),
 }));
 
 jest.mock('fs-extra', () => ({}));
@@ -85,5 +87,39 @@ describe('getCachedFileLocation', () => {
     const result = await getCachedFileLocation(md5, filename);
 
     expect(result).toBeNull();
+  });
+});
+
+describe('validateChecksum', () => {
+  it('should read the file of the path provided', async () => {
+    jest
+      .spyOn(fs, 'readFile')
+      .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
+
+    await validateChecksum('path/to/file', 'd10b4c3ff123b26dc068d43a8bef2d23');
+
+    expect(fs.readFile).toHaveBeenCalledWith('path/to/file', expect.any(Function));
+  });
+
+  it('should throw an error if the checksum does not match', async () => {
+    jest
+      .spyOn(fs, 'readFile')
+      .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
+
+    await expect(validateChecksum('path/to/file', 'invalidchecksum')).rejects.toThrow(
+      'Checksum verification failed for path/to/file. Expected checksum invalidchecksum but got d10b4c3ff123b26dc068d43a8bef2d23',
+    );
+  });
+
+  it('should throw an error if the checksum is not provided', async () => {
+    await expect(validateChecksum('path/to/file', '')).rejects.toThrow('Checksum not provided');
+  });
+
+  it('should throw an error if the file cannot be read', async () => {
+    jest
+      .spyOn(fs, 'readFile')
+      .mockImplementation((path, cb) => cb(new Error('File not found'), Buffer.from('')));
+
+    await expect(validateChecksum('path/to/file', 'checksum')).rejects.toThrow('File not found');
   });
 });

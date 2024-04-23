@@ -102,5 +102,7 @@ export async function validateChecksum(filePath: string, expectedChecksum: strin
         `Checksum verification failed for ${filePath}. Expected checksum ${expectedChecksum} but got ${checksum}`,
       );
     }
+  } else {
+    throw new Error('Checksum not provided');
   }
 }

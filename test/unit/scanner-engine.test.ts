@@ -24,7 +24,8 @@ import MockAdapter from 'axios-mock-adapter';
 import { ScannerProperties, ScannerProperty } from '../../src/types';
 import { fetchScannerEngine } from '../../src/scanner-engine';
 import * as file from '../../src/file';
-
+import * as request from '../../src/request';
+import { Readable } from 'stream';
 const mock = new MockAdapter(axios);
 
 const MOCKED_PROPERTIES: ScannerProperties = {
@@ -43,8 +44,35 @@ beforeEach(() => {
 });
 
 describe('scanner-engine', () => {
-  beforeEach(() => {
-    mock.onGet('http://sonarqube.com/batch/index').reply(200, 'scanner-engine-1.2.3.zip|md5_test');
+  beforeEach(async () => {
+    await request.initializeAxios(MOCKED_PROPERTIES);
+    mock.onGet('/batch/index').reply(200, 'scanner-engine-1.2.3.zip|md5_test');
+    mock.onGet('/batch/file?name=scanner-engine-1.2.3.zip').reply(() => {
+      const readable = new Readable({
+        read() {
+          this.push('md5_test');
+          this.push(null); // Indicates end of stream
+        },
+      });
+
+      return [200, readable];
+    });
+
+    jest.spyOn(file, 'getCachedFileLocation').mockImplementation((md5, filename) => {
+      return Promise.resolve(null);
+    });
+
+    jest.spyOn(file, 'extractArchive').mockImplementation((fromPath, toPath) => {
+      return Promise.resolve();
+    });
+
+    jest.spyOn(file, 'validateChecksum').mockImplementation(() => {
+      return Promise.resolve();
+    });
+
+    jest.spyOn(request, 'download').mockImplementation(() => {
+      return Promise.resolve();
+    });
   });
 
   describe('fetchScannerEngine', () => {
@@ -67,7 +95,7 @@ describe('scanner-engine', () => {
 
         jest.spyOn(file, 'extractArchive');
 
-        jest.spyOn(file, 'download');
+        jest.spyOn(request, 'download');
       });
 
       it('should use the cached scanner engine', async () => {
@@ -77,27 +105,13 @@ describe('scanner-engine', () => {
           'md5_test',
           'scanner-engine-1.2.3.zip',
         );
-        expect(file.download).not.toHaveBeenCalled();
+        expect(request.download).not.toHaveBeenCalled();
         expect(file.extractArchive).not.toHaveBeenCalled();
 
         expect(scannerEngine).toEqual('mocked/path/to/scanner-engine');
       });
     });
     describe('when the scanner engine is not cached', () => {
-      beforeEach(() => {
-        jest.spyOn(file, 'getCachedFileLocation').mockImplementation((md5, filename) => {
-          return Promise.resolve(null);
-        });
-
-        jest.spyOn(file, 'extractArchive').mockImplementation((fromPath, toPath) => {
-          return Promise.resolve();
-        });
-
-        jest.spyOn(file, 'download').mockImplementation(() => {
-          return Promise.resolve();
-        });
-      });
-
       it('should create the parent cache directory if it does not exist', async () => {
         jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => false);
         jest.spyOn(fs, 'mkdirSync').mockImplementationOnce(() => undefined);
@@ -116,7 +130,7 @@ describe('scanner-engine', () => {
           'md5_test',
           'scanner-engine-1.2.3.zip',
         );
-        expect(file.download).toHaveBeenCalledTimes(1);
+        expect(request.download).toHaveBeenCalledTimes(1);
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
 
         expect(scannerEngine).toEqual(

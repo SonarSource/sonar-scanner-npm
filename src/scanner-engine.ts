@@ -55,8 +55,7 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   // Create destination directory if it doesn't exist
   const parentCacheDirectory = path.dirname(scannerEnginePath);
   if (!fs.existsSync(parentCacheDirectory)) {
-    log(LogLevel.DEBUG, `Cache directory doesn't exist: ${parentCacheDirectory}`);
-    log(LogLevel.DEBUG, `Creating cache directory`);
+    log(LogLevel.DEBUG, `Creating Cache directory as it doesn't exist: ${parentCacheDirectory}`);
     fs.mkdirSync(parentCacheDirectory, { recursive: true });
   }
 
