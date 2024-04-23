@@ -20,7 +20,7 @@
 
 import fs from 'fs';
 import sinon from 'sinon';
-import * as logging from '../../src/logging';
+import { log, LogLevel } from '../../src/logging';
 import * as platform from '../../src/platform';
 
 describe('getPlatformInfo', () => {
@@ -96,7 +96,6 @@ describe('getPlatformInfo', () => {
   });
 
   it('failed to detect alpine', () => {
-    const logSpy = sinon.spy(logging, 'log');
     const platformStub = sinon.stub(process, 'platform').value('linux');
     const archStub = sinon.stub(process, 'arch').value('x64');
 
@@ -105,15 +104,12 @@ describe('getPlatformInfo', () => {
       arch: 'x64',
     });
 
-    expect(
-      logSpy.calledWith(
-        logging.LogLevel.ERROR,
-        'Failed to read /etc/os-release or /usr/lib/os-release',
-      ),
-    ).toBe(true);
+    expect(log).toHaveBeenCalledWith(
+      LogLevel.WARN,
+      'Failed to read /etc/os-release or /usr/lib/os-release',
+    );
 
     platformStub.restore();
     archStub.restore();
-    logSpy.restore();
   });
 });

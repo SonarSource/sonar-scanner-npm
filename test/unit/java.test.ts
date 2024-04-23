@@ -19,15 +19,7 @@
  */
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import fs from 'fs';
-import path from 'path';
-import { SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
-import * as file from '../../src/file';
-import {
-  fetchServerVersion,
-  handleJREProvisioning,
-  serverSupportsJREProvisioning,
-} from '../../src/java';
+import { fetchServerVersion, fetchJRE, serverSupportsJREProvisioning } from '../../src/java';
 import * as request from '../../src/request';
 import { JreMetaData, PlatformInfo, ScannerProperties, ScannerProperty } from '../../src/types';
 
@@ -141,7 +133,7 @@ describe('java', () => {
 
     describe('when the JRE is cached', () => {
       it('should fetch the latest supported JRE and use the cached version', async () => {
-        await handleJREProvisioning(
+        await fetchJRE(
           {
             [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
             [ScannerProperty.SonarToken]: 'mock-token',
@@ -164,7 +156,7 @@ describe('java', () => {
       });
 
       it('should download the JRE', async () => {
-        await handleJREProvisioning(
+        await fetchJRE(
           {
             [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
             [ScannerProperty.SonarToken]: 'mock-token',

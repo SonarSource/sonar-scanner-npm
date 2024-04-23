@@ -45,7 +45,7 @@ export function getProxyUrl(properties: ScannerProperties): URL | undefined {
     log(LogLevel.WARN, `Detecting proxy: Incomplete proxy configuration. Proxy host is missing.`);
   }
 
-  log(LogLevel.DEBUG, `Detecting proxy: No proxy detected'}`);
+  log(LogLevel.DEBUG, 'Detecting proxy: No proxy detected');
   return undefined;
 }
 
