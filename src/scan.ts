@@ -30,6 +30,14 @@ import { fetchScannerEngine } from './scanner-engine';
 import { ScanOptions, ScannerProperty } from './types';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
+  try {
+    await runScan(scanOptions, cliArgs);
+  } catch (error: any) {
+    log(LogLevel.ERROR, `An error occurred: ${error?.message ?? error}`);
+  }
+}
+
+async function runScan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
 
@@ -45,7 +53,8 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
 
   initializeAxios(properties);
 
-  log(LogLevel.INFO, 'Version: ', version);
+  log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
+  log(LogLevel.INFO, `Version: ${version}`);
 
   log(LogLevel.DEBUG, 'Finding platform info');
   const platformInfo = getPlatformInfo();
