@@ -19,8 +19,14 @@
  */
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import { promisify } from 'util';
+import * as stream from 'stream';
+import fs from 'fs';
 import { getProxyUrl } from './proxy';
 import { ScannerProperties, ScannerProperty } from './types';
+import { log, LogLevel } from './logging';
+
+const finished = promisify(stream.finished);
 
 // The axios instance is private to this module
 let _axiosInstance: AxiosInstance | null = null;
@@ -60,4 +66,40 @@ export function fetch(config: AxiosRequestConfig) {
   }
 
   return _axiosInstance.request(config);
+}
+
+export async function download(url: string, destPath: string) {
+  log(LogLevel.DEBUG, `Downloading ${url} to ${destPath}`);
+
+  const response = await fetch({
+    url,
+    method: 'GET',
+    responseType: 'stream',
+  });
+
+  const totalLength = response.headers['content-length'];
+
+  if (totalLength) {
+    let progress = 0;
+
+    response.data.on('data', (chunk: any) => {
+      progress += chunk.length;
+      process.stdout.write(
+        `\r[INFO] Bootstrapper:: Downloaded ${Math.round((progress / totalLength) * 100)}%`,
+      );
+    });
+  } else {
+    log(LogLevel.INFO, 'Download started');
+  }
+
+  response.data.on('end', () => {
+    totalLength && process.stdout.write('\n');
+    log(LogLevel.INFO, 'Download complete');
+  });
+
+  const writer = fs.createWriteStream(destPath);
+  const streamPipeline = promisify(stream.pipeline);
+  await streamPipeline(response.data, writer);
+  response.data.pipe(writer);
+  await finished(writer);
 }
