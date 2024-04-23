@@ -22,6 +22,7 @@
 jest.mock('../src/logging', () => ({
   ...jest.requireActual('../src/logging'),
   log: jest.fn(),
+  logWithPrefix: jest.fn(),
   getLogLevel: jest.fn(),
   stringToLogLevel: jest.fn(),
 }));

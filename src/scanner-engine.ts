@@ -17,15 +17,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { log, LogLevel } from './logging';
-import { fetch, download } from './request';
-import { CacheFileData, ScannerProperties, ScannerProperty } from './types';
+import { spawn } from 'child_process';
 import {
   extractArchive,
   getCacheDirectories,
   getCacheFileLocation,
   validateChecksum,
 } from './file';
+import { LogLevel, log, logWithPrefix } from './logging';
+import { proxyUrlToJavaOptions } from './proxy';
+import { download, fetch } from './request';
+import {
+  CacheFileData,
+  ScanOptions,
+  ScannerLogEntry,
+  ScannerProperties,
+  ScannerProperty,
+} from './types';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
   log(LogLevel.DEBUG, 'Detecting latest version of Scanner Engine');
@@ -66,4 +74,56 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   log(LogLevel.INFO, `Extracting Scanner Engine to ${scannerEnginePath}`);
   await extractArchive(archivePath, scannerEnginePath);
   return scannerEnginePath;
+}
+
+async function logOutput(message: string) {
+  try {
+    // Try and assume the log comes from the scanner engine
+    const parsed = JSON.parse(message) as ScannerLogEntry;
+    logWithPrefix(parsed.level, 'ScannerEngine', parsed.formattedMessage);
+    if (parsed.throwable) {
+      // Console.log without newline
+      process.stdout.write(parsed.throwable);
+    }
+  } catch (e) {
+    process.stdout.write(message);
+  }
+}
+
+export async function runScannerEngine(
+  javaBinPath: string,
+  scannerEnginePath: string,
+  scanOptions: ScanOptions,
+  properties: ScannerProperties,
+) {
+  // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
+  const propertiesJSON = JSON.stringify({ scannerProperties: properties });
+
+  // Run the scanner-engine
+  const args = [
+    ...proxyUrlToJavaOptions(properties),
+    ...(scanOptions.jvmOptions ?? []),
+    '-jar',
+    scannerEnginePath,
+  ];
+  log(LogLevel.DEBUG, 'Running scanner engine', javaBinPath, ...args);
+  const child = spawn(javaBinPath, args);
+
+  log(LogLevel.DEBUG, 'Writing properties to scanner engine', propertiesJSON);
+  child.stdin.write(propertiesJSON);
+  child.stdin.end();
+
+  child.stdout.on('data', buffer => buffer.toString().trim().split('\n').forEach(logOutput));
+  child.stderr.on('data', buffer => log(LogLevel.ERROR, buffer.toString()));
+
+  return new Promise<void>((resolve, reject) => {
+    child.on('exit', code => {
+      if (code === 0) {
+        log(LogLevel.INFO, 'Scanner engine finished successfully');
+        resolve();
+      } else {
+        reject(new Error(`Scanner engine failed with code ${code}`));
+      }
+    });
+  });
 }

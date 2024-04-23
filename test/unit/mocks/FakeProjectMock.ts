@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import path from 'path';
-import { SCANNER_BOOTSTRAPPER_NAME } from '../../../src/constants';
+import { SCANNER_BOOTSTRAPPER_NAME, SCANNER_CLI_VERSION } from '../../../src/constants';
 
 const baseEnvVariables = process.env;
 
@@ -57,6 +57,7 @@ export class FakeProjectMock {
       'sonar.scanner.appVersion': '1.2.3',
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': 'false',
+      'sonar.scanner.version': SCANNER_CLI_VERSION,
       'sonar.userHome': expect.stringMatching(/\.sonar$/),
     };
   }

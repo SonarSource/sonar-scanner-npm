@@ -26,6 +26,7 @@ import {
   ENV_TO_PROPERTY_NAME,
   ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
+  SCANNER_CLI_VERSION,
   SONARCLOUD_URL,
   SONARCLOUD_URL_REGEX,
   SONAR_DIR_DEFAULT,
@@ -39,6 +40,7 @@ const DEFAULT_PROPERTIES = {
     process.env.HOME ?? process.env.USERPROFILE ?? '',
     SONAR_DIR_DEFAULT,
   ),
+  [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
 };
 
 /**
