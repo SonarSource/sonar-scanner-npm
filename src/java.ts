@@ -128,13 +128,10 @@ export async function fetchJRE(
 
     const url = API_V2_JRE_ENDPOINT + `/${latestJREData.filename}`;
 
-    log(LogLevel.DEBUG, `Downloading ${url} to ${archivePath}`);
-    await download(properties, url, latestJREData);
-    log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
+    await download(url, archivePath);
 
     await validateChecksum(archivePath, latestJREData.md5);
 
-    log(LogLevel.INFO, `Extracting JRE to ${jreDirPath}`);
     await extractArchive(archivePath, jreDirPath);
 
     const jreBinPath = path.join(jreDirPath, latestJREData.javaPath);

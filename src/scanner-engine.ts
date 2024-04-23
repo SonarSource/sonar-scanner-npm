@@ -62,7 +62,7 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
 
   // TODO: replace with /api/v2/analysis/engine/<filename>
   log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
-  await download(properties, `/batch/file?name=${filename}`, archivePath);
+  await download(`/batch/file?name=${filename}`, archivePath);
   log(LogLevel.INFO, `Downloaded Scanner Engine to ${scannerEnginePath}`);
 
   await validateChecksum(archivePath, md5);

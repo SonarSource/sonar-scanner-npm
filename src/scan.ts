@@ -74,4 +74,5 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   latestScannerEngine = await fetchScannerEngine(properties);
 
   //TODO: run the scanner..
+  log(LogLevel.INFO, 'Running the scanner ...');
 }

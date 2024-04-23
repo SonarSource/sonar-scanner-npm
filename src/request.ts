@@ -68,7 +68,7 @@ export function fetch(config: AxiosRequestConfig) {
   return _axiosInstance.request(config);
 }
 
-export async function download(properties: ScannerProperties, url: string, destPath: string) {
+export async function download(url: string, destPath: string) {
   log(LogLevel.DEBUG, `Downloading ${url} to ${destPath}`);
 
   const response = await fetch({
@@ -78,17 +78,23 @@ export async function download(properties: ScannerProperties, url: string, destP
   });
 
   const totalLength = response.headers['content-length'];
-  let progress = 0;
 
-  response.data.on('data', (chunk: any) => {
-    progress += chunk.length;
-    process.stdout.write(
-      `\r[INFO] Bootstrapper::  Downloaded ${Math.round((progress / totalLength) * 100)}%`,
-    );
-  });
+  if (totalLength) {
+    let progress = 0;
+
+    response.data.on('data', (chunk: any) => {
+      progress += chunk.length;
+      process.stdout.write(
+        `\r[INFO] Bootstrapper:: Downloaded ${Math.round((progress / totalLength) * 100)}%`,
+      );
+    });
+  } else {
+    log(LogLevel.INFO, 'Download started');
+  }
 
   response.data.on('end', () => {
-    log(LogLevel.INFO, `\nJRE Download complete`);
+    totalLength && process.stdout.write('\n');
+    log(LogLevel.INFO, 'Download complete');
   });
 
   const writer = fs.createWriteStream(destPath);
