@@ -104,8 +104,7 @@ describe('getPlatformInfo', () => {
       arch: 'x64',
     });
 
-    expect(log).toHaveBeenNthCalledWith(
-      1,
+    expect(log).toHaveBeenCalledWith(
       LogLevel.WARN,
       'Failed to read /etc/os-release or /usr/lib/os-release',
     );

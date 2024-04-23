@@ -53,7 +53,7 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   const scannerEnginePath = path.join(SONAR_CACHE_DIR, md5, filename + UNARCHIVE_SUFFIX);
 
   // Create destination directory if it doesn't exist
-  const parentCacheDirectory = scannerEnginePath.substring(0, scannerEnginePath.lastIndexOf('/'));
+  const parentCacheDirectory = path.dirname(scannerEnginePath);
   if (!fs.existsSync(parentCacheDirectory)) {
     log(LogLevel.DEBUG, `Cache directory doesn't exist: ${parentCacheDirectory}`);
     log(LogLevel.DEBUG, `Creating cache directory`);

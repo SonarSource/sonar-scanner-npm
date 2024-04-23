@@ -119,7 +119,7 @@ export async function fetchJRE(
     );
 
     // Create destination directory if it doesn't exist
-    const parentCacheDirectory = jreDirPath.substring(0, jreDirPath.lastIndexOf('/'));
+    const parentCacheDirectory = path.dirname(jreDirPath);
     if (!fs.existsSync(parentCacheDirectory)) {
       log(LogLevel.DEBUG, `Cache directory doesn't exist: ${parentCacheDirectory}`);
       log(LogLevel.DEBUG, `Creating cache directory`);
