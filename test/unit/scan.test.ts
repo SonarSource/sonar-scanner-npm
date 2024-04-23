@@ -18,6 +18,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+// logging is globally mocked, but in this case the true log output is needed
+jest.mock('../../src/logging', () => ({
+  ...jest.requireActual('../../src/logging'),
+  log: jest.fn(),
+}));
+
 import * as java from '../../src/java';
 import * as logging from '../../src/logging';
 import * as platform from '../../src/platform';
@@ -28,8 +34,6 @@ jest.mock('../../src/platform');
 jest.mock('../../package.json', () => ({
   version: 'MOCK.VERSION',
 }));
-
-jest.spyOn(logging, 'setLogLevel');
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -47,15 +51,13 @@ describe('scan', () => {
   });
 
   it('should output the current version of the scanner', async () => {
-    (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
-    jest.spyOn(logging, 'log');
+    jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
     await scan({}, []);
     expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: ', 'MOCK.VERSION');
   });
 
   it('should output the current platform', async () => {
-    (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
-    jest.spyOn(logging, 'log');
+    jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
     jest.spyOn(platform, 'getPlatformInfo').mockReturnValue({ os: 'alpine', arch: 'arm64' });
     await scan({}, []);
     expect(logging.log).toHaveBeenCalledWith('INFO', 'Platform: ', {
@@ -66,17 +68,17 @@ describe('scan', () => {
 
   describe('when the SQ version does not support JRE provisioning', () => {
     it('should not fetch the JRE version', async () => {
-      (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
+      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
       await scan({}, []);
-      expect(java.handleJREProvisioning).not.toHaveBeenCalled();
+      expect(java.fetchJRE).not.toHaveBeenCalled();
     });
   });
 
   describe('when the user provides a JRE exe path override', () => {
     it('should not fetch the JRE version', async () => {
-      (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(false);
+      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
       await scan({ options: { 'sonar.scanner.javaExePath': 'path/to/java' } }, []);
-      expect(java.handleJREProvisioning).not.toHaveBeenCalled();
+      expect(java.fetchJRE).not.toHaveBeenCalled();
 
       // TODO: test that the JRE exe path is used when running the scanner engine
     });
@@ -84,10 +86,10 @@ describe('scan', () => {
 
   describe('when the user provides a SonarQube URL and the version supports provisioning', () => {
     it('should fetch the JRE version', async () => {
-      (java.serverSupportsJREProvisioning as jest.Mock).mockResolvedValue(true);
-      jest.spyOn(java, 'handleJREProvisioning');
+      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(true);
+      jest.spyOn(java, 'fetchJRE');
       await scan({ serverUrl: 'http://localhost:9000' }, []);
-      expect(java.handleJREProvisioning).toHaveBeenCalled();
+      expect(java.fetchJRE).toHaveBeenCalled();
     });
   });
 });
