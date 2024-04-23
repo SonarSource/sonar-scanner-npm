@@ -35,7 +35,7 @@ import {
 } from './file';
 import { log, LogLevel } from './logging';
 import { download, fetch } from './request';
-import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
+import { PlatformInfo, ScannerProperties, ScannerProperty } from './types';
 
 export async function fetchServerVersion(): Promise<SemVer> {
   let version: SemVer | null = null;
@@ -94,7 +94,7 @@ export async function serverSupportsJREProvisioning(
 export async function fetchJRE(
   properties: ScannerProperties,
   platformInfo: PlatformInfo,
-): Promise<JREFullData> {
+): Promise<string> {
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
   const latestJREData = await fetchLatestSupportedJRE(platformInfo);
   log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
@@ -108,10 +108,7 @@ export async function fetchJRE(
     log(LogLevel.INFO, 'Using Cached JRE');
     properties[ScannerProperty.SonarScannerWasJRECacheHit] = 'true';
 
-    return {
-      ...latestJREData,
-      jrePath: path.join(cachedJRE, cachedJRE),
-    };
+    return path.join(cachedJRE, latestJREData.javaPath);
   } else {
     const { archivePath, unarchivePath: jreDirPath } = await getCacheDirectories(
       properties,
@@ -125,12 +122,7 @@ export async function fetchJRE(
 
     await extractArchive(archivePath, jreDirPath);
 
-    const jreBinPath = path.join(jreDirPath, latestJREData.javaPath);
-
-    return {
-      ...latestJREData,
-      jrePath: jreBinPath,
-    };
+    return path.join(jreDirPath, latestJREData.javaPath);
   }
 }
 
