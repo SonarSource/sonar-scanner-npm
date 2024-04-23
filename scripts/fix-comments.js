@@ -21,22 +21,23 @@
 const fs = require('fs');
 const path = require('path');
 
-const directoryPath = path.resolve(__dirname, '../build');
+const LICENSE_HEADER = fs.readFileSync(path.resolve(__dirname, 'file-header.ts')).toString().trim();
 
-fs.readdirSync(directoryPath).forEach(file => {
-  const filePath = path.join(directoryPath, file);
-  const fileContent = fs.readFileSync(filePath, 'utf8');
+// Read every .js file in the ../build directory
+const directoryPath = path.resolve(__dirname, '../build/src');
 
-  const commentStart = fileContent.indexOf('/*');
-  const commentEnd = fileContent.indexOf('*/', commentStart) + 2; // +2 to include the end of the comment
-
-  if (commentStart > 0 && commentEnd > 0) {
-    const beforeComment = fileContent.slice(0, commentStart);
-    const comment = fileContent.slice(commentStart, commentEnd);
-    const afterComment = fileContent.slice(commentEnd);
-
-    const newFileContent = comment + '\n' + beforeComment + afterComment;
-
-    fs.writeFileSync(filePath, newFileContent);
+const fileNames = fs.readdirSync(directoryPath);
+for (const fileName of fileNames) {
+  // Skip if not a .js file
+  if (!fileName.endsWith('.js')) {
+    continue;
   }
-});
+
+  // Read the file, drop the license header, re-prepend it and write the file
+  const filePath = path.join(directoryPath, fileName);
+  const fileContent = fs.readFileSync(filePath, 'utf8');
+  const fileWithoutHeader = fileContent.replace(LICENSE_HEADER, '');
+  const newFileContent = `${LICENSE_HEADER}\n${fileWithoutHeader}`;
+
+  fs.writeFileSync(filePath, newFileContent);
+}
