@@ -20,15 +20,10 @@
 import { spawn } from 'child_process';
 import * as fsExtra from 'fs-extra';
 import path from 'path';
-import {
-  SCANNER_CLI_INSTALL_PATH,
-  SCANNER_CLI_MIRROR,
-  SCANNER_CLI_VERSION,
-  SONAR_CACHE_DIR,
-} from './constants';
+import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_MIRROR } from './constants';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
-import { getProxyUrl, proxyUrlToJavaOptions } from './proxy';
+import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
 
@@ -77,7 +72,7 @@ function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
 }
 
 export async function downloadScannerCli(properties: ScannerProperties): Promise<string> {
-  const version = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
+  const version = properties[ScannerProperty.SonarScannerCliVersion];
   if (!/^[\d.]+$/.test(version)) {
     throw new Error(`Version "${version}" does not have a correct format."`);
   }
@@ -115,30 +110,26 @@ export async function runScannerCli(
   binPath: string,
 ) {
   log(LogLevel.INFO, 'Starting analysis');
-
-  const options = [...(scanOptions.jvmOptions ?? []), ...proxyUrlToJavaOptions(properties)];
-  const scannerProcess = spawn(binPath, options, {
-    env: {
-      ...process.env,
-      SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
+  const child = spawn(
+    binPath,
+    [...(scanOptions.jvmOptions ?? []), ...proxyUrlToJavaOptions(properties)],
+    {
+      env: {
+        ...process.env,
+        SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
+      },
     },
-  });
+  );
+
+  child.stdout.on('data', buffer => process.stdout.write(buffer));
+  child.stderr.on('data', buffer => log(LogLevel.ERROR, buffer.toString()));
 
   return new Promise<void>((resolve, reject) => {
-    scannerProcess.stdout.on('data', data => {
-      for (const line of data.toString().trim().split('\n')) {
-        log(LogLevel.INFO, line);
-      }
-    });
-    scannerProcess.stderr.on('data', data => {
-      log(LogLevel.ERROR, data.toString().trim());
-    });
-    scannerProcess.on('exit', code => {
+    process.on('exit', code => {
       if (code === 0) {
         log(LogLevel.INFO, 'SonarScanner CLI finished successfully');
         resolve();
       } else {
-        log(LogLevel.ERROR, `SonarScanner CLI failed with code ${code}`);
         reject(new Error(`SonarScanner CLI failed with code ${code}`));
       }
     });

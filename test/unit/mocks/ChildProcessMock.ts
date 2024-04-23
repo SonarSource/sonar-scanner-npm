@@ -17,14 +17,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 
 export class ChildProcessMock {
   private exitCode: number = 0;
 
   private stdout: string = '';
-
   private stderr: string = '';
+
+  private mock: Partial<ChildProcess> | null = null;
 
   constructor() {
     jest.mocked(spawn).mockImplementation((this.handleSpawn as any).bind(this));
@@ -39,6 +40,10 @@ export class ChildProcessMock {
     this.stderr = stderr ?? '';
   }
 
+  setChildProcessMock(mock: Partial<ChildProcess> | null) {
+    this.mock = mock;
+  }
+
   handleSpawn() {
     return {
       on: jest.fn().mockImplementation((event, callback) => {
@@ -46,8 +51,10 @@ export class ChildProcessMock {
           callback(this.exitCode);
         }
       }),
-      stdout: { on: jest.fn().mockImplementation((event, callback) => callback(this.stdout)) },
-      stderr: { on: jest.fn().mockImplementation((event, callback) => callback(this.stderr)) },
+      stdin: { write: jest.fn(), end: jest.fn() },
+      stdout: { on: jest.fn().mockImplementation((_event, callback) => callback(this.stdout)) },
+      stderr: { on: jest.fn().mockImplementation((_event, callback) => callback(this.stderr)) },
+      ...this.mock,
     };
   }
 
@@ -55,6 +62,7 @@ export class ChildProcessMock {
     this.exitCode = 0;
     this.stdout = '';
     this.stderr = '';
+    this.mock = null;
     jest.clearAllMocks();
   }
 }
