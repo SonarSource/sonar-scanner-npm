@@ -18,10 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import * as platform from '../../src/platform';
-import * as logging from '../../src/logging';
 import fs from 'fs';
 import sinon from 'sinon';
+import * as logging from '../../src/logging';
+import * as platform from '../../src/platform';
 
 describe('getPlatformInfo', () => {
   it('detect macos', () => {

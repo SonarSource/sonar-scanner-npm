@@ -18,19 +18,17 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { version } from '../package.json';
 import { handleJREProvisioning, serverSupportsJREProvisioning } from './java';
-import { log, LogLevel, setLogLevel } from './logging';
+import { LogLevel, log, setLogLevel } from './logging';
 import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
-import { ScannerProperty, JreMetaData, ScanOptions } from './types';
-import { version } from '../package.json';
+import { initializeAxios } from './request';
+import { JreMetaData, ScanOptions, ScannerProperty } from './types';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
-
-  const serverUrl = properties[ScannerProperty.SonarHostUrl];
-  const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
 
   if (properties[ScannerProperty.SonarVerbose] === 'true') {
     setLogLevel(LogLevel.DEBUG);
@@ -41,6 +39,11 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
     setLogLevel(properties[ScannerProperty.SonarLogLevel]);
     log(LogLevel.DEBUG, `Overriding the log level to ${properties[ScannerProperty.SonarLogLevel]}`);
   }
+
+  initializeAxios(properties);
+
+  const serverUrl = properties[ScannerProperty.SonarHostUrl];
+  const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
 
   log(LogLevel.INFO, 'Version: ', version);
 
