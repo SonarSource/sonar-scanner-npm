@@ -21,7 +21,7 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import fs from 'fs';
 import path from 'path';
-import { SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
+import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
 import * as file from '../../src/file';
 import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
 import * as request from '../../src/request';
@@ -31,7 +31,6 @@ const mock = new MockAdapter(axios);
 
 const MOCKED_PROPERTIES: ScannerProperties = {
   [ScannerProperty.SonarHostUrl]: 'http://sonarqube.com',
-  [ScannerProperty.SonarToken]: 'dummy-token',
 };
 
 beforeEach(() => {
@@ -71,9 +70,7 @@ describe('java', () => {
     });
 
     it('should fail if version can not be parsed', async () => {
-      mock
-        .onGet('http://sonarqube.com/api/server/version')
-        .reply(200, '<!DOCTYPE><HTML><BODY>FORBIDDEN</BODY></HTML>');
+      mock.onGet('/api/server/version').reply(200, '<!DOCTYPE><HTML><BODY>FORBIDDEN</BODY></HTML>');
 
       expect(async () => {
         await fetchServerVersion();
@@ -85,6 +82,7 @@ describe('java', () => {
     it('should return true for sonarcloud', async () => {
       expect(
         await serverSupportsJREProvisioning({
+          ...MOCKED_PROPERTIES,
           [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
         }),
       ).toBe(true);
@@ -92,21 +90,13 @@ describe('java', () => {
 
     it(`should return true for SQ version >= ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
       mock.onGet('/api/server/version').reply(200, '10.5.0');
-      expect(
-        await serverSupportsJREProvisioning({
-          [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
-        }),
-      ).toBe(true);
+      expect(await serverSupportsJREProvisioning(MOCKED_PROPERTIES)).toBe(true);
     });
 
     it(`should return false for SQ version < ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
       // Define the behavior of the GET request
       mock.onGet('/api/server/version').reply(200, '9.9.9');
-      expect(
-        await serverSupportsJREProvisioning({
-          [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
-        }),
-      ).toBe(false);
+      expect(await serverSupportsJREProvisioning(MOCKED_PROPERTIES)).toBe(false);
     });
   });
 
@@ -118,12 +108,12 @@ describe('java', () => {
       md5: 'd41d8cd98f00b204e9800998ecf8427e',
     };
     beforeEach(() => {
-      jest.spyOn(file, 'getCachedFileLocation').mockResolvedValue('mocked/path/to/file');
+      jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue('mocked/path/to/file');
 
       jest.spyOn(file, 'extractArchive').mockResolvedValue(undefined);
 
       mock
-        .onGet(`/api/v2/analysis/jres`, {
+        .onGet(API_V2_JRE_ENDPOINT, {
           params: {
             os: platformInfo.os,
             arch: platformInfo.arch,
@@ -132,49 +122,52 @@ describe('java', () => {
         .reply(200, serverResponse);
 
       mock
-        .onGet(`/api/v2/analysis/jres/${serverResponse.filename}`)
+        .onGet(`${API_V2_JRE_ENDPOINT}/${serverResponse.filename}`)
         .reply(200, fs.createReadStream(path.resolve(__dirname, '../unit/mocks/mock-jre.tar.gz')));
     });
 
     describe('when the JRE is cached', () => {
       it('should fetch the latest supported JRE and use the cached version', async () => {
-        await fetchJRE(
-          {
-            [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
-            [ScannerProperty.SonarToken]: 'mock-token',
-          },
-          platformInfo,
-        );
+        await fetchJRE(MOCKED_PROPERTIES, platformInfo);
 
         expect(request.fetch).toHaveBeenCalledTimes(1);
         expect(request.download).not.toHaveBeenCalled();
 
         // check for the cache
-        expect(file.getCachedFileLocation).toHaveBeenCalledTimes(1);
+        expect(file.getCacheFileLocation).toHaveBeenCalledTimes(1);
 
         expect(file.extractArchive).not.toHaveBeenCalled();
       });
     });
 
     describe('when the JRE is not cached', () => {
+      const mockCacheDirectories = {
+        archivePath: '/mocked-archive-path',
+        unarchivePath: '/mocked-archive-path_extracted',
+      };
       beforeEach(() => {
-        jest.spyOn(file, 'getCachedFileLocation').mockResolvedValue(null);
+        jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue(null);
+        jest.spyOn(file, 'getCacheDirectories').mockResolvedValue(mockCacheDirectories);
+        jest.spyOn(file, 'validateChecksum').mockResolvedValue(undefined);
+        jest.spyOn(request, 'download').mockResolvedValue(undefined);
       });
 
       it('should download the JRE', async () => {
-        await fetchJRE(
-          {
-            [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
-            [ScannerProperty.SonarToken]: 'mock-token',
-          },
-          platformInfo,
+        await fetchJRE({ ...MOCKED_PROPERTIES }, platformInfo);
+
+        expect(request.fetch).toHaveBeenCalledWith({
+          url: API_V2_JRE_ENDPOINT,
+          params: platformInfo,
+        });
+
+        expect(file.getCacheFileLocation).toHaveBeenCalledTimes(1);
+
+        expect(request.download).toHaveBeenCalledWith(
+          `${API_V2_JRE_ENDPOINT}/${serverResponse.filename}`,
+          mockCacheDirectories.archivePath,
         );
 
-        expect(request.fetch).toHaveBeenCalledTimes(1);
-        expect(request.download).toHaveBeenCalledTimes(1);
-
-        // check for the cache
-        expect(file.getCachedFileLocation).toHaveBeenCalledTimes(1);
+        expect(file.validateChecksum).toHaveBeenCalledTimes(1);
 
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
       });

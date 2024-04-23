@@ -24,7 +24,7 @@ import {
   SCANNER_CLI_INSTALL_PATH,
   SCANNER_CLI_MIRROR,
   SCANNER_CLI_VERSION,
-  SONAR_DIR,
+  SONAR_CACHE_DIR,
 } from './constants';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
@@ -89,7 +89,11 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   // Build paths
   const binExt = normalizePlatformName() === 'windows' ? '.bat' : '';
   const dirName = `sonar-scanner-${version}-${normalizePlatformName()}`;
-  const installDir = path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH);
+  const installDir = path.join(
+    properties[ScannerProperty.SonarUserHome],
+    SONAR_CACHE_DIR,
+    SCANNER_CLI_INSTALL_PATH,
+  );
   const archivePath = path.join(installDir, `${dirName}.zip`);
   const binPath = path.join(installDir, dirName, 'bin', `sonar-scanner${binExt}`);
 
