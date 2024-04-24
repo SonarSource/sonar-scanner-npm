@@ -51,6 +51,8 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: string[]) {
     log(LogLevel.DEBUG, `Overriding the log level to ${properties[ScannerProperty.SonarLogLevel]}`);
   }
 
+  log(LogLevel.DEBUG, 'Properties: ', properties);
+
   initializeAxios(properties);
 
   log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);

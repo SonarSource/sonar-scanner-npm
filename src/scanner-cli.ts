@@ -24,7 +24,7 @@ import {
   SCANNER_CLI_INSTALL_PATH,
   SCANNER_CLI_MIRROR,
   SCANNER_CLI_VERSION,
-  SONAR_DIR,
+  SONAR_CACHE_DIR,
 } from './constants';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
@@ -77,19 +77,17 @@ function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
 }
 
 export async function downloadScannerCli(properties: ScannerProperties): Promise<string> {
-  const token = properties[ScannerProperty.SonarToken];
   const version = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
   if (!/^[\d.]+$/.test(version)) {
     throw new Error(`Version "${version}" does not have a correct format."`);
   }
 
-  const proxyUrl = getProxyUrl(properties);
   const scannerCliUrl = getScannerCliUrl(properties, version);
 
   // Build paths
   const binExt = normalizePlatformName() === 'windows' ? '.bat' : '';
   const dirName = `sonar-scanner-${version}-${normalizePlatformName()}`;
-  const installDir = path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH);
+  const installDir = path.join(properties[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH);
   const archivePath = path.join(installDir, `${dirName}.zip`);
   const binPath = path.join(installDir, dirName, 'bin', `sonar-scanner${binExt}`);
 

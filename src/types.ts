@@ -32,6 +32,8 @@ export type JreMetaData = {
   javaPath: string;
 };
 
+export type CacheFileData = { md5: string; filename: string };
+
 export type JREFullData = JreMetaData & {
   jrePath: string;
 };

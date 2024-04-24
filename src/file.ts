@@ -25,11 +25,15 @@ import * as fsExtra from 'fs-extra';
 import path from 'path';
 import tarStream from 'tar-stream';
 import zlib from 'zlib';
-import { SONAR_CACHE_DIR } from './constants';
+import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
 import { log, LogLevel } from './logging';
+import { CacheFileData, ScannerProperties, ScannerProperty } from './types';
 
-export async function getCachedFileLocation(md5: string, filename: string) {
-  const filePath = path.join(SONAR_CACHE_DIR, md5, filename);
+export async function getCacheFileLocation(
+  properties: ScannerProperties,
+  { md5, filename }: CacheFileData,
+) {
+  const filePath = path.join(getParentCacheDirectory(properties), md5, filename);
   if (fs.existsSync(filePath)) {
     log(LogLevel.INFO, 'Found Cached: ', filePath);
     return filePath;
@@ -105,4 +109,29 @@ export async function validateChecksum(filePath: string, expectedChecksum: strin
   } else {
     throw new Error('Checksum not provided');
   }
+}
+
+export async function getCacheDirectories(
+  properties: ScannerProperties,
+  { md5, filename }: CacheFileData,
+) {
+  const archivePath = path.join(getParentCacheDirectory(properties), md5, filename);
+  const unarchivePath = path.join(
+    getParentCacheDirectory(properties),
+    md5,
+    filename + UNARCHIVE_SUFFIX,
+  );
+
+  // Create destination directory if it doesn't exist
+  const parentCacheDirectory = path.dirname(unarchivePath);
+  if (!fs.existsSync(parentCacheDirectory)) {
+    log(LogLevel.DEBUG, `Creating Cache directory as it doesn't exist: ${parentCacheDirectory}`);
+    fs.mkdirSync(parentCacheDirectory, { recursive: true });
+  }
+
+  return { archivePath, unarchivePath };
+}
+
+function getParentCacheDirectory(properties: ScannerProperties) {
+  return path.join(properties[ScannerProperty.SonarUserHome], SONAR_CACHE_DIR);
 }

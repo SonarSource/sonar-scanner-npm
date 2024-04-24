@@ -18,18 +18,21 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import fs from 'fs';
 import path from 'path';
 import semver, { SemVer } from 'semver';
 import {
   API_OLD_VERSION_ENDPOINT,
   API_V2_JRE_ENDPOINT,
   API_V2_VERSION_ENDPOINT,
-  SONAR_CACHE_DIR,
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
-import { extractArchive, getCachedFileLocation, validateChecksum } from './file';
+import {
+  extractArchive,
+  getCacheDirectories,
+  getCacheFileLocation,
+  validateChecksum,
+} from './file';
 import { log, LogLevel } from './logging';
 import { download, fetch } from './request';
 import { JREFullData, PlatformInfo, ScannerProperties, ScannerProperty } from './types';
@@ -97,11 +100,10 @@ export async function fetchJRE(
   log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
-  const cachedJRE = await getCachedFileLocation(
-    latestJREData.md5,
-    latestJREData.filename + UNARCHIVE_SUFFIX,
-  );
-
+  const cachedJRE = await getCacheFileLocation(properties, {
+    md5: latestJREData.md5,
+    filename: latestJREData.filename + UNARCHIVE_SUFFIX,
+  });
   if (cachedJRE) {
     log(LogLevel.INFO, 'Using Cached JRE');
     properties[ScannerProperty.SonarScannerWasJRECacheHit] = 'true';
@@ -111,19 +113,10 @@ export async function fetchJRE(
       jrePath: path.join(cachedJRE, cachedJRE),
     };
   } else {
-    const archivePath = path.join(SONAR_CACHE_DIR, latestJREData.md5, latestJREData.filename);
-    const jreDirPath = path.join(
-      SONAR_CACHE_DIR,
-      latestJREData.md5,
-      latestJREData.filename + UNARCHIVE_SUFFIX,
+    const { archivePath, unarchivePath: jreDirPath } = await getCacheDirectories(
+      properties,
+      latestJREData,
     );
-
-    // Create destination directory if it doesn't exist
-    const parentCacheDirectory = path.dirname(jreDirPath);
-    if (!fs.existsSync(parentCacheDirectory)) {
-      log(LogLevel.DEBUG, `Creating Cache directory as it doesn't exist: ${parentCacheDirectory}`);
-      fs.mkdirSync(parentCacheDirectory, { recursive: true });
-    }
 
     await download(`${API_V2_JRE_ENDPOINT}/${latestJREData.filename}`, archivePath);
     log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
