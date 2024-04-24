@@ -28,10 +28,18 @@ import {
   SCANNER_BOOTSTRAPPER_NAME,
   SONARCLOUD_URL,
   SONARCLOUD_URL_REGEX,
+  SONAR_DIR_DEFAULT,
   SONAR_PROJECT_FILENAME,
 } from './constants';
 import { LogLevel, log } from './logging';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+
+const DEFAULT_PROPERTIES = {
+  [ScannerProperty.SonarUserHome]: path.join(
+    process.env.HOME ?? process.env.USERPROFILE ?? '',
+    SONAR_DIR_DEFAULT,
+  ),
+};
 
 /**
  * Convert the name of a sonar property from its environment variable form
@@ -336,6 +344,7 @@ export function getProperties(
     scanOptionsProperties,
     inferredProperties,
     envProperties, // Lowest precedence
+    DEFAULT_PROPERTIES, // fallback to default if nothing was provided for these properties
   ]
     .reverse()
     .reduce((acc, curr) => ({ ...acc, ...curr }), {});

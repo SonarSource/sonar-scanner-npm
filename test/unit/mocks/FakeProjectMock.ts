@@ -57,6 +57,7 @@ export class FakeProjectMock {
       'sonar.scanner.appVersion': '1.2.3',
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': 'false',
+      'sonar.userHome': '/Users/lucas.paulger/.sonar',
     };
   }
 }

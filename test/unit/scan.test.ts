@@ -30,6 +30,8 @@ import * as platform from '../../src/platform';
 import { scan } from '../../src/scan';
 
 jest.mock('../../src/java');
+jest.mock('../../src/scanner-cli');
+jest.mock('../../src/scanner-engine');
 jest.mock('../../src/platform');
 jest.mock('../../package.json', () => ({
   version: 'MOCK.VERSION',
@@ -50,10 +52,15 @@ describe('scan', () => {
     expect(logging.getLogLevel()).toBe('DEBUG');
   });
 
+  it('should set the log level to the value provided by the user', async () => {
+    await scan({ options: { 'sonar.log.level': 'DEBUG' } }, []);
+    expect(logging.getLogLevel()).toBe('DEBUG');
+  });
+
   it('should output the current version of the scanner', async () => {
     jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
     await scan({}, []);
-    expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: ', 'MOCK.VERSION');
+    expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: MOCK.VERSION');
   });
 
   it('should output the current platform', async () => {

@@ -33,9 +33,9 @@ export const SONARCLOUD_PRODUCTION_URL = 'https://sonarcloud.io';
 
 export const SONARQUBE_JRE_PROVISIONING_MIN_VERSION = '10.5';
 
-export const SONAR_DIR = path.join(process.env.HOME ?? process.env.USERPROFILE ?? '', '.sonar');
+export const SONAR_DIR_DEFAULT = '.sonar';
 
-export const SONAR_CACHE_DIR = path.join(SONAR_DIR, 'cache');
+export const SONAR_CACHE_DIR = 'cache';
 
 export const UNARCHIVE_SUFFIX = '_extracted';
 
