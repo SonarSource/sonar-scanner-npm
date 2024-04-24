@@ -20,11 +20,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import sinon from 'sinon';
-import {
-  SCANNER_CLI_DEFAULT_BIN_NAME,
-  SCANNER_CLI_INSTALL_PATH,
-  SONAR_DIR,
-} from '../../src/constants';
+import { SCANNER_CLI_DEFAULT_BIN_NAME, SCANNER_CLI_INSTALL_PATH } from '../../src/constants';
 import { extractArchive } from '../../src/file';
 import { LogLevel, log } from '../../src/logging';
 import { download } from '../../src/request';
@@ -43,6 +39,12 @@ jest.mock('../../src/file');
 jest.mock('../../src/logging');
 
 const childProcessHandler = new ChildProcessMock();
+
+const MOCK_PROPERTIES = {
+  [ScannerProperty.SonarToken]: 'token',
+  [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
+  [ScannerProperty.SonarUserHome]: 'path/to/user/home',
+};
 
 beforeEach(() => {
   childProcessHandler.reset();
@@ -73,14 +75,9 @@ describe('scanner-cli', () => {
     it('should use already downloaded version', async () => {
       const stub = sinon.stub(process, 'platform').value('linux');
 
-      expect(
-        await downloadScannerCli({
-          [ScannerProperty.SonarToken]: 'token',
-          [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
-        }),
-      ).toBe(
+      expect(await downloadScannerCli(MOCK_PROPERTIES)).toBe(
         path.join(
-          SONAR_DIR,
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
           'sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner',
         ),
@@ -94,34 +91,34 @@ describe('scanner-cli', () => {
       childProcessHandler.setExitCode(1);
       const stub = sinon.stub(process, 'platform').value('linux');
 
-      const binPath = await downloadScannerCli({
-        [ScannerProperty.SonarToken]: 'token',
-        [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
-      });
+      const binPath = await downloadScannerCli(MOCK_PROPERTIES);
 
-      expect(
-        await downloadScannerCli({
-          [ScannerProperty.SonarToken]: 'token',
-          [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
-        }),
-      ).toBe(
+      expect(await downloadScannerCli(MOCK_PROPERTIES)).toBe(
         path.join(
-          SONAR_DIR,
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
           'sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner',
         ),
       );
       expect(download).toHaveBeenLastCalledWith(
         'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip',
-        path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH, 'sonar-scanner-5.0.1.3006-linux.zip'),
+        path.join(
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          'sonar-scanner-5.0.1.3006-linux.zip',
+        ),
       );
       expect(extractArchive).toHaveBeenLastCalledWith(
-        path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH, 'sonar-scanner-5.0.1.3006-linux.zip'),
-        path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH),
+        path.join(
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          'sonar-scanner-5.0.1.3006-linux.zip',
+        ),
+        path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
       );
       expect(binPath).toBe(
         path.join(
-          SONAR_DIR,
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
           'sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner',
         ),
@@ -134,22 +131,27 @@ describe('scanner-cli', () => {
       childProcessHandler.setExitCode(1);
       const stub = sinon.stub(process, 'platform').value('win32');
 
-      const binPath = await downloadScannerCli({
-        [ScannerProperty.SonarToken]: 'token',
-        [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
-      });
+      const binPath = await downloadScannerCli(MOCK_PROPERTIES);
 
       expect(download).toHaveBeenLastCalledWith(
         'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-windows.zip',
-        path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH, 'sonar-scanner-5.0.1.3006-windows.zip'),
+        path.join(
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          'sonar-scanner-5.0.1.3006-windows.zip',
+        ),
       );
       expect(extractArchive).toHaveBeenLastCalledWith(
-        path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH, 'sonar-scanner-5.0.1.3006-windows.zip'),
-        path.join(SONAR_DIR, SCANNER_CLI_INSTALL_PATH),
+        path.join(
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          'sonar-scanner-5.0.1.3006-windows.zip',
+        ),
+        path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
       );
       expect(binPath).toBe(
         path.join(
-          SONAR_DIR,
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
           'sonar-scanner-5.0.1.3006-windows/bin/sonar-scanner.bat',
         ),
@@ -165,10 +167,7 @@ describe('scanner-cli', () => {
         {
           jvmOptions: ['-Xmx512m'],
         },
-        {
-          [ScannerProperty.SonarToken]: 'token',
-          [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
-        },
+        MOCK_PROPERTIES,
         'sonar-scanner',
       );
 
@@ -176,25 +175,13 @@ describe('scanner-cli', () => {
       const [command, args, options] = (spawn as jest.Mock).mock.calls.pop();
       expect(command).toBe('sonar-scanner');
       expect(args).toEqual(['-Xmx512m']);
-      expect(options.env.SONARQUBE_SCANNER_PARAMS).toBe(
-        JSON.stringify({
-          [ScannerProperty.SonarToken]: 'token',
-          [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
-        }),
-      );
+      expect(options.env.SONARQUBE_SCANNER_PARAMS).toBe(JSON.stringify(MOCK_PROPERTIES));
     });
 
     it('should display SonarScanner CLI output', async () => {
       childProcessHandler.setOutput('the output', 'some error');
 
-      await runScannerCli(
-        {},
-        {
-          [ScannerProperty.SonarToken]: 'token',
-          [ScannerProperty.SonarHostUrl]: 'https://localhost:9000',
-        },
-        'sonar-scanner',
-      );
+      await runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner');
 
       expect(log).toHaveBeenCalledWith(LogLevel.ERROR, 'some error');
       expect(log).toHaveBeenCalledWith(LogLevel.INFO, 'the output');
@@ -203,16 +190,7 @@ describe('scanner-cli', () => {
     it('should reject if SonarScanner CLI fails', async () => {
       childProcessHandler.setExitCode(1);
 
-      await expect(
-        runScannerCli(
-          {},
-          {
-            [ScannerProperty.SonarToken]: 'token',
-            [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
-          },
-          'sonar-scanner',
-        ),
-      ).rejects.toBeDefined();
+      await expect(runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner')).rejects.toBeDefined();
 
       expect(log).toHaveBeenCalledWith(LogLevel.ERROR, 'SonarScanner CLI failed with code 1');
     });
@@ -221,8 +199,7 @@ describe('scanner-cli', () => {
       await runScannerCli(
         {},
         {
-          [ScannerProperty.SonarToken]: 'token',
-          [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
+          ...MOCK_PROPERTIES,
           [ScannerProperty.SonarScannerProxyHost]: 'proxy',
           [ScannerProperty.SonarScannerProxyPort]: '9000',
           [ScannerProperty.SonarScannerProxyUser]: 'some-user',
@@ -242,8 +219,7 @@ describe('scanner-cli', () => {
       ]);
       expect(options.env.SONARQUBE_SCANNER_PARAMS).toBe(
         JSON.stringify({
-          [ScannerProperty.SonarToken]: 'token',
-          [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
+          ...MOCK_PROPERTIES,
           [ScannerProperty.SonarScannerProxyHost]: 'proxy',
           [ScannerProperty.SonarScannerProxyPort]: '9000',
           [ScannerProperty.SonarScannerProxyUser]: 'some-user',

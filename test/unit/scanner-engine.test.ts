@@ -19,7 +19,6 @@
  */
 
 import axios from 'axios';
-import fs from 'fs';
 import MockAdapter from 'axios-mock-adapter';
 import { ScannerProperties, ScannerProperty } from '../../src/types';
 import { fetchScannerEngine } from '../../src/scanner-engine';
@@ -34,8 +33,8 @@ const MOCKED_PROPERTIES: ScannerProperties = {
 };
 
 const MOCK_CACHE_DIRECTORIES = {
-  archivePath: '/mocked-archive-path',
-  unarchivePath: '/mocked-archive-path_extracted',
+  archivePath: 'mocked/path/to/sonar/cache/md5_test/scanner-engine-1.2.3.zip',
+  unarchivePath: 'mocked/path/to/sonar/cache/md5_test/scanner-engine-1.2.3.zip_extracted',
 };
 
 beforeEach(() => {
@@ -58,23 +57,11 @@ describe('scanner-engine', () => {
       return [200, readable];
     });
 
-    jest.spyOn(file, 'getCacheFileLocation').mockImplementation((md5, filename) => {
-      return Promise.resolve(null);
-    });
-
-    jest.spyOn(file, 'extractArchive').mockImplementation((fromPath, toPath) => {
-      return Promise.resolve();
-    });
-
-    jest.spyOn(file, 'validateChecksum').mockImplementation(() => {
-      return Promise.resolve();
-    });
-
-    jest.spyOn(request, 'download').mockImplementation(() => {
-      return Promise.resolve();
-    });
-
+    jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue(null);
+    jest.spyOn(file, 'extractArchive').mockResolvedValue();
+    jest.spyOn(file, 'validateChecksum').mockResolvedValue();
     jest.spyOn(file, 'getCacheDirectories').mockResolvedValue(MOCK_CACHE_DIRECTORIES);
+    jest.spyOn(request, 'download').mockResolvedValue();
   });
 
   describe('fetchScannerEngine', () => {
@@ -115,10 +102,10 @@ describe('scanner-engine', () => {
       it('should download and extract the scanner engine', async () => {
         const scannerEngine = await fetchScannerEngine(MOCKED_PROPERTIES);
 
-        expect(file.getCacheFileLocation).toHaveBeenCalledWith(
-          'md5_test',
-          'scanner-engine-1.2.3.zip',
-        );
+        expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
+          md5: 'md5_test',
+          filename: 'scanner-engine-1.2.3.zip',
+        });
         expect(request.download).toHaveBeenCalledTimes(1);
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
 
