@@ -17,13 +17,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import fs from 'fs';
-import path from 'path';
 import { log, LogLevel } from './logging';
 import { fetch, download } from './request';
-import { ScannerProperties, ScannerProperty } from './types';
-import { extractArchive, getCachedFileLocation, validateChecksum } from './file';
-import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
+import { CacheFileData, ScannerProperties, ScannerProperty } from './types';
+import {
+  extractArchive,
+  getCacheDirectories,
+  getCacheFileLocation,
+  validateChecksum,
+} from './file';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
   log(LogLevel.DEBUG, 'Detecting latest version of Scanner Engine');
@@ -36,10 +38,9 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
 
   log(LogLevel.DEBUG, 'Looking for Cached Scanner Engine');
 
-  const cachedScannerEngine = await getCachedFileLocation(
-    md5, // TODO: use sha256
-    filename,
-  );
+  // TODO: use sha256 instead of md5
+  const cacheFileData: CacheFileData = { md5, filename };
+  const cachedScannerEngine = await getCacheFileLocation(properties, cacheFileData);
 
   if (cachedScannerEngine) {
     log(LogLevel.INFO, 'Using Cached Scanner Engine');
@@ -49,15 +50,11 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   }
 
   properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
-  const archivePath = path.join(SONAR_CACHE_DIR, md5, filename);
-  const scannerEnginePath = path.join(SONAR_CACHE_DIR, md5, filename + UNARCHIVE_SUFFIX);
 
-  // Create destination directory if it doesn't exist
-  const parentCacheDirectory = path.dirname(scannerEnginePath);
-  if (!fs.existsSync(parentCacheDirectory)) {
-    log(LogLevel.DEBUG, `Creating Cache directory as it doesn't exist: ${parentCacheDirectory}`);
-    fs.mkdirSync(parentCacheDirectory, { recursive: true });
-  }
+  const { archivePath, unarchivePath: scannerEnginePath } = await getCacheDirectories(properties, {
+    md5,
+    filename,
+  });
 
   // TODO: replace with /api/v2/analysis/engine/<filename>
   log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
