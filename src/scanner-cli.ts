@@ -46,6 +46,11 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
 export async function tryLocalSonarScannerExecutable(command: string): Promise<boolean> {
   return new Promise<boolean>(resolve => {
     log(LogLevel.INFO, `Trying to find a local install of the SonarScanner: ${command}`);
+
+    if (!fsExtra.existsSync(command)) {
+      resolve(false);
+      return;
+    }
     const scannerProcess = spawn(command, ['-v']);
 
     scannerProcess.on('exit', code => {

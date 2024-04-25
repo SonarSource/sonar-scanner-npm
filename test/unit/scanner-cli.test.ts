@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import * as fsExtra from 'fs-extra';
 import { spawn } from 'child_process';
 import path from 'path';
 import sinon from 'sinon';
@@ -37,6 +38,7 @@ import {
 import { ScannerProperty } from '../../src/types';
 import { ChildProcessMock } from './mocks/ChildProcessMock';
 
+jest.mock('fs-extra');
 jest.mock('child_process');
 jest.mock('../../src/request');
 jest.mock('../../src/file');
@@ -58,6 +60,7 @@ beforeEach(() => {
 describe('scanner-cli', () => {
   describe('tryLocalSonarScannerExecutable', () => {
     it('should detect locally installed scanner-cli', async () => {
+      jest.spyOn(fsExtra, 'existsSync').mockReturnValue(true);
       expect(await tryLocalSonarScannerExecutable(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe(true);
     });
 
