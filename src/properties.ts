@@ -33,15 +33,20 @@ import {
   SONAR_PROJECT_FILENAME,
 } from './constants';
 import { LogLevel, log } from './logging';
+import { getArch, getSupportedOS } from './platform';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
 
-const DEFAULT_PROPERTIES = {
-  [ScannerProperty.SonarUserHome]: path.join(
-    process.env.HOME ?? process.env.USERPROFILE ?? '',
-    SONAR_DIR_DEFAULT,
-  ),
-  [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
-};
+function getDefaultProperties(): ScannerProperties {
+  return {
+    [ScannerProperty.SonarUserHome]: path.join(
+      process.env.HOME ?? process.env.USERPROFILE ?? '',
+      SONAR_DIR_DEFAULT,
+    ),
+    [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
+    [ScannerProperty.SonarScannerOs]: getSupportedOS(),
+    [ScannerProperty.SonarScannerArch]: getArch(),
+  };
+}
 
 /**
  * Convert the name of a sonar property from its environment variable form
@@ -339,17 +344,15 @@ export function getProperties(
   }
 
   // Merge properties respecting order of precedence
-  const properties = [
-    { 'sonar.projectBaseDir': projectBaseDir }, // Manually computed, can't be overridden
-    bootstrapperProperties, // Can't be overridden
-    cliProperties, // Highest precedence
-    scanOptionsProperties,
-    inferredProperties,
-    envProperties, // Lowest precedence
-    DEFAULT_PROPERTIES, // fallback to default if nothing was provided for these properties
-  ]
-    .reverse()
-    .reduce((acc, curr) => ({ ...acc, ...curr }), {});
+  const properties = {
+    ...getDefaultProperties(), // fallback to default if nothing was provided for these properties
+    ...envProperties, // Lowest precedence
+    ...inferredProperties,
+    ...scanOptionsProperties,
+    ...cliProperties, // Highest precedence
+    ...bootstrapperProperties, // Can't be overridden
+    ...{ 'sonar.projectBaseDir': projectBaseDir }, // Manually computed, can't be overridden
+  };
 
   return {
     ...properties,
