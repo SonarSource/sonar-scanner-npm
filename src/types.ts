@@ -19,13 +19,6 @@
  */
 import { LogLevel } from './logging';
 
-export type SupportedOS = NodeJS.Platform | 'alpine';
-
-export type PlatformInfo = {
-  os: SupportedOS | null;
-  arch: NodeJS.Architecture | null;
-};
-
 export type JreMetaData = {
   filename: string;
   md5: string;
@@ -51,6 +44,8 @@ export enum ScannerProperty {
   SonarExclusions = 'sonar.exclusions',
   SonarHostUrl = 'sonar.host.url',
   SonarUserHome = 'sonar.userHome',
+  SonarScannerOs = 'sonar.scanner.os',
+  SonarScannerArch = 'sonar.scanner.arch',
   SonarOrganization = 'sonar.organization',
   SonarProjectBaseDir = 'sonar.projectBaseDir',
   SonarScannerSonarCloudURL = 'sonar.scanner.sonarcloudUrl',

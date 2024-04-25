@@ -28,10 +28,8 @@ describe('getPlatformInfo', () => {
     const platformStub = sinon.stub(process, 'platform').value('darwin');
     const archStub = sinon.stub(process, 'arch').value('arm64');
 
-    expect(platform.getPlatformInfo()).toEqual({
-      os: 'darwin',
-      arch: 'arm64',
-    });
+    expect(platform.getSupportedOS()).toEqual('darwin');
+    expect(platform.getArch()).toEqual('arm64');
 
     platformStub.restore();
     archStub.restore();
@@ -41,10 +39,8 @@ describe('getPlatformInfo', () => {
     const platformStub = sinon.stub(process, 'platform').value('win32');
     const archStub = sinon.stub(process, 'arch').value('x64');
 
-    expect(platform.getPlatformInfo()).toEqual({
-      os: 'win32',
-      arch: 'x64',
-    });
+    expect(platform.getSupportedOS()).toEqual('win32');
+    expect(platform.getArch()).toEqual('x64');
 
     platformStub.restore();
     archStub.restore();
@@ -54,10 +50,8 @@ describe('getPlatformInfo', () => {
     const platformStub = sinon.stub(process, 'platform').value('openbsd');
     const archStub = sinon.stub(process, 'arch').value('x64');
 
-    expect(platform.getPlatformInfo()).toEqual({
-      os: 'openbsd',
-      arch: 'x64',
-    });
+    expect(platform.getSupportedOS()).toEqual('openbsd');
+    expect(platform.getArch()).toEqual('x64');
 
     platformStub.restore();
     archStub.restore();
@@ -69,10 +63,8 @@ describe('getPlatformInfo', () => {
     const fsReadStub = sinon.stub(fs, 'readFileSync');
     fsReadStub.withArgs('/etc/os-release').returns('NAME="Alpine Linux"\nID=alpine');
 
-    expect(platform.getPlatformInfo()).toEqual({
-      os: 'alpine',
-      arch: 'x64',
-    });
+    expect(platform.getSupportedOS()).toEqual('alpine');
+    expect(platform.getArch()).toEqual('x64');
 
     platformStub.restore();
     archStub.restore();
@@ -85,10 +77,8 @@ describe('getPlatformInfo', () => {
     const fsReadStub = sinon.stub(fs, 'readFileSync');
     fsReadStub.withArgs('/usr/lib/os-release').returns('NAME="Alpine Linux"\nID=alpine');
 
-    expect(platform.getPlatformInfo()).toEqual({
-      os: 'alpine',
-      arch: 'x64',
-    });
+    expect(platform.getSupportedOS()).toEqual('alpine');
+    expect(platform.getArch()).toEqual('x64');
 
     platformStub.restore();
     archStub.restore();
@@ -98,11 +88,10 @@ describe('getPlatformInfo', () => {
   it('failed to detect alpine', () => {
     const platformStub = sinon.stub(process, 'platform').value('linux');
     const archStub = sinon.stub(process, 'arch').value('x64');
+    const fsReadStub = sinon.stub(fs, 'readFileSync');
 
-    expect(platform.getPlatformInfo()).toEqual({
-      os: 'linux',
-      arch: 'x64',
-    });
+    expect(platform.getSupportedOS()).toEqual('linux');
+    expect(platform.getArch()).toEqual('x64');
 
     expect(log).toHaveBeenCalledWith(
       LogLevel.WARN,
@@ -111,5 +100,6 @@ describe('getPlatformInfo', () => {
 
     platformStub.restore();
     archStub.restore();
+    fsReadStub.restore();
   });
 });

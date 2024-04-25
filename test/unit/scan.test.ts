@@ -65,12 +65,10 @@ describe('scan', () => {
 
   it('should output the current platform', async () => {
     jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
-    jest.spyOn(platform, 'getPlatformInfo').mockReturnValue({ os: 'alpine', arch: 'arm64' });
+    jest.spyOn(platform, 'getSupportedOS').mockReturnValue('alpine');
+    jest.spyOn(platform, 'getArch').mockReturnValue('arm64');
     await scan({}, []);
-    expect(logging.log).toHaveBeenCalledWith('INFO', 'Platform: ', {
-      os: 'alpine',
-      arch: 'arm64',
-    });
+    expect(logging.log).toHaveBeenCalledWith('INFO', 'Platform:', 'alpine', 'arm64');
   });
 
   describe('when the SQ version does not support JRE provisioning', () => {

@@ -20,7 +20,6 @@
 
 import fs from 'fs';
 import { LogLevel, log } from './logging';
-import { PlatformInfo, SupportedOS } from './types';
 
 export function getArch(): NodeJS.Architecture {
   return process.arch;
@@ -53,13 +52,6 @@ function isAlpineLinux(): boolean {
   return !!content && (content.match(/^ID=([^\u001b\r\n]*)/m) || [])[1] === 'alpine';
 }
 
-function getSupportedOS(): SupportedOS {
+export function getSupportedOS(): NodeJS.Platform | 'alpine' {
   return isAlpineLinux() ? 'alpine' : process.platform;
-}
-
-export function getPlatformInfo(): PlatformInfo {
-  return {
-    os: getSupportedOS(),
-    arch: getArch(),
-  };
 }
