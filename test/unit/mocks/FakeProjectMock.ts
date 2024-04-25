@@ -58,7 +58,7 @@ export class FakeProjectMock {
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': 'false',
       'sonar.scanner.version': SCANNER_CLI_VERSION,
-      'sonar.userHome': '/Users/lucas.paulger/.sonar',
+      'sonar.userHome': expect.stringMatching(/\.sonar$/),
     };
   }
 }
