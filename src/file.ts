@@ -59,6 +59,7 @@ export async function extractArchive(fromPath: string, toPath: string) {
 
         stream.pipe(fs.createWriteStream(filePath, { mode: header.mode }));
 
+        // end of file, move onto next file
         stream.on('end', next);
 
         stream.resume(); // just auto drain the stream
@@ -74,7 +75,10 @@ export async function extractArchive(fromPath: string, toPath: string) {
       });
     });
 
-    fs.createReadStream(tarFilePath).pipe(zlib.createGunzip()).pipe(extract);
+    const readStream = fs.createReadStream(tarFilePath);
+    const gunzip = zlib.createGunzip();
+    const nextStep = readStream.pipe(gunzip);
+    nextStep.pipe(extract);
 
     await extractionPromise;
   } else {
