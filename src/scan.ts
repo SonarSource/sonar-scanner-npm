@@ -22,7 +22,6 @@ import { version } from '../package.json';
 import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
 import { fetchJRE, serverSupportsJREProvisioning } from './java';
 import { LogLevel, log, setLogLevel } from './logging';
-import { getPlatformInfo } from './platform';
 import { getProperties } from './properties';
 import { initializeAxios } from './request';
 import { downloadScannerCli, runScannerCli, tryLocalSonarScannerExecutable } from './scanner-cli';
@@ -51,16 +50,18 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: string[]) {
     log(LogLevel.DEBUG, `Overriding the log level to ${properties[ScannerProperty.SonarLogLevel]}`);
   }
 
-  log(LogLevel.DEBUG, 'Properties: ', properties);
+  log(LogLevel.DEBUG, 'Properties:', properties);
+  log(
+    LogLevel.INFO,
+    'Platform:',
+    properties[ScannerProperty.SonarScannerOs],
+    properties[ScannerProperty.SonarScannerArch],
+  );
 
   initializeAxios(properties);
 
   log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
   log(LogLevel.INFO, `Version: ${version}`);
-
-  log(LogLevel.DEBUG, 'Finding platform info');
-  const platformInfo = getPlatformInfo();
-  log(LogLevel.INFO, 'Platform: ', platformInfo);
 
   log(LogLevel.DEBUG, 'Check if Server supports JRE Provisioning');
   const supportsJREProvisioning = await serverSupportsJREProvisioning(properties);
@@ -83,7 +84,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: string[]) {
 
   // TODO: also check if JRE is explicitly set by properties
   const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
-  const latestJRE = explicitJREPathOverride ?? (await fetchJRE(properties, platformInfo));
+  const latestJRE = explicitJREPathOverride ?? (await fetchJRE(properties));
   const latestScannerEngine = await fetchScannerEngine(properties);
 
   log(LogLevel.INFO, 'Running the Scanner Engine');

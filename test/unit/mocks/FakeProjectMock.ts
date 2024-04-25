@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import path from 'path';
+import sinon from 'sinon';
 import { SCANNER_BOOTSTRAPPER_NAME, SCANNER_CLI_VERSION } from '../../../src/constants';
 
 const baseEnvVariables = process.env;
@@ -37,12 +38,14 @@ export class FakeProjectMock {
     } else {
       this.projectPath = '';
     }
-    process.env = baseEnvVariables;
-    process.cwd = () => this.projectPath;
+    sinon.stub(process, 'platform').value('windows');
+    sinon.stub(process, 'arch').value('aarch64');
+    sinon.stub(process, 'env').value(baseEnvVariables);
+    sinon.stub(process, 'cwd').value(() => this.projectPath);
   }
 
   setEnvironmentVariables(values: { [key: string]: string }) {
-    process.env = values;
+    sinon.stub(process, 'env').value(values);
   }
 
   getStartTime() {
@@ -59,6 +62,8 @@ export class FakeProjectMock {
       'sonar.scanner.wasJreCacheHit': 'false',
       'sonar.scanner.version': SCANNER_CLI_VERSION,
       'sonar.userHome': expect.stringMatching(/\.sonar$/),
+      'sonar.scanner.os': 'windows',
+      'sonar.scanner.arch': 'aarch64',
     };
   }
 }

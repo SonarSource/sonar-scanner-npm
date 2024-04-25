@@ -33,9 +33,9 @@ import {
   getCacheFileLocation,
   validateChecksum,
 } from './file';
-import { log, LogLevel } from './logging';
+import { LogLevel, log } from './logging';
 import { download, fetch } from './request';
-import { PlatformInfo, ScannerProperties, ScannerProperty } from './types';
+import { ScannerProperties, ScannerProperty } from './types';
 
 export async function fetchServerVersion(): Promise<SemVer> {
   let version: SemVer | null = null;
@@ -91,12 +91,9 @@ export async function serverSupportsJREProvisioning(
   return supports;
 }
 
-export async function fetchJRE(
-  properties: ScannerProperties,
-  platformInfo: PlatformInfo,
-): Promise<string> {
+export async function fetchJRE(properties: ScannerProperties): Promise<string> {
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-  const latestJREData = await fetchLatestSupportedJRE(platformInfo);
+  const latestJREData = await fetchLatestSupportedJRE(properties);
   log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
@@ -126,17 +123,17 @@ export async function fetchJRE(
   }
 }
 
-async function fetchLatestSupportedJRE(platformInfo: PlatformInfo) {
-  log(
-    LogLevel.DEBUG,
-    `Downloading JRE for ${platformInfo.os} ${platformInfo.arch} from ${API_V2_JRE_ENDPOINT}`,
-  );
+async function fetchLatestSupportedJRE(properties: ScannerProperties) {
+  const os = properties[ScannerProperty.SonarScannerOs];
+  const arch = properties[ScannerProperty.SonarScannerArch];
+
+  log(LogLevel.DEBUG, `Downloading JRE for ${os} ${arch} from ${API_V2_JRE_ENDPOINT}`);
 
   const { data } = await fetch({
     url: API_V2_JRE_ENDPOINT,
     params: {
-      os: platformInfo.os,
-      arch: platformInfo.arch,
+      os,
+      arch,
     },
   });
 
