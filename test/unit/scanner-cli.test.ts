@@ -20,7 +20,11 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import sinon from 'sinon';
-import { SCANNER_CLI_DEFAULT_BIN_NAME, SCANNER_CLI_INSTALL_PATH } from '../../src/constants';
+import {
+  SCANNER_CLI_DEFAULT_BIN_NAME,
+  SCANNER_CLI_INSTALL_PATH,
+  SCANNER_CLI_VERSION,
+} from '../../src/constants';
 import { extractArchive } from '../../src/file';
 import { LogLevel, log } from '../../src/logging';
 import { download } from '../../src/request';
@@ -44,6 +48,7 @@ const MOCK_PROPERTIES = {
   [ScannerProperty.SonarToken]: 'token',
   [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
   [ScannerProperty.SonarUserHome]: 'path/to/user/home',
+  [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
 };
 
 beforeEach(() => {
@@ -179,20 +184,21 @@ describe('scanner-cli', () => {
     });
 
     it('should display SonarScanner CLI output', async () => {
+      jest.spyOn(process.stdout, 'write');
       childProcessHandler.setOutput('the output', 'some error');
 
       await runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner');
 
       expect(log).toHaveBeenCalledWith(LogLevel.ERROR, 'some error');
-      expect(log).toHaveBeenCalledWith(LogLevel.INFO, 'the output');
+      expect(process.stdout.write).toHaveBeenCalledWith('the output');
     });
 
     it('should reject if SonarScanner CLI fails', async () => {
       childProcessHandler.setExitCode(1);
 
-      await expect(runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner')).rejects.toBeDefined();
-
-      expect(log).toHaveBeenCalledWith(LogLevel.ERROR, 'SonarScanner CLI failed with code 1');
+      await expect(runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner')).rejects.toThrow(
+        'SonarScanner CLI failed with code 1',
+      );
     });
 
     it('should pass proxy options to scanner', async () => {

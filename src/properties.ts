@@ -42,7 +42,7 @@ function getDefaultProperties(): ScannerProperties {
       process.env.HOME ?? process.env.USERPROFILE ?? '',
       SONAR_DIR_DEFAULT,
     ),
-    [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
+    [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION, // TODO: move back to scanner-cli since its a specific use case
     [ScannerProperty.SonarScannerOs]: getSupportedOS(),
     [ScannerProperty.SonarScannerArch]: getArch(),
   };
