@@ -25,12 +25,14 @@ import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../
 import * as file from '../../src/file';
 import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
 import * as request from '../../src/request';
-import { JreMetaData, PlatformInfo, ScannerProperties, ScannerProperty } from '../../src/types';
+import { JreMetaData, ScannerProperties, ScannerProperty } from '../../src/types';
 
 const mock = new MockAdapter(axios);
 
 const MOCKED_PROPERTIES: ScannerProperties = {
   [ScannerProperty.SonarHostUrl]: 'http://sonarqube.com',
+  [ScannerProperty.SonarScannerOs]: 'linux',
+  [ScannerProperty.SonarScannerArch]: 'arm64',
 };
 
 beforeEach(() => {
@@ -101,7 +103,6 @@ describe('java', () => {
   });
 
   describe('when JRE provisioning is supported', () => {
-    const platformInfo: PlatformInfo = { os: 'linux', arch: 'arm64' };
     const serverResponse: JreMetaData = {
       filename: 'mock-jre.tar.gz',
       javaPath: 'jre/bin/java',
@@ -115,8 +116,8 @@ describe('java', () => {
       mock
         .onGet(API_V2_JRE_ENDPOINT, {
           params: {
-            os: platformInfo.os,
-            arch: platformInfo.arch,
+            os: MOCKED_PROPERTIES[ScannerProperty.SonarScannerOs],
+            arch: MOCKED_PROPERTIES[ScannerProperty.SonarScannerArch],
           },
         })
         .reply(200, serverResponse);
@@ -128,7 +129,7 @@ describe('java', () => {
 
     describe('when the JRE is cached', () => {
       it('should fetch the latest supported JRE and use the cached version', async () => {
-        await fetchJRE(MOCKED_PROPERTIES, platformInfo);
+        await fetchJRE(MOCKED_PROPERTIES);
 
         expect(request.fetch).toHaveBeenCalledTimes(1);
         expect(request.download).not.toHaveBeenCalled();
@@ -153,11 +154,14 @@ describe('java', () => {
       });
 
       it('should download the JRE', async () => {
-        await fetchJRE({ ...MOCKED_PROPERTIES }, platformInfo);
+        await fetchJRE({ ...MOCKED_PROPERTIES });
 
         expect(request.fetch).toHaveBeenCalledWith({
           url: API_V2_JRE_ENDPOINT,
-          params: platformInfo,
+          params: {
+            os: MOCKED_PROPERTIES[ScannerProperty.SonarScannerOs],
+            arch: MOCKED_PROPERTIES[ScannerProperty.SonarScannerArch],
+          },
         });
 
         expect(file.getCacheFileLocation).toHaveBeenCalledTimes(1);

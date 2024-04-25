@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import sinon from 'sinon';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
   SCANNER_BOOTSTRAPPER_NAME,
@@ -36,6 +37,7 @@ jest.mock('../../package.json', () => ({
 const projectHandler = new FakeProjectMock();
 
 afterEach(() => {
+  sinon.restore();
   projectHandler.reset();
 });
 
@@ -79,6 +81,7 @@ describe('getProperties', () => {
           verbose: true,
           options: {
             'sonar.projectKey': 'use-this-project-key',
+            'sonar.scanner.os': 'some-os',
           },
         },
         projectHandler.getStartTime(),
@@ -94,6 +97,7 @@ describe('getProperties', () => {
         'sonar.projectName': 'Foo',
         'sonar.projectVersion': '1.0-SNAPSHOT',
         'sonar.sources': 'the-sources',
+        'sonar.scanner.os': 'some-os',
       });
     });
 
