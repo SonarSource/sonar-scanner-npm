@@ -20,7 +20,9 @@
 import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
-import { Readable } from 'stream';
+import * as tarStream from 'tar-stream';
+import * as zlib from 'zlib';
+import { PassThrough } from 'stream';
 import {
   extractArchive,
   getCacheDirectories,
@@ -34,24 +36,21 @@ const MOCKED_PROPERTIES = {
   [ScannerProperty.SonarUserHome]: '/path/to/sonar/user/home',
 };
 
-// Mock the filesystem
+jest.mock('fs');
+jest.mock('tar-stream');
+jest.mock('zlib');
+
 jest.mock('fs', () => ({
-  createReadStream: jest.fn().mockImplementation(() => {
-    const mockStream = new Readable({
-      read() {
-        process.nextTick(() => this.emit('end')); // emit 'end' on next tick
-      },
-    });
-    mockStream.pipe = jest.fn().mockReturnThis();
-    return mockStream;
-  }),
+  createReadStream: jest.fn(),
   createWriteStream: jest.fn(),
   existsSync: jest.fn(),
   readFile: jest.fn(),
   mkdirSync: jest.fn(),
 }));
 
-jest.mock('fs-extra', () => ({}));
+jest.mock('fs-extra', () => ({
+  ensureDir: jest.fn(),
+}));
 
 jest.mock('adm-zip', () => {
   const MockAdmZip = jest.fn();
@@ -65,14 +64,82 @@ afterEach(() => {
 
 describe('file', () => {
   describe('extractArchive', () => {
-    it('should extract zip files to the specified directory', async () => {
-      const archivePath = 'path/to/archive.zip';
-      const extractPath = 'path/to/extract';
+    describe('zip', () => {
+      it('should extract zip files to the specified directory', async () => {
+        const archivePath = 'path/to/archive.zip';
+        const extractPath = 'path/to/extract';
 
-      await extractArchive(archivePath, extractPath);
+        await extractArchive(archivePath, extractPath);
 
-      const mockAdmZipInstance = (AdmZip as jest.MockedClass<typeof AdmZip>).mock.instances[0];
-      expect(mockAdmZipInstance.extractAllTo).toHaveBeenCalledWith(extractPath, true, true);
+        const mockAdmZipInstance = (AdmZip as jest.MockedClass<typeof AdmZip>).mock.instances[0];
+        expect(mockAdmZipInstance.extractAllTo).toHaveBeenCalledWith(extractPath, true, true);
+      });
+    });
+
+    describe('tar.gz', () => {
+      const mockFilePath = 'path/to/file.tar.gz';
+      const mockDestDir = 'path/to/dest';
+      const mockFileHeader = { name: 'file.txt', mode: 0o777 };
+      const mockOn = jest.fn();
+      const mockPassThroughStream = new PassThrough();
+      beforeEach(() => {
+        mockPassThroughStream.on = jest.fn().mockImplementation((event, callback) => {
+          if (event === 'data') {
+            callback('mock data');
+          } else if (event === 'end') {
+            callback();
+          }
+        });
+
+        mockPassThroughStream.resume = jest.fn();
+        mockPassThroughStream.end = jest.fn();
+        jest.spyOn(fs, 'createWriteStream').mockReturnValue({
+          on: jest.fn(),
+          once: jest.fn(),
+          emit: jest.fn(),
+          end: jest.fn(),
+          write: jest.fn(),
+        } as unknown as fs.WriteStream);
+        jest
+          .spyOn(fs, 'createReadStream')
+          .mockReturnValue({ pipe: jest.fn().mockReturnThis() } as unknown as fs.ReadStream);
+        jest
+          .spyOn(tarStream, 'extract')
+          .mockReturnValue({ on: mockOn } as unknown as tarStream.Extract);
+        jest
+          .spyOn(zlib, 'createGunzip')
+          .mockReturnValue({ pipe: jest.fn().mockReturnThis() } as unknown as zlib.Gunzip);
+      });
+
+      it('should extract a .tar.gz file to the specified directory', async () => {
+        mockOn.mockImplementation((event, callback) => {
+          if (event === 'entry') {
+            callback(mockFileHeader, mockPassThroughStream, jest.fn());
+          }
+          if (event === 'finish') {
+            callback();
+          }
+        });
+
+        await extractArchive(mockFilePath, mockDestDir);
+
+        expect(fs.createReadStream).toHaveBeenCalledWith(mockFilePath);
+        expect(zlib.createGunzip).toHaveBeenCalled();
+        expect(tarStream.extract).toHaveBeenCalled();
+        expect(fs.createWriteStream).toHaveBeenCalledWith(`${mockDestDir}/${mockFileHeader.name}`, {
+          mode: 511,
+        });
+      });
+
+      it('should throw if extract fails', async () => {
+        mockOn.mockImplementation((event, callback) => {
+          if (event === 'error') {
+            callback(new Error('mock error'));
+          }
+        });
+
+        await expect(extractArchive(mockFilePath, mockDestDir)).rejects.toThrow('mock error');
+      });
     });
   });
 
