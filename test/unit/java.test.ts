@@ -89,7 +89,7 @@ describe('java', () => {
     });
 
     it(`should return true for SQ version >= ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
-      mock.onGet('/api/server/version').reply(200, '10.5.0');
+      mock.onGet('/api/server/version').reply(200, '10.6.1.3123');
       expect(await serverSupportsJREProvisioning(MOCKED_PROPERTIES)).toBe(true);
     });
 

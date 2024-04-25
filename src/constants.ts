@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import path from 'path';
 import { ScannerProperty } from './types';
 
 export const SCANNER_BOOTSTRAPPER_NAME = 'ScannerNpm';
@@ -31,7 +30,7 @@ export const SONARCLOUD_ENV_REGEX =
 
 export const SONARCLOUD_PRODUCTION_URL = 'https://sonarcloud.io';
 
-export const SONARQUBE_JRE_PROVISIONING_MIN_VERSION = '10.5';
+export const SONARQUBE_JRE_PROVISIONING_MIN_VERSION = '10.6';
 
 export const SONAR_DIR_DEFAULT = '.sonar';
 
