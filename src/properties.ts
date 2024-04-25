@@ -173,7 +173,7 @@ function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
     const sonarPropertiesFile = path.join(projectBaseDir, SONAR_PROJECT_FILENAME);
     const properties: ScannerProperties = {};
     const data = fs.readFileSync(sonarPropertiesFile).toString();
-    const lines = data.split('\n');
+    const lines = data.split(/\r?\n/);
     for (const line of lines) {
       const trimmedLine = line.trim();
       if (trimmedLine.length === 0 || trimmedLine.startsWith('#')) {
