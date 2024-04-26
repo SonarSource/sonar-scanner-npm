@@ -196,6 +196,6 @@ function extendWithExecParams(env = {}) {
     // (if this value is exceeded then the child process is killed).
     // TODO: make this customizable
     maxBuffer: ONE_MB,
-    shell: isWindows(), //we need to enable sheel on windows due to CVE-2024-27980
+    shell: isWindows(), //we need to enable shell on windows due to CVE-2024-27980
   };
 }
