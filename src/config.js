@@ -24,6 +24,7 @@ const os = require('os');
 const fs = require('fs');
 const log = require('fancy-log');
 const { HttpsProxyAgent } = require('https-proxy-agent');
+const { isWindows } = require('./utils/platform');
 
 module.exports.getScannerParams = getScannerParams;
 module.exports.extendWithExecParams = extendWithExecParams;
@@ -195,5 +196,6 @@ function extendWithExecParams(env = {}) {
     // (if this value is exceeded then the child process is killed).
     // TODO: make this customizable
     maxBuffer: ONE_MB,
+    shell: isWindows(),
   };
 }
