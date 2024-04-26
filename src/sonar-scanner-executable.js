@@ -18,7 +18,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const quote = require('shell-quote').quote;
 const exec = require('child_process').execFileSync;
 const mkdirs = require('mkdirp').sync;
 const { DownloaderHelper } = require('node-downloader-helper');
@@ -121,7 +120,7 @@ async function getSonarScannerExecutable(params = {}) {
 function getLocalSonarScannerExecutable(command = 'sonar-scanner') {
   try {
     log(`Trying to find a local install of the SonarScanner: ${command}`);
-    exec(quote([command]), ['-v']);
+    exec(command, ['-v'], { shell: true });
     // TODO: we should check that it's at least v2.8+
     log('Local install of Sonarscanner found.');
     return command;

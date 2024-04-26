@@ -30,7 +30,7 @@ const {
   SONAR_SCANNER_MIRROR,
 } = require('../../src/config');
 const { buildInstallFolderPath, buildExecutablePath } = require('../../src/utils/paths');
-const { findTargetOS } = require('../../src/utils/platform');
+const { findTargetOS, isWindows } = require('../../src/utils/platform');
 
 function pathForProject(projectFolder) {
   return path.join(__dirname, 'fixtures', projectFolder);
@@ -279,6 +279,7 @@ describe('config', function () {
       assert.deepEqual(extendWithExecParams({ hello: 2 }), {
         maxBuffer: 1024 * 1024,
         stdio: 'inherit',
+        shell: isWindows(),
         env: {
           hello: 2,
           whatsup: 'dog',
@@ -292,6 +293,7 @@ describe('config', function () {
       assert.deepEqual(extendWithExecParams(), {
         env: {},
         maxBuffer: 1024 * 1024,
+        shell: isWindows(),
         stdio: 'inherit',
       });
     });
