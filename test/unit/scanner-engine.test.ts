@@ -29,6 +29,7 @@ import { fetchScannerEngine, runScannerEngine } from '../../src/scanner-engine';
 import { ScannerProperties, ScannerProperty } from '../../src/types';
 import { ChildProcessMock } from './mocks/ChildProcessMock';
 import { logWithPrefix } from '../../src/logging';
+import fs from 'fs';
 
 const mock = new MockAdapter(axios);
 
@@ -200,6 +201,23 @@ describe('scanner-engine', () => {
       );
 
       stdoutStub.restore();
+    });
+
+    it('should dump data to file when dumpToFile property is set', async () => {
+      childProcessHandler.setExitCode(1); // Make it so the scanner would fail
+      const writeFile = jest.spyOn(fs.promises, 'writeFile').mockResolvedValue();
+
+      await runScannerEngine(
+        '/some/path/to/java',
+        '/some/path/to/scanner-engine',
+        {},
+        {
+          ...MOCKED_PROPERTIES,
+          [ScannerProperty.SonarScannerInternalDumpToFile]: '/path/to/dump.json',
+        },
+      );
+
+      expect(writeFile).toHaveBeenCalledWith('/path/to/dump.json', expect.any(String));
     });
 
     it.each([['http'], ['https']])(
