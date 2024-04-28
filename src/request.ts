@@ -48,6 +48,8 @@ export function initializeAxios(properties: ScannerProperties) {
   const token = properties[ScannerProperty.SonarToken];
   const baseURL = properties[ScannerProperty.SonarHostUrl];
   const agents = getHttpAgents(properties);
+  const timeout =
+    Math.floor(parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) * 1000;
 
   if (!_axiosInstance) {
     _axiosInstance = axios.create({
@@ -55,6 +57,7 @@ export function initializeAxios(properties: ScannerProperties) {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      timeout,
       ...agents,
     });
   }
