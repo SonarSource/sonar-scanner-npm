@@ -96,6 +96,8 @@ export async function runScannerEngine(
   scanOptions: ScanOptions,
   properties: ScannerProperties,
 ) {
+  log(LogLevel.INFO, 'Running the Scanner Engine');
+
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
   const propertiesJSON = JSON.stringify({ scannerProperties: properties });
 
