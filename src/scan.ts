@@ -82,11 +82,19 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: string[]) {
     return;
   }
 
-  // TODO: also check if JRE is explicitly set by properties
-  const explicitJREPathOverride = properties[ScannerProperty.SonarScannerJavaExePath];
-  const latestJRE = explicitJREPathOverride ?? (await fetchJRE(properties));
+  // Detect what Java to use (in path, specified from properties or provisioned)
+  let javaPath: string;
+  if (properties[ScannerProperty.SonarScannerJavaExePath]) {
+    javaPath = properties[ScannerProperty.SonarScannerJavaExePath];
+  } else if (properties[ScannerProperty.SonarScannerSkipJreProvisioning] === 'true') {
+    javaPath = 'java';
+  } else {
+    javaPath = await fetchJRE(properties);
+  }
+
+  // Fetch the Scanner Engine
   const latestScannerEngine = await fetchScannerEngine(properties);
 
-  log(LogLevel.INFO, 'Running the Scanner Engine');
-  await runScannerEngine(latestJRE, latestScannerEngine, scanOptions, properties);
+  // Run the Scanner Engine
+  await runScannerEngine(javaPath, latestScannerEngine, scanOptions, properties);
 }
