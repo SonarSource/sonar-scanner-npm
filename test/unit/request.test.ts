@@ -69,6 +69,27 @@ describe('request', () => {
         headers: {
           Authorization: `Bearer testToken`,
         },
+        timeout: 0,
+      });
+    });
+
+    it('should initialize axios with timeout', () => {
+      jest.spyOn(axios, 'create');
+
+      const properties: ScannerProperties = {
+        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+        [ScannerProperty.SonarToken]: 'testToken',
+        [ScannerProperty.SonarScannerResponseTimeout]: '23',
+      };
+
+      initializeAxios(properties);
+
+      expect(axios.create).toHaveBeenCalledWith({
+        baseURL: 'https://sonarcloud.io',
+        headers: {
+          Authorization: `Bearer testToken`,
+        },
+        timeout: 23000,
       });
     });
 
