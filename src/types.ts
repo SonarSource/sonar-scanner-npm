@@ -56,6 +56,7 @@ export enum ScannerProperty {
   SonarScannerProxyPort = 'sonar.scanner.proxyPort',
   SonarScannerProxyUser = 'sonar.scanner.proxyUser',
   SonarScannerProxyPassword = 'sonar.scanner.proxyPassword',
+  SonarScannerResponseTimeout = 'sonar.scanner.responseTimeout',
   SonarScannerSkipJreProvisioning = 'sonar.scanner.skipJreProvisioning',
   SonarScannerInternalDumpToFile = 'sonar.scanner.internal.dumpToFile',
   SonarScannerInternalIsSonarCloud = 'sonar.scanner.internal.isSonarCloud',
