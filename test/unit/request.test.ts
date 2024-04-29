@@ -18,7 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import axios from 'axios';
+import fs from 'fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import path from 'path';
+import * as logging from '../../src/logging';
 import { fetch, getHttpAgents, initializeAxios } from '../../src/request';
 import { ScannerProperties, ScannerProperty } from '../../src/types';
 
@@ -32,29 +35,128 @@ beforeEach(() => {
 
 describe('request', () => {
   describe('http-agent', () => {
-    it('should define proxy url correctly', () => {
-      const agents = getHttpAgents({
-        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
-        [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
+    describe('with proxy options', () => {
+      it('should define proxy url correctly', async () => {
+        const agents = await getHttpAgents({
+          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
+        });
+        expect(agents.httpAgent).toBeInstanceOf(HttpProxyAgent);
+        expect(agents.httpAgent?.proxy.toString()).toBe('https://proxy.com/');
+        expect(agents.httpsAgent).toBeInstanceOf(HttpsProxyAgent);
+        expect(agents.httpsAgent?.proxy.toString()).toBe('https://proxy.com/');
       });
-      expect(agents.httpAgent).toBeInstanceOf(HttpProxyAgent);
-      expect(agents.httpAgent?.proxy.toString()).toBe('https://proxy.com/');
-      expect(agents.httpsAgent).toBeInstanceOf(HttpsProxyAgent);
-      expect(agents.httpsAgent?.proxy.toString()).toBe('https://proxy.com/');
+
+      it('should not define agents when no proxy is provided', async () => {
+        const agents = await getHttpAgents({
+          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+        });
+        expect(agents.httpAgent).toBeUndefined();
+        expect(agents.httpsAgent).toBeUndefined();
+        expect(agents).toEqual({});
+      });
     });
 
-    it('should not define agents when no proxy is provided', () => {
-      const agents = getHttpAgents({
-        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+    describe('with tls options', () => {
+      it('should initialize axios with password-protected truststore', async () => {
+        jest.spyOn(axios, 'create');
+
+        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
+        const truststorePass = 'password';
+        const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
+        const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
+
+        const { httpsAgent } = await getHttpAgents({
+          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
+          [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
+        });
+
+        const ca = httpsAgent?.options.ca as string[];
+        expect(ca).toHaveLength(1);
+        expect(ca).toContain(certificatePem);
       });
-      expect(agents.httpAgent).toBeUndefined();
-      expect(agents.httpsAgent).toBeUndefined();
-      expect(agents).toEqual({});
+
+      it("should not fail if truststore can't be parsed", async () => {
+        jest.spyOn(axios, 'create');
+        jest.spyOn(logging, 'log');
+
+        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-invalid.p12');
+        const truststorePass = 'password';
+
+        const { httpsAgent } = await getHttpAgents({
+          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
+          [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
+        });
+
+        expect(httpsAgent).toBeUndefined();
+        expect(logging.log).toHaveBeenCalledWith(
+          logging.LogLevel.WARN,
+          expect.stringContaining('Failed to load truststore'),
+        );
+      });
+
+      it('should initialize axios with password-protected empty truststore', async () => {
+        jest.spyOn(axios, 'create');
+        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-empty.p12');
+        const truststorePass = 'password';
+
+        const { httpsAgent } = await getHttpAgents({
+          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
+          [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
+        });
+
+        const ca = httpsAgent?.options.ca as string[];
+        expect(ca).toHaveLength(0);
+      });
+
+      it('should initialize axios with password-protected keystore', async () => {
+        jest.spyOn(axios, 'create');
+        const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
+        const keystorePass = 'password';
+
+        const { httpsAgent } = await getHttpAgents({
+          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarScannerKeystorePath]: keystorePath,
+          [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
+        });
+
+        expect(httpsAgent?.options.pfx).toEqual(fs.readFileSync(keystorePath));
+        expect(httpsAgent?.options.passphrase).toBe(keystorePass);
+      });
+    });
+
+    it('should support combining proxy, truststore and keystore', async () => {
+      jest.spyOn(axios, 'create');
+      const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
+      const truststorePass = 'password';
+      const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
+      const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
+      const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
+      const keystorePass = 'password';
+
+      const { httpsAgent } = await getHttpAgents({
+        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+        [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
+        [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
+        [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
+        [ScannerProperty.SonarScannerKeystorePath]: keystorePath,
+        [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
+      });
+
+      const ca = httpsAgent?.options.ca as string[];
+      expect(ca).toHaveLength(1);
+      expect(ca).toContain(certificatePem);
+      expect(httpsAgent?.options.pfx).toEqual(fs.readFileSync(keystorePath));
+      expect(httpsAgent?.options.passphrase).toBe(keystorePass);
+      expect(httpsAgent?.proxy.toString()).toBe('https://proxy.com/');
     });
   });
 
-  describe('fetch', () => {
-    it('should initialize axios', () => {
+  describe('initializeAxios', () => {
+    it('should initialize axios', async () => {
       jest.spyOn(axios, 'create');
 
       const properties: ScannerProperties = {
@@ -62,8 +164,9 @@ describe('request', () => {
         [ScannerProperty.SonarToken]: 'testToken',
       };
 
-      initializeAxios(properties);
+      await initializeAxios(properties);
 
+      expect(axios.create).toHaveBeenCalledTimes(1);
       expect(axios.create).toHaveBeenCalledWith({
         baseURL: 'https://sonarcloud.io',
         headers: {
@@ -73,7 +176,7 @@ describe('request', () => {
       });
     });
 
-    it('should initialize axios with timeout', () => {
+    it('should initialize axios with timeout', async () => {
       jest.spyOn(axios, 'create');
 
       const properties: ScannerProperties = {
@@ -82,7 +185,7 @@ describe('request', () => {
         [ScannerProperty.SonarScannerResponseTimeout]: '23',
       };
 
-      initializeAxios(properties);
+      await initializeAxios(properties);
 
       expect(axios.create).toHaveBeenCalledWith({
         baseURL: 'https://sonarcloud.io',
@@ -92,12 +195,14 @@ describe('request', () => {
         timeout: 23000,
       });
     });
+  });
 
+  describe('fetch', () => {
     it('should throw error if axios is not initialized', () => {
       expect(() => fetch({})).toThrow('Axios instance is not initialized');
     });
 
-    it('should call axios request if axios is initialized', () => {
+    it('should call axios request if axios is initialized', async () => {
       const mockedRequest = jest.fn();
       jest.spyOn(axios, 'create').mockImplementation(
         () =>
@@ -111,7 +216,7 @@ describe('request', () => {
         [ScannerProperty.SonarToken]: 'testToken',
       };
 
-      initializeAxios(properties);
+      await initializeAxios(properties);
 
       const config = { url: 'https://sonarcloud.io/api/issues/search' };
 

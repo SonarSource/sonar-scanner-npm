@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
 import { version } from '../package.json';
 import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
 import { fetchJRE, serverSupportsJREProvisioning } from './java';
@@ -58,7 +57,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
     properties[ScannerProperty.SonarScannerArch],
   );
 
-  initializeAxios(properties);
+  await initializeAxios(properties);
 
   log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
   log(LogLevel.INFO, `Version: ${version}`);
