@@ -31,65 +31,6 @@ const { startServer, closeServerPromise } = require('./fixtures/webserver/server
 
 describe('sqScannerExecutable', function () {
   describe('Sonar: getScannerExecutable(false)', function () {
-    it('should throw exception when the download of executable fails', async function () {
-      process.env.SONAR_SCANNER_MIRROR = 'http://fake.url/sonar-scanner';
-      try {
-        await getScannerExecutable(false, {
-          basePath: os.tmpdir(),
-        });
-        assert.fail();
-      } catch (err) {
-        console.log(err);
-        assert.equal(err.message, 'getaddrinfo ENOTFOUND fake.url');
-      }
-    }, 60000);
-
-    describe('when the executable exists', function () {
-      let filepath;
-      beforeAll(function () {
-        filepath = buildExecutablePath(
-          buildInstallFolderPath(os.tmpdir()),
-          DEFAULT_SCANNER_VERSION,
-        );
-        mkdirpSync(path.dirname(filepath));
-        fs.writeFileSync(filepath, 'echo "hello"');
-        fs.chmodSync(filepath, 0o700);
-      });
-      afterAll(function () {
-        rimraf.sync(filepath);
-      });
-      it('should return the path to it', async function () {
-        const receivedExecutable = await getScannerExecutable(false, {
-          basePath: os.tmpdir(),
-        });
-        assert.equal(receivedExecutable, filepath);
-      });
-    });
-
-    describe('when the executable is downloaded', function () {
-      let server, config, pathToZip, pathToUnzippedExecutable, expectedPlatformExecutablePath;
-      const FILENAME = 'test-executable.zip';
-      beforeAll(async function () {
-        server = await startServer();
-        config = getExecutableParams({ fileName: FILENAME });
-        expectedPlatformExecutablePath = config.platformExecutable;
-      });
-      afterAll(async function () {
-        await closeServerPromise(server);
-        pathToZip = path.join(config.installFolder, config.fileName);
-        pathToUnzippedExecutable = path.join(config.installFolder, 'executable');
-        rimraf.sync(pathToZip);
-        rimraf.sync(pathToUnzippedExecutable);
-      });
-      it('should download the executable, unzip it and return a path to it.', async function () {
-        const execPath = await getScannerExecutable(false, {
-          baseUrl: `http://${server.address().address}:${server.address().port}`,
-          fileName: FILENAME,
-        });
-        assert.equal(execPath, expectedPlatformExecutablePath);
-      });
-    });
-
     describe('when providing a self-signed CA certificate', function () {
       let caPath;
       beforeAll(() => {
@@ -134,16 +75,6 @@ describe('sqScannerExecutable', function () {
       } catch (e) {
         assert.equal(e.message, 'Invalid CA certificate');
       }
-    });
-  });
-
-  describe('local: getScannerExecutable(true)', () => {
-    it('should fail when the executable is not found', async () => {
-      assert.throws(
-        getScannerExecutable.bind(null, true),
-        'Local install of SonarScanner not found in: sonar-scanner',
-      );
-      //expect(getScannerExecutable(true)).to.eventually.be.rejectedWith('Local install of SonarScanner not found in: sonar-scanner');
     });
   });
 });

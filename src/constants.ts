@@ -44,6 +44,7 @@ export const ENV_TO_PROPERTY_NAME: [string, ScannerProperty][] = [
   ['SONAR_HOST_URL', ScannerProperty.SonarHostUrl],
   ['SONAR_USER_HOME', ScannerProperty.SonarUserHome],
   ['SONAR_ORGANIZATION', ScannerProperty.SonarOrganization],
+  ['SONAR_SCANNER_MIRROR', ScannerProperty.SonarScannerCliMirror], // old deprecated format
 ];
 
 export const SONAR_PROJECT_FILENAME = 'sonar-project.properties';

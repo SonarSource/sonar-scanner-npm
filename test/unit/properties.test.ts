@@ -478,6 +478,17 @@ describe('getProperties', () => {
 
       expect(properties['sonar.userHome']).toEqual('/tmp/.sonar/');
     });
+
+    it('should support the old SONAR_SCANNER_MIRROR environment variable', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_MIRROR: 'https://mirror.com/',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties['sonar.scanner.mirror']).toEqual('https://mirror.com/');
+    });
   });
 
   describe('should handle command line properties', () => {
