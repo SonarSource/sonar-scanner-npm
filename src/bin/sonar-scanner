@@ -19,9 +19,16 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 const scan = require('../../build/src/index').scan;
+const { program } = require('commander');
+const version = require('../../package.json').version;
 
-const options = process.argv.length > 2 ? process.argv.slice(2) : [];
+program
+  .option('-D, --define <property=value...>', 'Define property')
+  .version(version, '-v, --version', 'Display version information')
+  .option('-X, --debug', 'Produce execution debug output');
 
-scan({}, options).catch(() => {
+const cliArgs = program.parse().opts();
+
+scan({}, cliArgs).catch(() => {
   process.exitCode = 1;
 });

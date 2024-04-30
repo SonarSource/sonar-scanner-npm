@@ -34,7 +34,7 @@ import {
 } from './constants';
 import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
-import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { ScanOptions, ScannerProperties, ScannerProperty, CliArgs } from './types';
 
 function getDefaultProperties(): ScannerProperties {
   return {
@@ -159,9 +159,6 @@ function getCommandLineProperties(cliArgs?: string[]): ScannerProperties {
   // Parse CLI args (eg: -Dsonar.token=xxx)
   const properties: ScannerProperties = {};
   for (const arg of cliArgs) {
-    if (!arg.startsWith('-D')) {
-      continue;
-    }
     const [key, value] = arg.substring(2).split('=');
     properties[key] = value;
   }
@@ -308,10 +305,10 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
 export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
-  cliArgs?: string[],
+  cliArgs?: CliArgs,
 ): ScannerProperties {
   const bootstrapperProperties = getBootstrapperProperties(startTimestampMs);
-  const cliProperties = getCommandLineProperties(cliArgs);
+  const cliProperties = getCommandLineProperties(cliArgs?.define);
   const scanOptionsProperties = getScanOptionsProperties(scanOptions);
   const envProperties = getEnvironmentProperties();
 
