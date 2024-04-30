@@ -72,8 +72,6 @@ function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
   // Get location to download scanner-cli from
 
   // Not in default to avoid populating it for non scanner-cli users
-
-  // TODO: preserve basic auth for scanner mirror
   const scannerCliMirror = properties[ScannerProperty.SonarScannerCliMirror] ?? SCANNER_CLI_MIRROR;
   const scannerCliFileName =
     'sonar-scanner-cli-' + version + '-' + normalizePlatformName() + '.zip';

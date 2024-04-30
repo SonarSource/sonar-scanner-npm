@@ -43,7 +43,7 @@ function getDefaultProperties(): ScannerProperties {
       process.env.HOME ?? process.env.USERPROFILE ?? '',
       SONAR_DIR_DEFAULT,
     ),
-    [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION, // TODO: move back to scanner-cli since its a specific use case
+    [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
     [ScannerProperty.SonarScannerOs]: getSupportedOS(),
     [ScannerProperty.SonarScannerArch]: getArch(),
   };
@@ -262,15 +262,15 @@ export function getEnvironmentProperties() {
     ...properties,
     ...Object.fromEntries(
       Object.entries(env)
-        .filter(([key]) => key.startsWith(ENV_VAR_PREFIX))
-        .filter(([key]) => !jsonEnvVariables.includes(key))
-        .map(([key, value]) => [envNameToSonarPropertyNameMapper(key), value as string]),
-    ),
-    ...Object.fromEntries(
-      Object.entries(env)
         .filter(([key]) => key.startsWith(NPM_CONFIG_ENV_VAR_PREFIX))
         .filter(([key]) => !jsonEnvVariables.includes(key))
         .map(([key, value]) => [npmConfigEnvNameToSonarPropertyNameMapper(key), value as string]),
+    ),
+    ...Object.fromEntries(
+      Object.entries(env)
+        .filter(([key]) => key.startsWith(ENV_VAR_PREFIX))
+        .filter(([key]) => !jsonEnvVariables.includes(key))
+        .map(([key, value]) => [envNameToSonarPropertyNameMapper(key), value as string]),
     ),
   };
 
