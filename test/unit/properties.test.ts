@@ -467,6 +467,17 @@ describe('getProperties', () => {
       );
       expect(jsScanOptionsProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('4.7.0.2747');
     });
+
+    it('should support the old SONAR_BINARY_CACHE environment variable', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_BINARY_CACHE: '/tmp/.sonar/',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties['sonar.userHome']).toEqual('/tmp/.sonar/');
+    });
   });
 
   describe('should handle command line properties', () => {
