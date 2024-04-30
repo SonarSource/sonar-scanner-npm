@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  * sonar-scanner-npm
  * Copyright (C) 2022-2024 SonarSource SA
@@ -18,17 +17,20 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-const scan = require('../../build/src/index').scan;
-const { program } = require('commander');
-const version = require('../../package.json').version;
+
+import { scan } from './scan';
+import { program } from 'commander';
+const version = require('../package.json').version;
 
 program
   .option('-D, --define <property=value...>', 'Define property')
   .version(version, '-v, --version', 'Display version information')
   .option('-X, --debug', 'Produce execution debug output');
 
-const cliArgs = program.parse().opts();
+export function parseArgs() {
+  return program.parse().opts();
+}
 
-scan({}, cliArgs).catch(() => {
+scan({}, parseArgs()).catch(() => {
   process.exitCode = 1;
 });
