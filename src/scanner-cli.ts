@@ -99,7 +99,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   await download(scannerCliUrl.href, archivePath);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
-  extractArchive(archivePath, installDir);
+  await extractArchive(archivePath, installDir);
 
   return binPath;
 }
