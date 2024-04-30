@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { spawn } from 'child_process';
+import fs from 'fs';
 import {
   extractArchive,
   getCacheDirectories,
@@ -90,12 +91,14 @@ async function logOutput(message: string) {
   }
 }
 
-export async function runScannerEngine(
+export function runScannerEngine(
   javaBinPath: string,
   scannerEnginePath: string,
   scanOptions: ScanOptions,
   properties: ScannerProperties,
 ) {
+  log(LogLevel.INFO, 'Running the Scanner Engine');
+
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
   const propertiesJSON = JSON.stringify({ scannerProperties: properties });
 
@@ -106,6 +109,20 @@ export async function runScannerEngine(
     '-jar',
     scannerEnginePath,
   ];
+
+  // If debugging with dumpToFile, write the properties to a file and exit
+  const dumpToFile = properties[ScannerProperty.SonarScannerInternalDumpToFile];
+  if (dumpToFile) {
+    const data = {
+      propertiesJSON,
+      javaBinPath,
+      scannerEnginePath,
+      args,
+    };
+    log(LogLevel.INFO, 'Dumping data to file and exiting');
+    return fs.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
+  }
+
   log(LogLevel.DEBUG, 'Running scanner engine', javaBinPath, ...args);
   const child = spawn(javaBinPath, args);
 
