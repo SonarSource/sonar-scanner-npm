@@ -26,6 +26,7 @@ import { LogLevel, log } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { AxiosRequestConfig } from 'axios';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (process.platform.startsWith('win')) {
@@ -46,6 +47,10 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
 export async function tryLocalSonarScannerExecutable(command: string): Promise<boolean> {
   return new Promise<boolean>(resolve => {
     log(LogLevel.INFO, `Trying to find a local install of the SonarScanner: ${command}`);
+    if (!fsExtra.existsSync(command)) {
+      resolve(false);
+      return;
+    }
     const scannerProcess = spawn(command, ['-v']);
 
     scannerProcess.on('exit', code => {
@@ -67,6 +72,8 @@ function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
   // Get location to download scanner-cli from
 
   // Not in default to avoid populating it for non scanner-cli users
+
+  // TODO: preserve basic auth for scanner mirror
   const scannerCliMirror = properties[ScannerProperty.SonarScannerCliMirror] ?? SCANNER_CLI_MIRROR;
   const scannerCliFileName =
     'sonar-scanner-cli-' + version + '-' + normalizePlatformName() + '.zip';
@@ -96,9 +103,22 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   // Create parent directory if needed
   await fsExtra.ensureDir(installDir);
 
+  // Add basic auth credentials when used in the UR
+  let overrides: AxiosRequestConfig | undefined;
+  if (scannerCliUrl.username && scannerCliUrl.password) {
+    overrides = {
+      headers: {
+        Authorization:
+          'Basic ' +
+          Buffer.from(`${scannerCliUrl.username}:${scannerCliUrl.password}`).toString('base64'),
+      },
+    };
+  }
+
   // Download SonarScanner CLI
   log(LogLevel.INFO, 'Downloading SonarScanner CLI');
-  await download(scannerCliUrl.href, archivePath);
+  log(LogLevel.DEBUG, `Downloading from ${scannerCliUrl.href}`);
+  await download(scannerCliUrl.href, archivePath, overrides);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
   extractArchive(archivePath, installDir);

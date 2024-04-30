@@ -71,13 +71,14 @@ export function fetch(config: AxiosRequestConfig) {
   return _axiosInstance.request(config);
 }
 
-export async function download(url: string, destPath: string) {
+export async function download(url: string, destPath: string, overrides?: AxiosRequestConfig) {
   log(LogLevel.DEBUG, `Downloading ${url} to ${destPath}`);
 
   const response = await fetch({
     url,
     method: 'GET',
     responseType: 'stream',
+    ...overrides,
   });
 
   const totalLength = response.headers['content-length'];

@@ -130,15 +130,5 @@ describe('config', function () {
       const config = getExecutableParams();
       assert.notExists(config.httpOptions.httpRequestOptions);
     });
-
-    // TODO: validate this is still a valid use case and still works (might be part of axios and not our responsibility)
-    it('should consume and preserve username and password for sonar-scanner mirror server', function () {
-      process.env = {};
-      const config = getExecutableParams({
-        baseUrl: 'https://user:password@example.com/sonarqube-repository/',
-      });
-      assert.exists(config.httpOptions.headers['Authorization']);
-      assert.equal(config.httpOptions.headers['Authorization'], 'Basic dXNlcjpwYXNzd29yZA==');
-    });
   });
 });
