@@ -16,6 +16,7 @@
   },
   "license": "LGPL-3.0-only",
   "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
   "bin": {
     "sonar-scanner": "src/bin/sonar-scanner"
   },
@@ -84,7 +85,6 @@
     "arrowParens": "avoid"
   },
   "files": [
-    "build/**",
-    "src/**"
+    "build/**"
   ]
 }
