@@ -55,3 +55,7 @@ function isAlpineLinux(): boolean {
 export function getSupportedOS(): NodeJS.Platform | 'alpine' {
   return isAlpineLinux() ? 'alpine' : process.platform;
 }
+
+export function shellIsRequired() {
+  return getSupportedOS() === 'win32';
+}

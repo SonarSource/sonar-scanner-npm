@@ -26,6 +26,7 @@ import { LogLevel, log } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { shellIsRequired } from './platform';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (process.platform.startsWith('win')) {
@@ -46,7 +47,7 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
 export async function tryLocalSonarScannerExecutable(command: string): Promise<boolean> {
   return new Promise<boolean>(resolve => {
     log(LogLevel.INFO, `Trying to find a local install of the SonarScanner: ${command}`);
-    const scannerProcess = spawn(command, ['-v']);
+    const scannerProcess = spawn(command, ['-v'], { shell: shellIsRequired() });
 
     scannerProcess.on('exit', code => {
       if (code === 0) {
@@ -118,6 +119,7 @@ export async function runScannerCli(
         ...process.env,
         SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
       },
+      shell: shellIsRequired(),
     },
   );
 
