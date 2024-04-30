@@ -25,6 +25,7 @@ import {
   DEFAULT_SONAR_EXCLUSIONS,
   ENV_TO_PROPERTY_NAME,
   ENV_VAR_PREFIX,
+  NPM_CONFIG_ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
   SCANNER_CLI_VERSION,
   SONARCLOUD_URL,
@@ -56,6 +57,19 @@ function envNameToSonarPropertyNameMapper(envName: string) {
   // Extract the name and convert to camel case
   const sonarScannerKey = envName
     .substring(ENV_VAR_PREFIX.length)
+    .toLowerCase()
+    .replace(/_([a-z])/g, g => g[1].toUpperCase());
+  return `sonar.scanner.${sonarScannerKey}`;
+}
+
+/**
+ * Convert the name of a sonar property from its environment variable form
+ * (eg npm_config_sonar_scanner_) to its sonar form (eg sonar.scanner.fooBar).
+ */
+function npmConfigEnvNameToSonarPropertyNameMapper(envName: string) {
+  // Extract the name and convert to camel case
+  const sonarScannerKey = envName
+    .substring(NPM_CONFIG_ENV_VAR_PREFIX.length)
     .toLowerCase()
     .replace(/_([a-z])/g, g => g[1].toUpperCase());
   return `sonar.scanner.${sonarScannerKey}`;
@@ -215,6 +229,10 @@ function getScanOptionsProperties(scanOptions: ScanOptions): ScannerProperties {
     options[ScannerProperty.SonarVerbose] = scanOptions.verbose ? 'true' : 'false';
   }
 
+  if (typeof scanOptions.version !== 'undefined') {
+    options[ScannerProperty.SonarScannerCliVersion] = scanOptions.version;
+  }
+
   return options;
 }
 
@@ -247,6 +265,12 @@ export function getEnvironmentProperties() {
         .filter(([key]) => key.startsWith(ENV_VAR_PREFIX))
         .filter(([key]) => !jsonEnvVariables.includes(key))
         .map(([key, value]) => [envNameToSonarPropertyNameMapper(key), value as string]),
+    ),
+    ...Object.fromEntries(
+      Object.entries(env)
+        .filter(([key]) => key.startsWith(NPM_CONFIG_ENV_VAR_PREFIX))
+        .filter(([key]) => !jsonEnvVariables.includes(key))
+        .map(([key, value]) => [npmConfigEnvNameToSonarPropertyNameMapper(key), value as string]),
     ),
   };
 

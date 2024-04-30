@@ -437,6 +437,36 @@ describe('getProperties', () => {
         'SONARQUBE_SCANNER_PARAMS is deprecated, please use SONAR_SCANNER_JSON_PARAMS instead',
       );
     });
+
+    it('should set the [ScannerProperty.SonarScannerCliVersion] for all existing formats', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        npm_config_sonar_scanner_version: '4.8.1.3023',
+      });
+
+      // "NPM Config" format `npm_config_sonar_scanner_${property_name}`
+      const npmConfigProperties = getProperties({}, projectHandler.getStartTime());
+      expect(npmConfigProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('4.8.1.3023');
+
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_VERSION: '5.0.0.2966',
+      });
+
+      // "SONAR_SCANNER" format `SONAR_SCANNER_${PROPERTY_NAME}`
+      const SonarScannerProperties = getProperties({}, projectHandler.getStartTime());
+      expect(SonarScannerProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('5.0.0.2966');
+
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      // js scan options format
+      const jsScanOptionsProperties = getProperties(
+        {
+          version: '4.7.0.2747',
+        },
+        projectHandler.getStartTime(),
+      );
+      expect(jsScanOptionsProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('4.7.0.2747');
+    });
   });
 
   describe('should handle command line properties', () => {

@@ -21,6 +21,7 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import fs from 'fs';
 import path from 'path';
+import { LogLevel, log } from '../../src/logging';
 import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
 import * as file from '../../src/file';
 import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
@@ -50,7 +51,7 @@ describe('java', () => {
 
       mock.onGet('/api/v2/analysis/version').reply(404, 'Not Found');
 
-      const serverSemver = await fetchServerVersion();
+      const serverSemver = await fetchServerVersion(MOCKED_PROPERTIES);
       expect(serverSemver.toString()).toEqual('3.2.2');
       expect(request.fetch).toHaveBeenCalledTimes(2);
     });
@@ -58,7 +59,7 @@ describe('java', () => {
     it('the SonarQube version should be fetched correctly using the new endpoint', async () => {
       mock.onGet('/api/server/version').reply(200, '3.2.1.12313');
 
-      const serverSemver = await fetchServerVersion();
+      const serverSemver = await fetchServerVersion(MOCKED_PROPERTIES);
       expect(serverSemver.toString()).toEqual('3.2.1');
     });
 
@@ -66,16 +67,22 @@ describe('java', () => {
       mock.onGet('/api/server/version').reply(404, 'Not Found');
       mock.onGet('/api/v2/server/version').reply(404, 'Not Found');
 
-      expect(async () => {
-        await fetchServerVersion();
+      await expect(async () => {
+        await fetchServerVersion(MOCKED_PROPERTIES);
       }).rejects.toBeDefined();
+
+      // test that we inform the user of the hostUrl being used
+      expect(log).toHaveBeenCalledWith(
+        LogLevel.ERROR,
+        `Verify that ${MOCKED_PROPERTIES[ScannerProperty.SonarHostUrl]} is a valid SonarQube server`,
+      );
     });
 
     it('should fail if version can not be parsed', async () => {
       mock.onGet('/api/server/version').reply(200, '<!DOCTYPE><HTML><BODY>FORBIDDEN</BODY></HTML>');
 
       expect(async () => {
-        await fetchServerVersion();
+        await fetchServerVersion(MOCKED_PROPERTIES);
       }).rejects.toBeDefined();
     });
   });

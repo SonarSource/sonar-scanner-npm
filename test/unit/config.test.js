@@ -131,49 +131,6 @@ describe('config', function () {
       assert.notExists(config.httpOptions.httpRequestOptions);
     });
 
-    // TODO: do we care to cover this in a test? the code is pretty simple
-    it('should not set baseURL if url is invalid', function () {
-      const config = getExecutableParams({
-        baseUrl: 'http://example.com:80:80/sonarqube-repository/',
-      });
-      assert.equal(
-        config.downloadUrl,
-        new URL(
-          'sonar-scanner-cli-' + DEFAULT_SCANNER_VERSION + '-' + config.targetOS + '.zip',
-          SONAR_SCANNER_MIRROR,
-        ),
-      );
-    });
-
-    // TODO: is this part of the ecosystem and do we want it?
-    it('should take the version from env or params', function () {
-      process.env.npm_config_sonar_scanner_version = '4.8.1.3023';
-      assert.equal(
-        getExecutableParams().downloadUrl,
-        new URL(
-          'sonar-scanner-cli-' + '4.8.1.3023' + '-' + findTargetOS() + '.zip',
-          SONAR_SCANNER_MIRROR,
-        ),
-      );
-
-      process.env.SONAR_SCANNER_VERSION = '5.0.0.2966';
-      assert.equal(
-        getExecutableParams().downloadUrl,
-        new URL(
-          'sonar-scanner-cli-' + '5.0.0.2966' + '-' + findTargetOS() + '.zip',
-          SONAR_SCANNER_MIRROR,
-        ),
-      );
-
-      assert.equal(
-        getExecutableParams({ version: '4.7.0.2747' }).downloadUrl,
-        new URL(
-          'sonar-scanner-cli-' + '4.7.0.2747' + '-' + findTargetOS() + '.zip',
-          SONAR_SCANNER_MIRROR,
-        ),
-      );
-    });
-
     // TODO: validate this is still a valid use case and still works (might be part of axios and not our responsibility)
     it('should consume and preserve username and password for sonar-scanner mirror server', function () {
       process.env = {};

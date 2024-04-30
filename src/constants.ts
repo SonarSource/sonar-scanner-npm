@@ -36,6 +36,7 @@ export const SONAR_CACHE_DIR = 'cache';
 export const UNARCHIVE_SUFFIX = '_extracted';
 
 export const ENV_VAR_PREFIX = 'SONAR_SCANNER_';
+export const NPM_CONFIG_ENV_VAR_PREFIX = 'npm_config_sonar_scanner_';
 
 export const ENV_TO_PROPERTY_NAME: [string, ScannerProperty][] = [
   ['SONAR_TOKEN', ScannerProperty.SonarToken],

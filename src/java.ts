@@ -37,7 +37,7 @@ import { LogLevel, log } from './logging';
 import { download, fetch } from './request';
 import { ScannerProperties, ScannerProperty } from './types';
 
-export async function fetchServerVersion(): Promise<SemVer> {
+export async function fetchServerVersion(parameters: ScannerProperties): Promise<SemVer> {
   let version: SemVer | null = null;
   try {
     // Try and fetch the new version endpoint first
@@ -60,6 +60,12 @@ export async function fetchServerVersion(): Promise<SemVer> {
     } catch (error: unknown) {
       // If it also failed, give up
       log(LogLevel.ERROR, `Failed to fetch server version: ${error}`);
+
+      // Inform the user of the host url that has failed, most
+      log(
+        LogLevel.ERROR,
+        `Verify that ${parameters[ScannerProperty.SonarHostUrl]} is a valid SonarQube server`,
+      );
       throw error;
     }
   }
@@ -83,7 +89,7 @@ export async function serverSupportsJREProvisioning(
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
   const SQServerInfo =
     semver.coerce(parameters[ScannerProperty.SonarScannerInternalSqVersion]) ??
-    (await fetchServerVersion());
+    (await fetchServerVersion(parameters));
   log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
