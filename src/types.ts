@@ -81,6 +81,6 @@ export type ScanOptions = {
 };
 
 export type CliArgs = {
-  debug: boolean;
-  define: string[];
+  debug?: boolean;
+  define?: string[];
 };

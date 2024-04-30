@@ -434,7 +434,7 @@ describe('getProperties', () => {
           serverUrl: 'http://localhost/sonarqube',
         },
         projectHandler.getStartTime(),
-        ['-Dsonar.token=my-token', '-javaagent:/ignored-value.jar'],
+        { define: ['sonar.token=my-token', '-javaagent:/ignored-value.jar'] },
       );
 
       expect(properties).toEqual({
@@ -473,7 +473,7 @@ describe('getProperties', () => {
           },
         },
         projectHandler.getStartTime(),
-        ['-Dsonar.token=only-this-will-be-used'],
+        { define: ['sonar.token=only-this-will-be-used'] },
       );
 
       expect(properties).toEqual({
@@ -519,7 +519,7 @@ describe('getProperties', () => {
           },
         },
         projectHandler.getStartTime(),
-        ['-Dsonar.scanner.app=ignored'],
+        { define: ['sonar.scanner.app=ignored'] },
       );
 
       expect(properties).toEqual({
