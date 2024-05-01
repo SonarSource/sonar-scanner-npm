@@ -20,7 +20,7 @@
 import { spawn } from 'child_process';
 import * as fsExtra from 'fs-extra';
 import path from 'path';
-import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_MIRROR } from './constants';
+import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_MIRROR, SCANNER_CLI_VERSION } from './constants';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
@@ -80,7 +80,7 @@ function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
 }
 
 export async function downloadScannerCli(properties: ScannerProperties): Promise<string> {
-  const version = properties[ScannerProperty.SonarScannerCliVersion];
+  const version = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
   if (!/^[\d.]+$/.test(version)) {
     throw new Error(`Version "${version}" does not have a correct format."`);
   }

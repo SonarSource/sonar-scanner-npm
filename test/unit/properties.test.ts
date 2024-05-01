@@ -367,6 +367,33 @@ describe('getProperties', () => {
       });
     });
 
+    it.each([
+      ['http', 'HTTP_PROXY'],
+      ['https', 'HTTPS_PROXY'],
+    ])('should detect %s_proxy env variable', (protocol: string, envName: string) => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        [envName]: `${protocol}://user:pass@my-proxy.io:1234`,
+        SONAR_HOST_URL: `${protocol}://localhost/sonarqube`,
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': `${protocol}://localhost/sonarqube`,
+        'sonar.scanner.internal.isSonarCloud': 'false',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.scanner.proxyHost': 'my-proxy.io',
+        'sonar.scanner.proxyPort': '1234',
+        'sonar.scanner.proxyUser': 'user',
+        'sonar.scanner.proxyPassword': 'pass',
+      });
+    });
+
     it('should use SONAR_SCANNER_JSON_PARAMS', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({
@@ -470,9 +497,9 @@ describe('getProperties', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({
         SONAR_TOKEN: 'ignored',
-        SONAR_HOST_URL: 'http://ignored',
+        SONAR_HOST_URL: 'http://localhost/sonarqube',
         SONAR_USER_HOME: '/tmp/used',
-        SONAR_ORGANIZATION: 'ignored',
+        SONAR_ORGANIZATION: 'used',
         SONAR_SCANNER_JSON_PARAMS: JSON.stringify({
           'sonar.userHome': 'ignored',
           'sonar.scanner.someVar': 'used',
@@ -481,10 +508,11 @@ describe('getProperties', () => {
 
       const properties = getProperties(
         {
-          serverUrl: 'http://localhost/sonarqube',
+          serverUrl: 'http://ignored',
           options: {
+            'sonar.projectKey': 'used',
             'sonar.token': 'ignored',
-            'sonar.organization': 'used',
+            'sonar.organization': 'ignored',
           },
         },
         projectHandler.getStartTime(),
@@ -495,7 +523,7 @@ describe('getProperties', () => {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.internal.isSonarCloud': 'false',
-        'sonar.projectKey': 'foo',
+        'sonar.projectKey': 'used',
         'sonar.projectName': 'Foo',
         'sonar.projectVersion': '1.0-SNAPSHOT',
         'sonar.sources': 'the-sources',
@@ -547,10 +575,45 @@ describe('getProperties', () => {
         'sonar.sources': 'the-sources',
       });
     });
+
+    it.each([
+      ['http', 'HTTP_PROXY'],
+      ['https', 'HTTPS_PROXY'],
+    ])(
+      'should not use HTTP_PROXY if proxy is passed through CLI',
+      (protocol: string, envName: string) => {
+        projectHandler.reset('fake_project_with_sonar_properties_file');
+        projectHandler.setEnvironmentVariables({
+          [envName]: `${protocol}://ignore-this-proxy.io`,
+        });
+
+        const properties = getProperties(
+          {
+            serverUrl: `${protocol}://localhost/sonarqube`,
+            options: {
+              [ScannerProperty.SonarScannerProxyHost]: 'ignore-this-proxy.io',
+            },
+          },
+          projectHandler.getStartTime(),
+          ['-Dsonar.scanner.proxyHost=use-this-proxy.io'],
+        );
+
+        expect(properties).toEqual({
+          ...projectHandler.getExpectedProperties(),
+          'sonar.host.url': `${protocol}://localhost/sonarqube`,
+          'sonar.scanner.internal.isSonarCloud': 'false',
+          'sonar.projectKey': 'foo',
+          'sonar.projectName': 'Foo',
+          'sonar.projectVersion': '1.0-SNAPSHOT',
+          'sonar.sources': 'the-sources',
+          [ScannerProperty.SonarScannerProxyHost]: 'use-this-proxy.io',
+        });
+      },
+    );
   });
 });
 
-describe('getHostProperties', () => {
+describe('addHostProperties', () => {
   it('should detect SonarCloud', () => {
     const expected = {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
