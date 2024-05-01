@@ -46,23 +46,23 @@ beforeEach(() => {
 
 describe('scan', () => {
   it('should default the log level to INFO', async () => {
-    await scan({}, []);
+    await scan({});
     expect(logging.getLogLevel()).toBe('INFO');
   });
 
   it('should set the log level to the value provided by the user', async () => {
-    await scan({ options: { 'sonar.verbose': 'true' } }, []);
+    await scan({ options: { 'sonar.verbose': 'true' } });
     expect(logging.getLogLevel()).toBe('DEBUG');
   });
 
   it('should set the log level to the value provided by the user', async () => {
-    await scan({ options: { 'sonar.log.level': 'DEBUG' } }, []);
+    await scan({ options: { 'sonar.log.level': 'DEBUG' } });
     expect(logging.getLogLevel()).toBe('DEBUG');
   });
 
   it('should output the current version of the scanner', async () => {
     jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
-    await scan({}, []);
+    await scan({});
     expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: MOCK.VERSION');
   });
 
@@ -70,7 +70,7 @@ describe('scan', () => {
     jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
     jest.spyOn(platform, 'getSupportedOS').mockReturnValue('alpine');
     jest.spyOn(platform, 'getArch').mockReturnValue('arm64');
-    await scan({}, []);
+    await scan({});
     expect(logging.log).toHaveBeenCalledWith('INFO', 'Platform:', 'alpine', 'arm64');
   });
 
