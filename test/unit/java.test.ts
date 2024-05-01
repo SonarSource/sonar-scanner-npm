@@ -25,7 +25,7 @@ import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../
 import * as file from '../../src/file';
 import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
 import * as request from '../../src/request';
-import { JreMetaData, ScannerProperties, ScannerProperty } from '../../src/types';
+import { AnalysisJresResponseType, ScannerProperties, ScannerProperty } from '../../src/types';
 
 const mock = new MockAdapter(axios);
 
@@ -46,36 +46,38 @@ beforeEach(() => {
 describe('java', () => {
   describe('version should be detected correctly', () => {
     it('the SonarQube version should be fetched correctly when new endpoint does not exist', async () => {
-      mock.onGet('/api/server/version').reply(200, '3.2.2');
+      mock.onGet('http://sonarqube.com/api/server/version').reply(200, '3.2.2');
 
       mock.onGet('/api/v2/analysis/version').reply(404, 'Not Found');
 
-      const serverSemver = await fetchServerVersion();
+      const serverSemver = await fetchServerVersion(MOCKED_PROPERTIES);
       expect(serverSemver.toString()).toEqual('3.2.2');
       expect(request.fetch).toHaveBeenCalledTimes(2);
     });
 
     it('the SonarQube version should be fetched correctly using the new endpoint', async () => {
-      mock.onGet('/api/server/version').reply(200, '3.2.1.12313');
+      mock.onGet('http://sonarqube.com/api/server/version').reply(200, '3.2.1.12313');
 
-      const serverSemver = await fetchServerVersion();
+      const serverSemver = await fetchServerVersion(MOCKED_PROPERTIES);
       expect(serverSemver.toString()).toEqual('3.2.1');
     });
 
     it('should fail if both endpoints do not work', async () => {
-      mock.onGet('/api/server/version').reply(404, 'Not Found');
+      mock.onGet('http://sonarqube.com/api/server/version').reply(404, 'Not Found');
       mock.onGet('/api/v2/server/version').reply(404, 'Not Found');
 
       expect(async () => {
-        await fetchServerVersion();
+        await fetchServerVersion(MOCKED_PROPERTIES);
       }).rejects.toBeDefined();
     });
 
     it('should fail if version can not be parsed', async () => {
-      mock.onGet('/api/server/version').reply(200, '<!DOCTYPE><HTML><BODY>FORBIDDEN</BODY></HTML>');
+      mock
+        .onGet('http://sonarqube.com/api/server/version')
+        .reply(200, '<!DOCTYPE><HTML><BODY>FORBIDDEN</BODY></HTML>');
 
       expect(async () => {
-        await fetchServerVersion();
+        await fetchServerVersion(MOCKED_PROPERTIES);
       }).rejects.toBeDefined();
     });
   });
@@ -91,26 +93,30 @@ describe('java', () => {
     });
 
     it(`should return true for SQ version >= ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
-      mock.onGet('/api/server/version').reply(200, '10.6.1.3123');
+      mock.onGet('http://sonarqube.com/api/server/version').reply(200, '10.6.1.3123');
       expect(await serverSupportsJREProvisioning(MOCKED_PROPERTIES)).toBe(true);
     });
 
     it(`should return false for SQ version < ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
       // Define the behavior of the GET request
-      mock.onGet('/api/server/version').reply(200, '9.9.9');
+      mock.onGet('http://sonarqube.com/api/server/version').reply(200, '9.9.9');
       expect(await serverSupportsJREProvisioning(MOCKED_PROPERTIES)).toBe(false);
     });
   });
 
   describe('when JRE provisioning is supported', () => {
-    const serverResponse: JreMetaData = {
-      filename: 'mock-jre.tar.gz',
-      javaPath: 'jre/bin/java',
-      md5: 'd41d8cd98f00b204e9800998ecf8427e',
-    };
+    const serverResponse: AnalysisJresResponseType = [
+      {
+        id: 'some-id',
+        filename: 'mock-jre.tar.gz',
+        javaPath: 'jre/bin/java',
+        sha256: 'd41d8cd98f00b204e9800998ecf8427e',
+        arch: 'arm64',
+        os: 'linux',
+      },
+    ];
     beforeEach(() => {
       jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue('mocked/path/to/file');
-
       jest.spyOn(file, 'extractArchive').mockResolvedValue(undefined);
 
       mock
@@ -123,7 +129,7 @@ describe('java', () => {
         .reply(200, serverResponse);
 
       mock
-        .onGet(`${API_V2_JRE_ENDPOINT}/${serverResponse.filename}`)
+        .onGet(`${API_V2_JRE_ENDPOINT}/${serverResponse[0].id}`)
         .reply(200, fs.createReadStream(path.resolve(__dirname, '../unit/mocks/mock-jre.tar.gz')));
     });
 
@@ -134,7 +140,7 @@ describe('java', () => {
         expect(request.fetch).toHaveBeenCalledTimes(1);
         expect(request.download).not.toHaveBeenCalled();
 
-        // check for the cache
+        // Check for the cache
         expect(file.getCacheFileLocation).toHaveBeenCalledTimes(1);
 
         expect(file.extractArchive).not.toHaveBeenCalled();
@@ -167,13 +173,29 @@ describe('java', () => {
         expect(file.getCacheFileLocation).toHaveBeenCalledTimes(1);
 
         expect(request.download).toHaveBeenCalledWith(
-          `${API_V2_JRE_ENDPOINT}/${serverResponse.filename}`,
+          `${API_V2_JRE_ENDPOINT}/${serverResponse[0].id}`,
           mockCacheDirectories.archivePath,
         );
 
         expect(file.validateChecksum).toHaveBeenCalledTimes(1);
 
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
+      });
+
+      it('should fail if no JRE matches', async () => {
+        mock
+          .onGet(API_V2_JRE_ENDPOINT, {
+            params: {
+              os: MOCKED_PROPERTIES[ScannerProperty.SonarScannerOs],
+              arch: MOCKED_PROPERTIES[ScannerProperty.SonarScannerArch],
+            },
+          })
+          .reply(200, []);
+
+        // Check that it rejects with a specific error
+        expect(fetchJRE({ ...MOCKED_PROPERTIES })).rejects.toThrowError(
+          'No JREs available for your platform linux arm64',
+        );
       });
     });
   });

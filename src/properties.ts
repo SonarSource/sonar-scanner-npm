@@ -27,6 +27,7 @@ import {
   ENV_TO_PROPERTY_NAME,
   ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
+  SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
   SONARCLOUD_URL_REGEX,
   SONAR_DIR_DEFAULT,
@@ -34,7 +35,7 @@ import {
 } from './constants';
 import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
-import { ScanOptions, ScannerProperties, ScannerProperty, CliArgs } from './types';
+import { CliArgs, ScanOptions, ScannerProperties, ScannerProperty } from './types';
 
 function getDefaultProperties(): ScannerProperties {
   return {
@@ -191,8 +192,8 @@ function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
     }
 
     return properties;
-  } catch (error: any) {
-    log(LogLevel.WARN, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error.message}`);
+  } catch (error) {
+    log(LogLevel.WARN, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error}`);
     throw error;
   }
 }
@@ -292,19 +293,26 @@ function getBootstrapperProperties(startTimestampMs: number): ScannerProperties 
  * Get endpoint properties from scanner properties.
  */
 export function getHostProperties(properties: ScannerProperties): ScannerProperties {
-  const sonarHostUrl = properties[ScannerProperty.SonarHostUrl];
-  const sonarCloudUrl = properties[ScannerProperty.SonarScannerSonarCloudURL];
+  const sonarHostUrl = properties[ScannerProperty.SonarHostUrl]?.replace(/\/$/, '');
+  const sonarApiBaseUrl = properties[ScannerProperty.SonarScannerApiBaseUrl];
+  const sonarCloudSpecified =
+    properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
+    SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '');
 
-  if (!sonarHostUrl || SONARCLOUD_URL_REGEX.exec(sonarHostUrl)) {
+  if (!sonarHostUrl || sonarCloudSpecified) {
     return {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
-      [ScannerProperty.SonarHostUrl]: sonarCloudUrl ? sonarCloudUrl : SONARCLOUD_URL,
+      [ScannerProperty.SonarHostUrl]:
+        properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? SONARCLOUD_URL,
+      [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? SONARCLOUD_API_BASE_URL,
+    };
+  } else {
+    return {
+      [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
+      [ScannerProperty.SonarHostUrl]: sonarHostUrl,
+      [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? `${sonarHostUrl}/api/v2`,
     };
   }
-  return {
-    [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
-    [ScannerProperty.SonarHostUrl]: sonarHostUrl,
-  };
 }
 
 function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {

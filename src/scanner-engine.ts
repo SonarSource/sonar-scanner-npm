@@ -19,6 +19,7 @@
  */
 import { spawn } from 'child_process';
 import fs from 'fs';
+import { API_V2_SCANNER_ENGINE_ENDPOINT } from './constants';
 import {
   extractArchive,
   getCacheDirectories,
@@ -29,7 +30,7 @@ import { LogLevel, log, logWithPrefix } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download, fetch } from './request';
 import {
-  CacheFileData,
+  AnalysisEngineResponseType,
   ScanOptions,
   ScannerLogEntry,
   ScannerProperties,
@@ -38,19 +39,12 @@ import {
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
   log(LogLevel.DEBUG, 'Detecting latest version of Scanner Engine');
-  const { data } = await fetch({
-    // TODO: replace with /api/v2/analysis/engine
-    url: '/batch/index',
-  });
-  const [filename, md5] = data.trim().split('|');
+  const { data } = await fetch<AnalysisEngineResponseType>({ url: API_V2_SCANNER_ENGINE_ENDPOINT });
+  const { sha256: checksum, filename, downloadUrl } = data;
   log(LogLevel.INFO, 'Latest Supported Scanner Engine: ', filename);
 
   log(LogLevel.DEBUG, 'Looking for Cached Scanner Engine');
-
-  // TODO: use sha256 instead of md5
-  const cacheFileData: CacheFileData = { md5, filename };
-  const cachedScannerEngine = await getCacheFileLocation(properties, cacheFileData);
-
+  const cachedScannerEngine = await getCacheFileLocation(properties, { checksum, filename });
   if (cachedScannerEngine) {
     log(LogLevel.INFO, 'Using Cached Scanner Engine');
     properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'true';
@@ -61,16 +55,15 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
 
   const { archivePath, unarchivePath: scannerEnginePath } = await getCacheDirectories(properties, {
-    md5,
+    checksum,
     filename,
   });
-
-  // TODO: replace with /api/v2/analysis/engine/<filename>
+  const url = downloadUrl ?? API_V2_SCANNER_ENGINE_ENDPOINT;
   log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
-  await download(`/batch/file?name=${filename}`, archivePath);
+  await download(url, archivePath);
   log(LogLevel.INFO, `Downloaded Scanner Engine to ${scannerEnginePath}`);
 
-  await validateChecksum(archivePath, md5);
+  await validateChecksum(archivePath, checksum);
 
   log(LogLevel.INFO, `Extracting Scanner Engine to ${scannerEnginePath}`);
   await extractArchive(archivePath, scannerEnginePath);

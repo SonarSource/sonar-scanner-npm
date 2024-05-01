@@ -19,17 +19,7 @@
  */
 import { LogLevel } from './logging';
 
-export type JreMetaData = {
-  filename: string;
-  md5: string;
-  javaPath: string;
-};
-
-export type CacheFileData = { md5: string; filename: string };
-
-export type JREFullData = JreMetaData & {
-  jrePath: string;
-};
+export type CacheFileData = { checksum: string; filename: string };
 
 export type ScannerLogEntry = {
   level: LogLevel;
@@ -44,13 +34,14 @@ export enum ScannerProperty {
   SonarExclusions = 'sonar.exclusions',
   SonarHostUrl = 'sonar.host.url',
   SonarUserHome = 'sonar.userHome',
+  SonarScannerApiBaseUrl = 'sonar.scanner.apiBaseUrl',
   SonarScannerOs = 'sonar.scanner.os',
   SonarScannerArch = 'sonar.scanner.arch',
   SonarOrganization = 'sonar.organization',
   SonarProjectBaseDir = 'sonar.projectBaseDir',
-  SonarScannerSonarCloudURL = 'sonar.scanner.sonarcloudUrl',
+  SonarScannerSonarCloudUrl = 'sonar.scanner.sonarcloudUrl',
   SonarScannerJavaExePath = 'sonar.scanner.javaExePath',
-  SonarScannerWasJRECacheHit = 'sonar.scanner.wasJRECacheHit',
+  SonarScannerWasJreCacheHit = 'sonar.scanner.wasJreCacheHit',
   SonarScannerWasEngineCacheHit = 'sonar.scanner.wasEngineCacheHit',
   SonarScannerProxyHost = 'sonar.scanner.proxyHost',
   SonarScannerProxyPort = 'sonar.scanner.proxyPort',
@@ -87,4 +78,22 @@ export type ScanOptions = {
 export type CliArgs = {
   debug?: boolean;
   define?: string[];
+};
+
+export type AnalysisJreMetaData = {
+  id: string;
+  filename: string;
+  sha256: string;
+  javaPath: string;
+  os: string;
+  arch: string;
+  downloadUrl?: string;
+};
+
+export type AnalysisJresResponseType = AnalysisJreMetaData[];
+
+export type AnalysisEngineResponseType = {
+  filename: string;
+  sha256: string;
+  downloadUrl?: string;
 };
