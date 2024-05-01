@@ -79,3 +79,8 @@ export type ScanOptions = {
   logLevel?: string;
   verbose?: boolean;
 };
+
+export type CliArgs = {
+  debug?: boolean;
+  define?: string[];
+};
