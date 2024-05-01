@@ -87,7 +87,7 @@ describe('java', () => {
           ...MOCKED_PROPERTIES,
           [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
         }),
-      ).toBe(true);
+      ).toBe(false); // TODO: return to true once SC has the new provisioning mechanism in place
     });
 
     it(`should return true for SQ version >= ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {

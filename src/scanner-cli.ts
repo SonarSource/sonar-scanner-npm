@@ -47,6 +47,11 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
 export async function tryLocalSonarScannerExecutable(command: string): Promise<boolean> {
   return new Promise<boolean>(resolve => {
     log(LogLevel.INFO, `Trying to find a local install of the SonarScanner: ${command}`);
+
+    if (!fsExtra.existsSync(command)) {
+      resolve(false);
+      return;
+    }
     const scannerProcess = spawn(command, ['-v'], { shell: isWindows() });
 
     scannerProcess.on('exit', code => {
@@ -66,6 +71,8 @@ export async function tryLocalSonarScannerExecutable(command: string): Promise<b
  */
 function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
   // Get location to download scanner-cli from
+
+  // Not in default to avoid populating it for non scanner-cli users
   const scannerCliMirror = properties[ScannerProperty.SonarScannerCliMirror] ?? SCANNER_CLI_MIRROR;
   const scannerCliFileName =
     'sonar-scanner-cli-' + version + '-' + normalizePlatformName() + '.zip';
@@ -127,7 +134,7 @@ export async function runScannerCli(
   child.stderr.on('data', buffer => log(LogLevel.ERROR, buffer.toString()));
 
   return new Promise<void>((resolve, reject) => {
-    process.on('exit', code => {
+    child.on('exit', code => {
       if (code === 0) {
         log(LogLevel.INFO, 'SonarScanner CLI finished successfully');
         resolve();

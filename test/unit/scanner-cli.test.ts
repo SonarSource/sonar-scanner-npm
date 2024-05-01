@@ -17,10 +17,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import * as fsExtra from 'fs-extra';
 import { spawn } from 'child_process';
 import path from 'path';
 import sinon from 'sinon';
-import { SCANNER_CLI_DEFAULT_BIN_NAME, SCANNER_CLI_INSTALL_PATH } from '../../src/constants';
+import {
+  SCANNER_CLI_DEFAULT_BIN_NAME,
+  SCANNER_CLI_INSTALL_PATH,
+  SCANNER_CLI_VERSION,
+} from '../../src/constants';
 import { extractArchive } from '../../src/file';
 import { LogLevel, log } from '../../src/logging';
 import { download } from '../../src/request';
@@ -33,6 +38,7 @@ import {
 import { ScannerProperty } from '../../src/types';
 import { ChildProcessMock } from './mocks/ChildProcessMock';
 
+jest.mock('fs-extra');
 jest.mock('child_process');
 jest.mock('../../src/request');
 jest.mock('../../src/file');
@@ -44,6 +50,7 @@ const MOCK_PROPERTIES = {
   [ScannerProperty.SonarToken]: 'token',
   [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
   [ScannerProperty.SonarUserHome]: 'path/to/user/home',
+  [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
 };
 
 beforeEach(() => {
@@ -53,6 +60,7 @@ beforeEach(() => {
 describe('scanner-cli', () => {
   describe('tryLocalSonarScannerExecutable', () => {
     it('should detect locally installed scanner-cli', async () => {
+      jest.spyOn(fsExtra, 'existsSync').mockReturnValue(true);
       expect(await tryLocalSonarScannerExecutable(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe(true);
     });
 
@@ -179,20 +187,21 @@ describe('scanner-cli', () => {
     });
 
     it('should display SonarScanner CLI output', async () => {
+      jest.spyOn(process.stdout, 'write');
       childProcessHandler.setOutput('the output', 'some error');
 
       await runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner');
 
       expect(log).toHaveBeenCalledWith(LogLevel.ERROR, 'some error');
-      expect(log).toHaveBeenCalledWith(LogLevel.INFO, 'the output');
+      expect(process.stdout.write).toHaveBeenCalledWith('the output');
     });
 
     it('should reject if SonarScanner CLI fails', async () => {
       childProcessHandler.setExitCode(1);
 
-      await expect(runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner')).rejects.toBeDefined();
-
-      expect(log).toHaveBeenCalledWith(LogLevel.ERROR, 'SonarScanner CLI failed with code 1');
+      await expect(runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner')).rejects.toThrow(
+        'SonarScanner CLI failed with code 1',
+      );
     });
 
     it('should pass proxy options to scanner', async () => {

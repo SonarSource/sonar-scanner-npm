@@ -27,7 +27,7 @@ module.exports = {
   moduleFileExtensions: ['js', 'ts', 'json'],
   moduleDirectories: ['node_modules'],
   testResultsProcessor: 'jest-sonar-reporter',
-  testMatch: ['<rootDir>/test/unit/**/*.test.{js,ts}'],
+  testMatch: ['<rootDir>/test/unit/**/*.test.ts'],
   testTimeout: 20000,
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
 };
