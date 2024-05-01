@@ -15,9 +15,10 @@
     "url": "https://github.com/SonarSource/sonar-scanner-npm/issues"
   },
   "license": "LGPL-3.0-only",
-  "main": "src/index.js",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
   "bin": {
-    "sonar-scanner": "src/bin/sonar-scanner"
+    "sonar-scanner": "bin/sonar-scanner"
   },
   "engines": {
     "node": ">= 18"
@@ -25,19 +26,21 @@
   "dependencies": {
     "adm-zip": "0.5.12",
     "axios": "1.6.8",
+    "commander": "12.0.0",
     "fs-extra": "11.2.0",
     "hpagent": "1.2.0",
     "jest-sonar-reporter": "2.0.0",
-    "proxy-from-env": "1.1.0",
+    "node-forge": "^1.3.1",
+    "proxy-from-env": "^1.1.0",
     "semver": "7.6.0",
     "slugify": "1.6.6",
-    "tar-stream": "3.1.7",
-    "ts-jest": "^29.1.2"
+    "tar-stream": "3.1.7"
   },
   "devDependencies": {
     "@types/adm-zip": "0.5.5",
     "@types/fs-extra": "11.0.4",
     "@types/jest": "29.5.12",
+    "@types/node-forge": "^1.3.11",
     "@types/proxy-from-env": "1.0.4",
     "@types/semver": "7.5.8",
     "@types/sinon": "17.0.3",
@@ -66,7 +69,7 @@
     "sonar-runner"
   ],
   "scripts": {
-    "build": "npm ci && npm run ts-build && npm run check-format && npm run license && npm test && cd tools/orchestrator && npm run build",
+    "build": "npm ci && npm run ts-build && npm run check-format && npm run license && npm test && cd tools/orchestrator",
     "ts-build": "tsc && node scripts/fix-comments.js",
     "test": "npx jest --coverage",
     "test-integration": "cd test/integration && npm test",
@@ -84,6 +87,6 @@
     "arrowParens": "avoid"
   },
   "files": [
-    "src/**"
+    "build/**"
   ]
 }

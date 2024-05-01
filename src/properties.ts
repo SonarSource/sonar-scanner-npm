@@ -19,6 +19,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { getProxyForUrl } from 'proxy-from-env';
 import slugify from 'slugify';
 import { version } from '../package.json';
 import {
@@ -27,7 +28,6 @@ import {
   ENV_VAR_PREFIX,
   NPM_CONFIG_ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
-  SCANNER_CLI_VERSION,
   SONARCLOUD_URL,
   SONARCLOUD_URL_REGEX,
   SONAR_DIR_DEFAULT,
@@ -35,7 +35,7 @@ import {
 } from './constants';
 import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
-import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { ScanOptions, ScannerProperties, ScannerProperty, CliArgs } from './types';
 
 function getDefaultProperties(): ScannerProperties {
   return {
@@ -43,7 +43,6 @@ function getDefaultProperties(): ScannerProperties {
       process.env.HOME ?? process.env.USERPROFILE ?? '',
       SONAR_DIR_DEFAULT,
     ),
-    [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
     [ScannerProperty.SonarScannerOs]: getSupportedOS(),
     [ScannerProperty.SonarScannerArch]: getArch(),
   };
@@ -165,18 +164,21 @@ function getPackageJsonProperties(
 /**
  * Convert CLI args into scanner properties.
  */
-function getCommandLineProperties(cliArgs?: string[]): ScannerProperties {
-  if (!cliArgs || cliArgs.length === 0) {
-    return {};
+function getCommandLineProperties(cliArgs?: CliArgs): ScannerProperties {
+  const properties: ScannerProperties = {};
+
+  if (cliArgs?.debug) {
+    properties[ScannerProperty.SonarVerbose] = 'true';
+  }
+
+  const { define } = cliArgs ?? {};
+  if (!define || define.length === 0) {
+    return properties;
   }
 
   // Parse CLI args (eg: -Dsonar.token=xxx)
-  const properties: ScannerProperties = {};
-  for (const arg of cliArgs) {
-    if (!arg.startsWith('-D')) {
-      continue;
-    }
-    const [key, value] = arg.substring(2).split('=');
+  for (const arg of define) {
+    const [key, value] = arg.split('=');
     properties[key] = value;
   }
 
@@ -213,33 +215,33 @@ function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
  * Get scanner properties from scan option object (JS API).
  */
 function getScanOptionsProperties(scanOptions: ScanOptions): ScannerProperties {
-  const options = {
+  const properties = {
     ...scanOptions.options,
   };
 
   if (typeof scanOptions.serverUrl !== 'undefined') {
-    options[ScannerProperty.SonarHostUrl] = scanOptions.serverUrl;
+    properties[ScannerProperty.SonarHostUrl] = scanOptions.serverUrl;
   }
 
   if (typeof scanOptions.token !== 'undefined') {
-    options[ScannerProperty.SonarToken] = scanOptions.token;
+    properties[ScannerProperty.SonarToken] = scanOptions.token;
   }
 
   if (typeof scanOptions.verbose !== 'undefined') {
-    options[ScannerProperty.SonarVerbose] = scanOptions.verbose ? 'true' : 'false';
+    properties[ScannerProperty.SonarVerbose] = scanOptions.verbose ? 'true' : 'false';
   }
 
   if (typeof scanOptions.version !== 'undefined') {
-    options[ScannerProperty.SonarScannerCliVersion] = scanOptions.version;
+    properties[ScannerProperty.SonarScannerCliVersion] = scanOptions.version;
   }
 
-  return options;
+  return properties;
 }
 
 /**
  * Automatically parse properties from environment variables.
  */
-export function getEnvironmentProperties() {
+function getEnvironmentProperties() {
   const { env } = process;
 
   const jsonEnvVariables = ['SONAR_SCANNER_JSON_PARAMS', 'SONARQUBE_SCANNER_PARAMS'];
@@ -314,13 +316,13 @@ function getBootstrapperProperties(startTimestampMs: number): ScannerProperties 
  * Get endpoint properties from scanner properties.
  */
 export function getHostProperties(properties: ScannerProperties): ScannerProperties {
-  let sonarHostUrl = properties[ScannerProperty.SonarHostUrl] ?? '';
+  const sonarHostUrl = properties[ScannerProperty.SonarHostUrl];
+  const sonarCloudUrl = properties[ScannerProperty.SonarScannerSonarCloudURL];
 
   if (!sonarHostUrl || SONARCLOUD_URL_REGEX.exec(sonarHostUrl)) {
     return {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
-      [ScannerProperty.SonarHostUrl]:
-        properties[ScannerProperty.SonarScannerSonarCloudURL] ?? SONARCLOUD_URL,
+      [ScannerProperty.SonarHostUrl]: sonarCloudUrl ? sonarCloudUrl : SONARCLOUD_URL,
     };
   }
   return {
@@ -329,23 +331,48 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
   };
 }
 
+function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {
+  const proxyUrl = getProxyForUrl(serverUrl);
+  // If no proxy is set, return the properties as is
+  if (!proxyUrl) {
+    return {};
+  }
+
+  // Parse the proxy URL
+  const url = new URL(proxyUrl);
+  const properties: ScannerProperties = {};
+  properties[ScannerProperty.SonarScannerProxyHost] = url.hostname;
+  if (url.port) {
+    properties[ScannerProperty.SonarScannerProxyPort] = url.port;
+  }
+  if (url.username) {
+    properties[ScannerProperty.SonarScannerProxyUser] = url.username;
+  }
+  if (url.password) {
+    properties[ScannerProperty.SonarScannerProxyPassword] = url.password;
+  }
+  return properties;
+}
+
 export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
-  cliArgs?: string[],
+  cliArgs?: CliArgs,
 ): ScannerProperties {
-  const bootstrapperProperties = getBootstrapperProperties(startTimestampMs);
   const cliProperties = getCommandLineProperties(cliArgs);
-  const scanOptionsProperties = getScanOptionsProperties(scanOptions);
   const envProperties = getEnvironmentProperties();
+  const scanOptionsProperties = getScanOptionsProperties(scanOptions);
+
+  const userProperties: ScannerProperties = {
+    ...scanOptionsProperties,
+    ...envProperties,
+    ...cliProperties,
+  };
 
   // Compute default base dir respecting order of precedence we use for the final merge
-  const projectBaseDir =
-    cliProperties[ScannerProperty.SonarProjectBaseDir] ??
-    scanOptionsProperties[ScannerProperty.SonarProjectBaseDir] ??
-    envProperties[ScannerProperty.SonarProjectBaseDir] ??
-    process.cwd();
+  const projectBaseDir = userProperties[ScannerProperty.SonarProjectBaseDir] ?? process.cwd();
 
+  // Infer specific properties from project files
   let inferredProperties: ScannerProperties;
   try {
     inferredProperties = getSonarFileProperties(projectBaseDir);
@@ -356,10 +383,7 @@ export function getProperties(
     };
 
     const baseSonarExclusions =
-      cliProperties[ScannerProperty.SonarExclusions] ??
-      scanOptionsProperties[ScannerProperty.SonarExclusions] ??
-      envProperties[ScannerProperty.SonarExclusions] ??
-      DEFAULT_SONAR_EXCLUSIONS;
+      userProperties[ScannerProperty.SonarExclusions] ?? DEFAULT_SONAR_EXCLUSIONS;
 
     inferredProperties = {
       ...inferredProperties,
@@ -367,19 +391,29 @@ export function getProperties(
     };
   }
 
+  // Generate proxy properties from HTTP[S]_PROXY env variables, if not already set
+  const httpProxyProperties = getHttpProxyEnvProperties(
+    userProperties[ScannerProperty.SonarHostUrl],
+  );
+
   // Merge properties respecting order of precedence
   const properties = {
     ...getDefaultProperties(), // fallback to default if nothing was provided for these properties
-    ...envProperties, // Lowest precedence
     ...inferredProperties,
     ...scanOptionsProperties,
+    ...httpProxyProperties,
+    ...envProperties,
     ...cliProperties, // Highest precedence
-    ...bootstrapperProperties, // Can't be overridden
-    ...{ 'sonar.projectBaseDir': projectBaseDir }, // Manually computed, can't be overridden
   };
+
+  // Hotfix host properties with custom SonarCloud URL
+  const hostProperties = getHostProperties(properties);
 
   return {
     ...properties,
-    ...getHostProperties(properties),
+    // Can't be overridden:
+    ...hostProperties,
+    ...getBootstrapperProperties(startTimestampMs),
+    'sonar.projectBaseDir': projectBaseDir,
   };
 }

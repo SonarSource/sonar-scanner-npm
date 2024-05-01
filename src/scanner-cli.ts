@@ -20,22 +20,23 @@
 import { spawn } from 'child_process';
 import * as fsExtra from 'fs-extra';
 import path from 'path';
-import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_MIRROR } from './constants';
+import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_MIRROR, SCANNER_CLI_VERSION } from './constants';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { isMac, isWindows, isLinux } from './platform';
 import { AxiosRequestConfig } from 'axios';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
-  if (process.platform.startsWith('win')) {
+  if (isWindows()) {
     return 'windows';
   }
-  if (process.platform.startsWith('linux')) {
+  if (isLinux()) {
     return 'linux';
   }
-  if (process.platform.startsWith('darwin')) {
+  if (isMac()) {
     return 'macosx';
   }
   throw Error(`Your platform '${process.platform}' is currently not supported.`);
@@ -47,11 +48,12 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
 export async function tryLocalSonarScannerExecutable(command: string): Promise<boolean> {
   return new Promise<boolean>(resolve => {
     log(LogLevel.INFO, `Trying to find a local install of the SonarScanner: ${command}`);
+
     if (!fsExtra.existsSync(command)) {
       resolve(false);
       return;
     }
-    const scannerProcess = spawn(command, ['-v']);
+    const scannerProcess = spawn(command, ['-v'], { shell: isWindows() });
 
     scannerProcess.on('exit', code => {
       if (code === 0) {
@@ -79,7 +81,7 @@ function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
 }
 
 export async function downloadScannerCli(properties: ScannerProperties): Promise<string> {
-  const version = properties[ScannerProperty.SonarScannerCliVersion];
+  const version = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
   if (!/^[\d.]+$/.test(version)) {
     throw new Error(`Version "${version}" does not have a correct format."`);
   }
@@ -119,7 +121,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   await download(scannerCliUrl.href, archivePath, overrides);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
-  extractArchive(archivePath, installDir);
+  await extractArchive(archivePath, installDir);
 
   return binPath;
 }
@@ -138,6 +140,7 @@ export async function runScannerCli(
         ...process.env,
         SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
       },
+      shell: isWindows(),
     },
   );
 

@@ -60,7 +60,6 @@ export class FakeProjectMock {
       'sonar.scanner.appVersion': '1.2.3',
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': 'false',
-      'sonar.scanner.version': SCANNER_CLI_VERSION,
       'sonar.userHome': expect.stringMatching(/\.sonar$/),
       'sonar.scanner.os': 'windows',
       'sonar.scanner.arch': 'aarch64',

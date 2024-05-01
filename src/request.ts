@@ -20,6 +20,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import fs from 'fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import https from 'https';
+import forge from 'node-forge';
 import * as stream from 'stream';
 import { promisify } from 'util';
 import { LogLevel, log } from './logging';
@@ -31,23 +33,72 @@ const finished = promisify(stream.finished);
 // The axios instance is private to this module
 let _axiosInstance: AxiosInstance | null = null;
 
-export function getHttpAgents(
+async function extractTruststoreCerts(p12Base64: string, password: string = ''): Promise<string[]> {
+  // P12/PFX file -> DER -> ASN.1 -> PKCS12
+  const der = forge.util.decode64(p12Base64);
+  const asn1 = forge.asn1.fromDer(der);
+  const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
+
+  // Extract the CA certificates as PEM for Node
+  const bags = p12.getBags({ bagType: forge.pki.oids.certBag });
+  const ca: string[] = [];
+  for (const entry of bags[forge.pki.oids.certBag] ?? []) {
+    if (entry.cert) {
+      ca.push(forge.pki.certificateToPem(entry.cert));
+    }
+  }
+
+  log(LogLevel.DEBUG, `${ca.length} CA certificates found in truststore`);
+  return ca;
+}
+
+export async function getHttpAgents(
   properties: ScannerProperties,
-): Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent'> {
+): Promise<Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent'>> {
   const agents: Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent'> = {};
   const proxyUrl = getProxyUrl(properties);
 
+  // Accumulate https agent options
+  const httpsAgentOptions: https.AgentOptions = {};
+
+  // Truststore
+  const truststorePath = properties[ScannerProperty.SonarScannerTruststorePath];
+  if (truststorePath) {
+    log(LogLevel.DEBUG, `Using truststore at ${truststorePath}`);
+    const p12Base64 = await fs.promises.readFile(truststorePath, { encoding: 'base64' });
+    try {
+      const certs = await extractTruststoreCerts(
+        p12Base64,
+        properties[ScannerProperty.SonarScannerTruststorePassword],
+      );
+      httpsAgentOptions.ca = certs;
+    } catch (e) {
+      log(LogLevel.WARN, `Failed to load truststore: ${e}`);
+    }
+  }
+
+  // Key store
+  const keystorePath = properties[ScannerProperty.SonarScannerKeystorePath];
+  if (keystorePath) {
+    log(LogLevel.DEBUG, `Using keystore at ${keystorePath}`);
+    httpsAgentOptions.pfx = await fs.promises.readFile(keystorePath);
+    httpsAgentOptions.passphrase = properties[ScannerProperty.SonarScannerKeystorePassword] ?? '';
+  }
+
   if (proxyUrl) {
-    agents.httpsAgent = new HttpsProxyAgent({ proxy: proxyUrl.toString() });
+    agents.httpsAgent = new HttpsProxyAgent({ proxy: proxyUrl.toString(), ...httpsAgentOptions });
     agents.httpAgent = new HttpProxyAgent({ proxy: proxyUrl.toString() });
+  } else if (Object.keys(httpsAgentOptions).length > 0) {
+    // Only create an agent if there are options
+    agents.httpsAgent = new https.Agent({ ...httpsAgentOptions });
   }
   return agents;
 }
 
-export function initializeAxios(properties: ScannerProperties) {
+export async function initializeAxios(properties: ScannerProperties) {
   const token = properties[ScannerProperty.SonarToken];
   const baseURL = properties[ScannerProperty.SonarHostUrl];
-  const agents = getHttpAgents(properties);
+  const agents = await getHttpAgents(properties);
   const timeout =
     Math.floor(parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) * 1000;
 

@@ -35,7 +35,6 @@ cmake-build-debug/
 
 # IntelliJ
 /out/
-*.iml
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -141,6 +140,3 @@ xunit.xml
 
 # MacOS
 .DS_Store
-
-# TS build artifacts
-build/

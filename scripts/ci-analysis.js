@@ -20,7 +20,7 @@
 const path = require('path');
 
 // Regular users will call 'require('sonarqube-scanner')' - but not here: eat your own dog food! :-)
-const scanner = require('../src').scan;
+const scanner = require('../build/src').scan;
 
 // We just run an analysis and push it to SonarCloud
 // (No need to pass the server URL and the token, we're using the Travis
@@ -36,6 +36,7 @@ scanner({
     'sonar.tests': 'test',
     'sonar.host.url': 'https://sonarcloud.io',
     'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
+    'sonar.verbose': 'true',
   },
 }).catch(err => {
   process.exitCode = err.status;
