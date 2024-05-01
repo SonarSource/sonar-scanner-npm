@@ -17,20 +17,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import fs from 'fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import path from 'path';
+import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants';
 import * as logging from '../../src/logging';
-import { fetch, getHttpAgents, initializeAxios } from '../../src/request';
-import { ScannerProperties, ScannerProperty } from '../../src/types';
+import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request';
+import { ScannerProperty } from '../../src/types';
 
 jest.mock('axios', () => ({
-  create: jest.fn(),
+  create: jest.fn().mockReturnValue({ request: jest.fn() }),
+  request: jest.fn(),
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
+  resetAxios();
 });
 
 describe('request', () => {
@@ -38,7 +41,7 @@ describe('request', () => {
     describe('with proxy options', () => {
       it('should define proxy url correctly', async () => {
         const agents = await getHttpAgents({
-          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
         });
         expect(agents.httpAgent).toBeInstanceOf(HttpProxyAgent);
@@ -49,7 +52,7 @@ describe('request', () => {
 
       it('should not define agents when no proxy is provided', async () => {
         const agents = await getHttpAgents({
-          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         });
         expect(agents.httpAgent).toBeUndefined();
         expect(agents.httpsAgent).toBeUndefined();
@@ -67,7 +70,7 @@ describe('request', () => {
         const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
 
         const { httpsAgent } = await getHttpAgents({
-          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
           [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
         });
@@ -85,7 +88,7 @@ describe('request', () => {
         const truststorePass = 'password';
 
         const { httpsAgent } = await getHttpAgents({
-          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
           [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
         });
@@ -103,7 +106,7 @@ describe('request', () => {
         const truststorePass = 'password';
 
         const { httpsAgent } = await getHttpAgents({
-          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
           [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
         });
@@ -118,7 +121,7 @@ describe('request', () => {
         const keystorePass = 'password';
 
         const { httpsAgent } = await getHttpAgents({
-          [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+          [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerKeystorePath]: keystorePath,
           [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
         });
@@ -138,7 +141,7 @@ describe('request', () => {
       const keystorePass = 'password';
 
       const { httpsAgent } = await getHttpAgents({
-        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
         [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
         [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
@@ -159,19 +162,21 @@ describe('request', () => {
     it('should initialize axios', async () => {
       jest.spyOn(axios, 'create');
 
-      const properties: ScannerProperties = {
-        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+      await initializeAxios({
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
+        [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
         [ScannerProperty.SonarToken]: 'testToken',
-      };
+      });
 
-      await initializeAxios(properties);
-
-      expect(axios.create).toHaveBeenCalledTimes(1);
+      expect(axios.create).toHaveBeenCalledTimes(2);
       expect(axios.create).toHaveBeenCalledWith({
-        baseURL: 'https://sonarcloud.io',
+        baseURL: SONARCLOUD_API_BASE_URL,
         headers: {
           Authorization: `Bearer testToken`,
         },
+        timeout: 0,
+      });
+      expect(axios.create).toHaveBeenCalledWith({
         timeout: 0,
       });
     });
@@ -179,19 +184,21 @@ describe('request', () => {
     it('should initialize axios with timeout', async () => {
       jest.spyOn(axios, 'create');
 
-      const properties: ScannerProperties = {
-        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+      await initializeAxios({
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
+        [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
         [ScannerProperty.SonarToken]: 'testToken',
         [ScannerProperty.SonarScannerResponseTimeout]: '23',
-      };
-
-      await initializeAxios(properties);
+      });
 
       expect(axios.create).toHaveBeenCalledWith({
-        baseURL: 'https://sonarcloud.io',
+        baseURL: SONARCLOUD_API_BASE_URL,
         headers: {
           Authorization: `Bearer testToken`,
         },
+        timeout: 23000,
+      });
+      expect(axios.create).toHaveBeenCalledWith({
         timeout: 23000,
       });
     });
@@ -199,7 +206,36 @@ describe('request', () => {
 
   describe('fetch', () => {
     it('should throw error if axios is not initialized', () => {
-      expect(() => fetch({})).toThrow('Axios instance is not initialized');
+      jest.spyOn(axios, 'request');
+
+      expect(() => fetch({ url: '/some-url' })).toThrow('Axios instance is not initialized');
+    });
+
+    it('should use correct axios instance based on URL', async () => {
+      const mockedRequestInternal = jest.fn();
+      const mockedRequestExternal = jest.fn();
+      jest.spyOn(axios, 'create').mockImplementation(
+        options =>
+          ({
+            request: options?.baseURL ? mockedRequestInternal : mockedRequestExternal,
+          }) as any as AxiosInstance,
+      );
+
+      await initializeAxios({
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
+        [ScannerProperty.SonarToken]: 'testToken',
+        [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
+      });
+
+      await fetch({ url: 'https://sonarcloud.io/api/issues/search' });
+      await fetch({ url: 'http://sonarcloud.io/api/issues/search' });
+      expect(mockedRequestInternal).not.toHaveBeenCalled();
+      expect(mockedRequestExternal).toHaveBeenCalledTimes(2);
+
+      await fetch({ url: '/api/issues/search' });
+      await fetch({ url: '/issues/search' });
+      expect(mockedRequestInternal).toHaveBeenCalledTimes(2);
+      expect(mockedRequestExternal).toHaveBeenCalledTimes(2);
     });
 
     it('should call axios request if axios is initialized', async () => {
@@ -211,14 +247,12 @@ describe('request', () => {
           }) as any,
       );
 
-      const properties: ScannerProperties = {
-        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+      await initializeAxios({
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         [ScannerProperty.SonarToken]: 'testToken',
-      };
+      });
 
-      await initializeAxios(properties);
-
-      const config = { url: 'https://sonarcloud.io/api/issues/search' };
+      const config = { url: '/api/issues/search' };
 
       fetch(config);
       expect(mockedRequest).toHaveBeenCalledWith(config);

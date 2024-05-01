@@ -23,9 +23,9 @@ export const SCANNER_BOOTSTRAPPER_NAME = 'ScannerNpm';
 
 export const SONARCLOUD_URL = 'https://sonarcloud.io';
 
-export const SONARCLOUD_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarcloud\.io)/;
+export const SONARCLOUD_API_BASE_URL = 'https://api.sonarcloud.io';
 
-export const SONARCLOUD_PRODUCTION_URL = 'https://sonarcloud.io';
+export const SONARCLOUD_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarcloud\.io)/;
 
 export const SONARQUBE_JRE_PROVISIONING_MIN_VERSION = '10.6';
 
@@ -49,10 +49,11 @@ export const SONAR_PROJECT_FILENAME = 'sonar-project.properties';
 export const DEFAULT_SONAR_EXCLUSIONS =
   'node_modules/**,bower_components/**,jspm_packages/**,typings/**,lib-cov/**';
 
-export const API_V2_VERSION_ENDPOINT = '/api/v2/analysis/version';
+export const API_V2_VERSION_ENDPOINT = '/analysis/version';
+export const API_V2_JRE_ENDPOINT = '/analysis/jres';
+export const API_V2_SCANNER_ENGINE_ENDPOINT = '/analysis/engine';
+
 export const API_OLD_VERSION_ENDPOINT = '/api/server/version';
-export const API_V2_JRE_ENDPOINT = '/api/v2/analysis/jres';
-export const API_V2_SCANNER_ENGINE_ENDPOINT = '/api/v2/analysis/engine';
 
 export const SCANNER_CLI_DEFAULT_BIN_NAME = 'sonar-scanner';
 export const SCANNER_CLI_VERSION = '5.0.1.3006';

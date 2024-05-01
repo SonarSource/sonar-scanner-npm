@@ -17,8 +17,8 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import * as fsExtra from 'fs-extra';
 import { spawn } from 'child_process';
+import * as fsExtra from 'fs-extra';
 import path from 'path';
 import sinon from 'sinon';
 import {
@@ -275,7 +275,7 @@ describe('scanner-cli', () => {
 
   describe('normalizePlatformName', function () {
     it('detect Windows', function () {
-      const stub = sinon.stub(process, 'platform').value('windows10');
+      const stub = sinon.stub(process, 'platform').value('win32');
 
       expect(normalizePlatformName()).toEqual('windows');
       stub.restore();

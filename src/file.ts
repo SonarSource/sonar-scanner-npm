@@ -26,14 +26,14 @@ import path from 'path';
 import tarStream from 'tar-stream';
 import zlib from 'zlib';
 import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
-import { log, LogLevel } from './logging';
+import { LogLevel, log } from './logging';
 import { CacheFileData, ScannerProperties, ScannerProperty } from './types';
 
 export async function getCacheFileLocation(
   properties: ScannerProperties,
-  { md5, filename }: CacheFileData,
+  { checksum, filename }: CacheFileData,
 ) {
-  const filePath = path.join(getParentCacheDirectory(properties), md5, filename);
+  const filePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   if (fs.existsSync(filePath)) {
     log(LogLevel.INFO, 'Found Cached: ', filePath);
     return filePath;
@@ -71,7 +71,7 @@ export async function extractArchive(fromPath: string, toPath: string) {
 
       extract.on('error', err => {
         log(LogLevel.ERROR, 'Error extracting tar.gz', err);
-        reject(err);
+        reject(err as Error);
       });
     });
 
@@ -94,7 +94,7 @@ async function generateChecksum(filepath: string) {
         reject(err);
         return;
       }
-      resolve(crypto.createHash('md5').update(data).digest('hex'));
+      resolve(crypto.createHash('sha256').update(data).digest('hex'));
     });
   });
 }
@@ -117,12 +117,12 @@ export async function validateChecksum(filePath: string, expectedChecksum: strin
 
 export async function getCacheDirectories(
   properties: ScannerProperties,
-  { md5, filename }: CacheFileData,
+  { checksum, filename }: CacheFileData,
 ) {
-  const archivePath = path.join(getParentCacheDirectory(properties), md5, filename);
+  const archivePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   const unarchivePath = path.join(
     getParentCacheDirectory(properties),
-    md5,
+    checksum,
     filename + UNARCHIVE_SUFFIX,
   );
 
