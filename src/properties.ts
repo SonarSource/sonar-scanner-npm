@@ -151,14 +151,20 @@ function getPackageJsonProperties(
 /**
  * Convert CLI args into scanner properties.
  */
-function getCommandLineProperties(cliArgs?: string[]): ScannerProperties {
-  if (!cliArgs || cliArgs.length === 0) {
-    return {};
+function getCommandLineProperties(cliArgs?: CliArgs): ScannerProperties {
+  const properties: ScannerProperties = {};
+
+  if (cliArgs?.debug) {
+    properties[ScannerProperty.SonarVerbose] = 'true';
+  }
+
+  const { define } = cliArgs ?? {};
+  if (!define || define.length === 0) {
+    return properties;
   }
 
   // Parse CLI args (eg: -Dsonar.token=xxx)
-  const properties: ScannerProperties = {};
-  for (const arg of cliArgs) {
+  for (const arg of define) {
     const [key, value] = arg.split('=');
     properties[key] = value;
   }
@@ -308,7 +314,7 @@ export function getProperties(
   cliArgs?: CliArgs,
 ): ScannerProperties {
   const bootstrapperProperties = getBootstrapperProperties(startTimestampMs);
-  const cliProperties = getCommandLineProperties(cliArgs?.define);
+  const cliProperties = getCommandLineProperties(cliArgs);
   const scanOptionsProperties = getScanOptionsProperties(scanOptions);
   const envProperties = getEnvironmentProperties();
 

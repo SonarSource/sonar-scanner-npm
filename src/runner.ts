@@ -20,7 +20,7 @@
 
 import { scan } from './scan';
 import { program } from 'commander';
-const version = require('../package.json').version;
+import { version } from '../package.json';
 
 program
   .option('-D, --define <property=value...>', 'Define property')

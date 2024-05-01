@@ -40,7 +40,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
 
-  if (properties[ScannerProperty.SonarVerbose] === 'true' || cliArgs?.debug) {
+  if (properties[ScannerProperty.SonarVerbose] === 'true') {
     setLogLevel(LogLevel.DEBUG);
     log(LogLevel.DEBUG, 'Setting the log level to DEBUG due to verbose mode');
   }
