@@ -26,9 +26,9 @@ import { getProperties } from './properties';
 import { initializeAxios } from './request';
 import { downloadScannerCli, runScannerCli, tryLocalSonarScannerExecutable } from './scanner-cli';
 import { fetchScannerEngine, runScannerEngine } from './scanner-engine';
-import { ScanOptions, ScannerProperty } from './types';
+import { ScanOptions, ScannerProperty, CliArgs } from './types';
 
-export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
+export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   try {
     await runScan(scanOptions, cliArgs);
   } catch (error: any) {
@@ -36,7 +36,7 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: string[]) {
   }
 }
 
-async function runScan(scanOptions: ScanOptions, cliArgs?: string[]) {
+async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
 

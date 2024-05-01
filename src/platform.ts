@@ -25,8 +25,16 @@ export function getArch(): NodeJS.Architecture {
   return process.arch;
 }
 
-function isLinux(): boolean {
-  return process.platform.startsWith('linux');
+export function isLinux(): boolean {
+  return process.platform === 'linux';
+}
+
+export function isWindows() {
+  return process.platform === 'win32';
+}
+
+export function isMac() {
+  return process.platform === 'darwin';
 }
 
 /**
