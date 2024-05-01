@@ -42,6 +42,22 @@ afterEach(() => {
 });
 
 describe('getProperties', () => {
+  it('should provide default values', () => {
+    projectHandler.reset('fake_project_with_no_package_file');
+    projectHandler.setEnvironmentVariables({});
+
+    const properties = getProperties({}, projectHandler.getStartTime());
+
+    expect(properties).toEqual({
+      ...projectHandler.getExpectedProperties(),
+      'sonar.host.url': 'https://sonarcloud.io',
+      'sonar.scanner.internal.isSonarCloud': 'true',
+      'sonar.projectDescription': 'No description.',
+      'sonar.sources': '.',
+      'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
+    });
+  });
+
   describe('should handle JS API scan options params correctly', () => {
     it('should detect custom SonarCloud endpoint', () => {
       projectHandler.reset('fake_project_with_no_package_file');
@@ -49,9 +65,9 @@ describe('getProperties', () => {
 
       const properties = getProperties(
         {
-          serverUrl: 'http://localhost/sonarqube',
           options: {
             'sonar.projectKey': 'use-this-project-key',
+            'sonar.scanner.sonarcloudUrl': 'https://dev.sc-dev.io',
           },
         },
         projectHandler.getStartTime(),
@@ -59,17 +75,16 @@ describe('getProperties', () => {
 
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
-        'sonar.host.url': 'http://localhost/sonarqube',
-        'sonar.scanner.internal.isSonarCloud': 'false',
+        'sonar.host.url': 'https://dev.sc-dev.io',
+        'sonar.scanner.sonarcloudUrl': 'https://dev.sc-dev.io',
+        'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.projectKey': 'use-this-project-key',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
         'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
       });
     });
-  });
 
-  describe('should handle JS API scan options params correctly', () => {
     it('should detect and use user-provided scan option params', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({});

@@ -76,7 +76,8 @@ export async function serverSupportsJREProvisioning(
   parameters: ScannerProperties,
 ): Promise<boolean> {
   if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
-    return true;
+    //TODO: return to true once SC has the new provisioning mechanism in place
+    return false;
   }
 
   // SonarQube
