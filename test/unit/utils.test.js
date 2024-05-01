@@ -26,7 +26,7 @@ const sinon = require('sinon');
 describe('utils', function () {
   describe('findTargetOS()', function () {
     it('detect Windows', function () {
-      const stub = sinon.stub(process, 'platform').value('windows10');
+      const stub = sinon.stub(process, 'platform').value('win32');
 
       assert.equal(findTargetOS(), 'windows');
       stub.restore();
