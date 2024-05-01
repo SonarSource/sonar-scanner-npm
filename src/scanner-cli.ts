@@ -26,15 +26,16 @@ import { LogLevel, log } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { isMac, isWindows, isLinux } from './platform';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
-  if (process.platform.startsWith('win')) {
+  if (isWindows()) {
     return 'windows';
   }
-  if (process.platform.startsWith('linux')) {
+  if (isLinux()) {
     return 'linux';
   }
-  if (process.platform.startsWith('darwin')) {
+  if (isMac()) {
     return 'macosx';
   }
   throw Error(`Your platform '${process.platform}' is currently not supported.`);
@@ -51,7 +52,7 @@ export async function tryLocalSonarScannerExecutable(command: string): Promise<b
       resolve(false);
       return;
     }
-    const scannerProcess = spawn(command, ['-v']);
+    const scannerProcess = spawn(command, ['-v'], { shell: isWindows() });
 
     scannerProcess.on('exit', code => {
       if (code === 0) {
@@ -106,7 +107,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   await download(scannerCliUrl.href, archivePath);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
-  extractArchive(archivePath, installDir);
+  await extractArchive(archivePath, installDir);
 
   return binPath;
 }
@@ -125,6 +126,7 @@ export async function runScannerCli(
         ...process.env,
         SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
       },
+      shell: isWindows(),
     },
   );
 
