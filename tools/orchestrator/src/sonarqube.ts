@@ -20,7 +20,7 @@
 
 import * as path from 'path';
 import { ChildProcess, spawn, exec } from 'child_process';
-const axios = require('axios').default;
+import axios from 'axios';
 
 const DEFAULT_FOLDER = path.join(
   __dirname,
@@ -70,7 +70,10 @@ export async function startAndReady(
  */
 function start(sqPath: string = DEFAULT_FOLDER) {
   const pathToBin = getPathForPlatform(sqPath);
-  return spawn(`${pathToBin}`, ['console'], { stdio: ['inherit', 'pipe', 'inherit'] });
+  return spawn(`${pathToBin}`, ['console'], {
+    stdio: ['inherit', 'pipe', 'inherit'],
+    shell: process.platform === 'win32',
+  });
 }
 
 /**

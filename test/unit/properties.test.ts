@@ -433,7 +433,7 @@ describe('getProperties', () => {
         'sonar.projectVersion': '1.0-SNAPSHOT',
         'sonar.sources': 'the-sources',
       });
-      expect(log).toHaveBeenLastCalledWith(
+      expect(log).toHaveBeenCalledWith(
         LogLevel.WARN,
         expect.stringMatching(/Failed to parse JSON parameters/),
       );
@@ -549,9 +549,9 @@ describe('getProperties', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({
         SONAR_TOKEN: 'ignored',
-        SONAR_HOST_URL: 'http://localhost/sonarqube',
+        SONAR_HOST_URL: 'http://ignored',
         SONAR_USER_HOME: '/tmp/used',
-        SONAR_ORGANIZATION: 'used',
+        SONAR_ORGANIZATION: 'ignored',
         SONAR_SCANNER_JSON_PARAMS: JSON.stringify({
           'sonar.userHome': 'ignored',
           'sonar.scanner.someVar': 'used',
@@ -560,11 +560,11 @@ describe('getProperties', () => {
 
       const properties = getProperties(
         {
-          serverUrl: 'http://ignored',
+          serverUrl: 'http://localhost/sonarqube',
           options: {
             'sonar.projectKey': 'used',
             'sonar.token': 'ignored',
-            'sonar.organization': 'ignored',
+            'sonar.organization': 'used',
           },
         },
         projectHandler.getStartTime(),
@@ -647,7 +647,7 @@ describe('getProperties', () => {
             },
           },
           projectHandler.getStartTime(),
-          ['-Dsonar.scanner.proxyHost=use-this-proxy.io'],
+          { define: ['sonar.scanner.proxyHost=use-this-proxy.io'] },
         );
 
         expect(properties).toEqual({

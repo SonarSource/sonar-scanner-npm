@@ -28,14 +28,14 @@ import {
   ENV_VAR_PREFIX,
   NPM_CONFIG_ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
-  SONARCLOUD_URL,
-  SONARCLOUD_URL_REGEX,
   SONAR_DIR_DEFAULT,
   SONAR_PROJECT_FILENAME,
+  SONARCLOUD_URL,
+  SONARCLOUD_URL_REGEX,
 } from './constants';
-import { LogLevel, log } from './logging';
+import { log, LogLevel } from './logging';
 import { getArch, getSupportedOS } from './platform';
-import { ScanOptions, ScannerProperties, ScannerProperty, CliArgs } from './types';
+import { CliArgs, ScannerProperties, ScannerProperty, ScanOptions } from './types';
 
 function getDefaultProperties(): ScannerProperties {
   return {
@@ -89,14 +89,14 @@ function getPackageJsonProperties(
   } catch (error) {
     log(LogLevel.INFO, `Unable to read "package.json" file`);
     return {
-      'sonar.exclusions': sonarBaseExclusions,
+      [ScannerProperty.SonarExclusions]: sonarBaseExclusions,
     };
   }
   const pkg = JSON.parse(packageData);
   log(LogLevel.INFO, 'Retrieving info from "package.json" file');
 
   function fileExistsInProjectSync(file: string) {
-    return fs.existsSync(path.resolve(projectBaseDir, file));
+    return fs.existsSync(path.join(projectBaseDir, file));
   }
 
   function dependenceExists(pkgName: string) {
@@ -139,12 +139,12 @@ function getPackageJsonProperties(
         'coverage',
       );
     const uniqueCoverageDirs = Array.from(new Set(potentialCoverageDirs));
-    packageJsonParams['sonar.exclusions'] = sonarBaseExclusions;
+    packageJsonParams[ScannerProperty.SonarExclusions] = sonarBaseExclusions;
     for (const lcovReportDir of uniqueCoverageDirs) {
       const lcovReportPath = path.posix.join(lcovReportDir, 'lcov.info');
       if (fileExistsInProjectSync(lcovReportPath)) {
-        packageJsonParams['sonar.exclusions'] +=
-          (packageJsonParams['sonar.exclusions'].length > 0 ? ',' : '') +
+        packageJsonParams[ScannerProperty.SonarExclusions] +=
+          (packageJsonParams[ScannerProperty.SonarExclusions].length > 0 ? ',' : '') +
           path.posix.join(lcovReportDir, '**');
         // https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/javascript-typescript-test-coverage/
         packageJsonParams['sonar.javascript.lcov.reportPaths'] = lcovReportPath;
@@ -359,13 +359,13 @@ export function getProperties(
   startTimestampMs: number,
   cliArgs?: CliArgs,
 ): ScannerProperties {
-  const cliProperties = getCommandLineProperties(cliArgs);
   const envProperties = getEnvironmentProperties();
   const scanOptionsProperties = getScanOptionsProperties(scanOptions);
+  const cliProperties = getCommandLineProperties(cliArgs);
 
   const userProperties: ScannerProperties = {
-    ...scanOptionsProperties,
     ...envProperties,
+    ...scanOptionsProperties,
     ...cliProperties,
   };
 
@@ -400,10 +400,8 @@ export function getProperties(
   const properties = {
     ...getDefaultProperties(), // fallback to default if nothing was provided for these properties
     ...inferredProperties,
-    ...scanOptionsProperties,
     ...httpProxyProperties,
-    ...envProperties,
-    ...cliProperties, // Highest precedence
+    ...userProperties, // Highest precedence
   };
 
   // Hotfix host properties with custom SonarCloud URL

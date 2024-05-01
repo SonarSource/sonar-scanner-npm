@@ -36,9 +36,9 @@ const MOCKED_PROPERTIES: ScannerProperties = {
   [ScannerProperty.SonarScannerArch]: 'arm64',
 };
 
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
-  request.initializeAxios(MOCKED_PROPERTIES);
+  await request.initializeAxios(MOCKED_PROPERTIES);
   mock.reset();
   jest.spyOn(request, 'fetch');
   jest.spyOn(request, 'download');

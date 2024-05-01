@@ -59,7 +59,7 @@ beforeEach(() => {
 
 describe('scanner-engine', () => {
   beforeEach(async () => {
-    request.initializeAxios(MOCKED_PROPERTIES);
+    await request.initializeAxios(MOCKED_PROPERTIES);
     mock.onGet('/batch/index').reply(200, 'scanner-engine-1.2.3.zip|md5_test');
     mock.onGet('/batch/file?name=scanner-engine-1.2.3.zip').reply(() => {
       const readable = new Readable({

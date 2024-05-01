@@ -296,7 +296,7 @@ describe('scanner-cli', () => {
 
   describe('normalizePlatformName', function () {
     it('detect Windows', function () {
-      const stub = sinon.stub(process, 'platform').value('windows10');
+      const stub = sinon.stub(process, 'platform').value('win32');
 
       expect(normalizePlatformName()).toEqual('windows');
       stub.restore();
