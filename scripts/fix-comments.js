@@ -28,11 +28,6 @@ const directoryPath = path.resolve(__dirname, '../build/src');
 
 const fileNames = fs.readdirSync(directoryPath);
 for (const fileName of fileNames) {
-  // Skip if not a .js file
-  if (!fileName.endsWith('.js')) {
-    continue;
-  }
-
   // Read the file, drop the license header, re-prepend it and write the file
   const filePath = path.join(directoryPath, fileName);
   const fileContent = fs.readFileSync(filePath, 'utf8');
