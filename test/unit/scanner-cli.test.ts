@@ -18,27 +18,21 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { spawn } from 'child_process';
+import * as fsExtra from 'fs-extra';
 import path from 'path';
 import sinon from 'sinon';
-import * as fsExtra from 'fs-extra';
-import {
-  SCANNER_CLI_DEFAULT_BIN_NAME,
-  SCANNER_CLI_INSTALL_PATH,
-  SCANNER_CLI_VERSION,
-} from '../../src/constants';
+import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_VERSION } from '../../src/constants';
 import { extractArchive } from '../../src/file';
 import { LogLevel, log } from '../../src/logging';
 import { download } from '../../src/request';
-import {
-  downloadScannerCli,
-  normalizePlatformName,
-  runScannerCli,
-  tryLocalSonarScannerExecutable,
-} from '../../src/scanner-cli';
+import { downloadScannerCli, normalizePlatformName, runScannerCli } from '../../src/scanner-cli';
 import { ScannerProperty } from '../../src/types';
 import { ChildProcessMock } from './mocks/ChildProcessMock';
 
-jest.mock('fs-extra');
+jest.mock('fs-extra', () => ({
+  ensureDir: jest.fn(),
+  exists: jest.fn(),
+}));
 jest.mock('child_process');
 jest.mock('../../src/request');
 jest.mock('../../src/file');
@@ -58,19 +52,6 @@ beforeEach(() => {
 });
 
 describe('scanner-cli', () => {
-  describe('tryLocalSonarScannerExecutable', () => {
-    it('should detect locally installed scanner-cli', async () => {
-      jest.spyOn(fsExtra, 'existsSync').mockReturnValue(true);
-      expect(await tryLocalSonarScannerExecutable(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe(true);
-    });
-
-    it('should not detect locally installed scanner-cli', async () => {
-      childProcessHandler.setExitCode(1);
-
-      expect(await tryLocalSonarScannerExecutable(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe(false);
-    });
-  });
-
   describe('downloadScannerCli', function () {
     it('should reject invalid versions', () => {
       expect(
@@ -81,27 +62,27 @@ describe('scanner-cli', () => {
     });
 
     it('should use already downloaded version', async () => {
-      const stub = sinon.stub(process, 'platform').value('linux');
-
-      expect(await downloadScannerCli(MOCK_PROPERTIES)).toBe(
-        path.join(
-          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
-          SCANNER_CLI_INSTALL_PATH,
-          'sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner',
-        ),
+      const scannerBinPath = path.join(
+        MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
+        SCANNER_CLI_INSTALL_PATH,
+        'sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner',
       );
+      const stub = sinon.stub(process, 'platform').value('linux');
+      jest.spyOn(fsExtra, 'exists').mockImplementation(_path => Promise.resolve(true));
+
+      expect(await downloadScannerCli(MOCK_PROPERTIES)).toBe(scannerBinPath);
       expect(download).not.toHaveBeenCalled();
 
       stub.restore();
     });
 
     it('should download SonarScanner CLI if it does not exist on Unix', async () => {
-      childProcessHandler.setExitCode(1);
+      jest.spyOn(fsExtra, 'exists').mockImplementation(_path => Promise.resolve(false));
       const stub = sinon.stub(process, 'platform').value('linux');
 
       const binPath = await downloadScannerCli(MOCK_PROPERTIES);
 
-      expect(await downloadScannerCli(MOCK_PROPERTIES)).toBe(
+      expect(binPath).toBe(
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
@@ -125,20 +106,13 @@ describe('scanner-cli', () => {
         ),
         path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
       );
-      expect(binPath).toBe(
-        path.join(
-          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
-          SCANNER_CLI_INSTALL_PATH,
-          'sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner',
-        ),
-      );
 
       stub.restore();
     });
 
     it('should download SonarScanner CLI if it does not exist on Windows', async () => {
-      childProcessHandler.setExitCode(1);
       const stub = sinon.stub(process, 'platform').value('win32');
+      jest.spyOn(fsExtra, 'exists').mockImplementation(_path => Promise.resolve(false));
 
       const binPath = await downloadScannerCli(MOCK_PROPERTIES);
 
