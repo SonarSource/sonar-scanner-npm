@@ -62,3 +62,5 @@ export const SCANNER_CLI_VERSION = '5.0.1.3006';
 export const SCANNER_CLI_MIRROR =
   'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 export const SCANNER_CLI_INSTALL_PATH = 'native-sonar-scanner';
+
+export const WINDOWS_WHERE_EXE_PATH = 'C:\\Windows\\System32\\where.exe';

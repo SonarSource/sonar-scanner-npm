@@ -21,17 +21,18 @@ import { version } from '../package.json';
 import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
 import { fetchJRE, serverSupportsJREProvisioning } from './java';
 import { LogLevel, log, setLogLevel } from './logging';
+import { locateExecutableFromPath } from './process';
 import { getProperties } from './properties';
 import { initializeAxios } from './request';
-import { downloadScannerCli, runScannerCli, tryLocalSonarScannerExecutable } from './scanner-cli';
+import { downloadScannerCli, runScannerCli } from './scanner-cli';
 import { fetchScannerEngine, runScannerEngine } from './scanner-engine';
-import { ScanOptions, ScannerProperty, CliArgs } from './types';
+import { CliArgs, ScanOptions, ScannerProperty } from './types';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   try {
     await runScan(scanOptions, cliArgs);
-  } catch (error: any) {
-    log(LogLevel.ERROR, `An error occurred: ${error?.message ?? error}`);
+  } catch (error) {
+    log(LogLevel.ERROR, `An error occurred: ${error}`);
   }
 }
 
@@ -67,13 +68,14 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   log(LogLevel.INFO, `JRE Provisioning ${supportsJREProvisioning ? 'is' : 'is NOT'} supported`);
 
   if (!supportsJREProvisioning) {
-    log(LogLevel.INFO, 'Will download and use sonar-scanner-cli');
+    log(LogLevel.INFO, 'Falling back on using sonar-scanner-cli');
     if (scanOptions.localScannerCli) {
       log(LogLevel.INFO, 'Local scanner is requested, will not download sonar-scanner-cli');
-      if (!(await tryLocalSonarScannerExecutable(SCANNER_CLI_DEFAULT_BIN_NAME))) {
-        throw new Error('Local scanner is requested but not found');
+      const scannerPath = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
+      if (!scannerPath) {
+        throw new Error('SonarScanner CLI not found in PATH');
       }
-      await runScannerCli(scanOptions, properties, SCANNER_CLI_DEFAULT_BIN_NAME);
+      await runScannerCli(scanOptions, properties, scannerPath);
     } else {
       const binPath = await downloadScannerCli(properties);
       await runScannerCli(scanOptions, properties, binPath);
@@ -86,7 +88,11 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   if (properties[ScannerProperty.SonarScannerJavaExePath]) {
     javaPath = properties[ScannerProperty.SonarScannerJavaExePath];
   } else if (properties[ScannerProperty.SonarScannerSkipJreProvisioning] === 'true') {
-    javaPath = 'java';
+    const absoluteJavaPath = await locateExecutableFromPath('java');
+    if (!absoluteJavaPath) {
+      throw new Error('Java not found in PATH');
+    }
+    javaPath = absoluteJavaPath;
   } else {
     javaPath = await fetchJRE(properties);
   }

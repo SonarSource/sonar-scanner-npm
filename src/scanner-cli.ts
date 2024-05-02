@@ -23,10 +23,10 @@ import path from 'path';
 import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_MIRROR, SCANNER_CLI_VERSION } from './constants';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
+import { isLinux, isMac, isWindows } from './platform';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
-import { isMac, isWindows, isLinux } from './platform';
 import { AxiosRequestConfig } from 'axios';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
@@ -40,31 +40,6 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
     return 'macosx';
   }
   throw Error(`Your platform '${process.platform}' is currently not supported.`);
-}
-
-/**
- * Verifies if the provided (or default) command is executable
- */
-export async function tryLocalSonarScannerExecutable(command: string): Promise<boolean> {
-  return new Promise<boolean>(resolve => {
-    log(LogLevel.INFO, `Trying to find a local install of the SonarScanner: ${command}`);
-
-    if (!fsExtra.existsSync(command)) {
-      resolve(false);
-      return;
-    }
-    const scannerProcess = spawn(command, ['-v'], { shell: isWindows() });
-
-    scannerProcess.on('exit', code => {
-      if (code === 0) {
-        log(LogLevel.INFO, 'Local install of SonarScanner CLI found.');
-        resolve(true);
-      } else {
-        log(LogLevel.INFO, `Local install of SonarScanner CLI (${command}) not found`);
-        resolve(false);
-      }
-    });
-  });
 }
 
 /**
@@ -86,8 +61,6 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
     throw new Error(`Version "${version}" does not have a correct format."`);
   }
 
-  const scannerCliUrl = getScannerCliUrl(properties, version);
-
   // Build paths
   const binExt = normalizePlatformName() === 'windows' ? '.bat' : '';
   const dirName = `sonar-scanner-${version}-${normalizePlatformName()}`;
@@ -95,8 +68,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   const archivePath = path.join(installDir, `${dirName}.zip`);
   const binPath = path.join(installDir, dirName, 'bin', `sonar-scanner${binExt}`);
 
-  // Try and execute an already downloaded scanner, which should be at the same location
-  if (await tryLocalSonarScannerExecutable(binPath)) {
+  if (await fsExtra.exists(binPath)) {
     return binPath;
   }
 
@@ -104,6 +76,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   await fsExtra.ensureDir(installDir);
 
   // Add basic auth credentials when used in the UR
+  const scannerCliUrl = getScannerCliUrl(properties, version);
   let overrides: AxiosRequestConfig | undefined;
   if (scannerCliUrl.username && scannerCliUrl.password) {
     overrides = {
@@ -126,6 +99,9 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   return binPath;
 }
 
+/**
+ * @param binPath Absolute path to the scanner CLI executable
+ */
 export async function runScannerCli(
   scanOptions: ScanOptions,
   properties: ScannerProperties,

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { spawn, ChildProcess } from 'child_process';
+import { ChildProcess, exec, spawn } from 'child_process';
 
 export class ChildProcessMock {
   private exitCode: number = 0;
@@ -27,8 +27,11 @@ export class ChildProcessMock {
 
   private mock: Partial<ChildProcess> | null = null;
 
+  private commandHistory: string[] = [];
+
   constructor() {
     jest.mocked(spawn).mockImplementation((this.handleSpawn as any).bind(this));
+    jest.mocked(exec).mockImplementation((this.handleExec as any).bind(this));
   }
 
   setExitCode(exitCode: number) {
@@ -44,7 +47,12 @@ export class ChildProcessMock {
     this.mock = mock;
   }
 
-  handleSpawn() {
+  getCommandHistory() {
+    return this.commandHistory;
+  }
+
+  handleSpawn(command: string) {
+    this.commandHistory.push(command);
     return {
       on: jest.fn().mockImplementation((event, callback) => {
         if (event === 'exit') {
@@ -58,11 +66,24 @@ export class ChildProcessMock {
     };
   }
 
+  handleExec(
+    command: string,
+    callback: (error?: Error, { stdout, stderr }?: { stdout: string; stderr: string }) => void,
+  ) {
+    this.commandHistory.push(command);
+    const error = this.exitCode === 0 ? undefined : new Error('Command failed by mock');
+    callback(error, {
+      stdout: this.stdout,
+      stderr: this.stderr,
+    });
+  }
+
   reset() {
     this.exitCode = 0;
     this.stdout = '';
     this.stderr = '';
     this.mock = null;
+    this.commandHistory = [];
     jest.clearAllMocks();
   }
 }
