@@ -21,6 +21,7 @@ import sinon from 'sinon';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
   SCANNER_BOOTSTRAPPER_NAME,
+  SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
 } from '../../src/constants';
 import { LogLevel, log } from '../../src/logging';
@@ -50,7 +51,8 @@ describe('getProperties', () => {
 
     expect(properties).toEqual({
       ...projectHandler.getExpectedProperties(),
-      'sonar.host.url': 'https://sonarcloud.io',
+      'sonar.host.url': SONARCLOUD_URL,
+      'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
       'sonar.scanner.internal.isSonarCloud': 'true',
       'sonar.projectDescription': 'No description.',
       'sonar.sources': '.',
@@ -67,7 +69,7 @@ describe('getProperties', () => {
         {
           options: {
             'sonar.projectKey': 'use-this-project-key',
-            'sonar.scanner.sonarcloudUrl': 'https://dev.sc-dev.io',
+            'sonar.scanner.apiBaseUrl': 'https://dev.sc-dev.io',
           },
         },
         projectHandler.getStartTime(),
@@ -75,8 +77,8 @@ describe('getProperties', () => {
 
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
-        'sonar.host.url': 'https://dev.sc-dev.io',
-        'sonar.scanner.sonarcloudUrl': 'https://dev.sc-dev.io',
+        'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': 'https://dev.sc-dev.io',
         'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.projectKey': 'use-this-project-key',
         'sonar.projectDescription': 'No description.',
@@ -105,6 +107,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.token': 'dummy-token',
         'sonar.verbose': 'true',
@@ -147,6 +150,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.javascript.lcov.reportPaths': 'coverage/lcov.info',
         'sonar.projectKey': 'fake-basic-project',
@@ -174,6 +178,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectKey': 'fake-project',
         'sonar.projectName': 'fake-project',
@@ -202,6 +207,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
@@ -223,6 +229,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectDescription': 'No description.',
         'sonar.sources': '.',
@@ -247,6 +254,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.javascript.lcov.reportPaths': 'jest-coverage/lcov.info',
         'sonar.projectKey': 'fake-basic-project',
@@ -272,6 +280,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.javascript.lcov.reportPaths': 'nyc-coverage/lcov.info',
         'sonar.projectKey': 'fake-basic-project',
@@ -312,6 +321,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -335,7 +345,8 @@ describe('getProperties', () => {
 
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
-        'sonar.host.url': 'https://sonarqube.com/',
+        'sonar.host.url': 'https://sonarqube.com',
+        'sonar.scanner.apiBaseUrl': 'https://sonarqube.com/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -358,6 +369,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
         'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -382,6 +394,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': `${protocol}://localhost/sonarqube`,
+        'sonar.scanner.apiBaseUrl': `${protocol}://localhost/sonarqube/api/v2`,
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -407,6 +420,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
         'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -427,6 +441,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
         'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -452,6 +467,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
         'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -534,6 +550,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -574,6 +591,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectKey': 'used',
         'sonar.projectName': 'Foo',
@@ -620,6 +638,7 @@ describe('getProperties', () => {
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.projectKey': 'foo',
         'sonar.projectName': 'Foo',
@@ -653,6 +672,7 @@ describe('getProperties', () => {
         expect(properties).toEqual({
           ...projectHandler.getExpectedProperties(),
           'sonar.host.url': `${protocol}://localhost/sonarqube`,
+          'sonar.scanner.apiBaseUrl': `${protocol}://localhost/sonarqube/api/v2`,
           'sonar.scanner.internal.isSonarCloud': 'false',
           'sonar.projectKey': 'foo',
           'sonar.projectName': 'Foo',
@@ -666,10 +686,11 @@ describe('getProperties', () => {
 });
 
 describe('addHostProperties', () => {
-  it('should detect SonarCloud', () => {
+  it('should detect SonarCloud by default', () => {
     const expected = {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
-      [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+      [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
+      [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
     };
 
     // SonarCloud used by default
@@ -678,7 +699,7 @@ describe('addHostProperties', () => {
     // Backward-compatible use-case
     expect(
       getHostProperties({
-        [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io',
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
       }),
     ).toEqual(expected);
 
@@ -699,13 +720,15 @@ describe('addHostProperties', () => {
 
   it('should detect SonarCloud with custom URL', () => {
     const endpoint = getHostProperties({
-      [ScannerProperty.SonarHostUrl]: 'https://sonarcloud.io/',
-      [ScannerProperty.SonarScannerSonarCloudURL]: 'http://that-is-a-sonarcloud-custom-url.com',
+      [ScannerProperty.SonarHostUrl]: 'http://that-is-a-sonarcloud-custom-url.com',
+      [ScannerProperty.SonarScannerSonarCloudUrl]: 'http://that-is-a-sonarcloud-custom-url.com',
+      [ScannerProperty.SonarScannerApiBaseUrl]: 'http://api.that-is-a-sonarcloud-custom-url.com',
     });
 
     expect(endpoint).toEqual({
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
       [ScannerProperty.SonarHostUrl]: 'http://that-is-a-sonarcloud-custom-url.com',
+      [ScannerProperty.SonarScannerApiBaseUrl]: 'http://api.that-is-a-sonarcloud-custom-url.com',
     });
   });
 
@@ -717,18 +740,20 @@ describe('addHostProperties', () => {
     expect(endpoint).toEqual({
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
       [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
+      [ScannerProperty.SonarScannerApiBaseUrl]: 'https://next.sonarqube.com/api/v2',
     });
   });
 
   it('should ignore SonarCloud custom URL if sonar host URL does not match sonarcloud', () => {
     const endpoint = getHostProperties({
       [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
-      [ScannerProperty.SonarScannerSonarCloudURL]: 'http://that-is-a-sonarcloud-custom-url.com',
+      [ScannerProperty.SonarScannerSonarCloudUrl]: 'http://that-is-a-sonarcloud-custom-url.com',
     });
 
     expect(endpoint).toEqual({
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
       [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
+      [ScannerProperty.SonarScannerApiBaseUrl]: 'https://next.sonarqube.com/api/v2',
     });
   });
 });

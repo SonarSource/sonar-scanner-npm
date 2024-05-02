@@ -30,8 +30,14 @@ import { ScannerProperties, ScannerProperty } from './types';
 
 const finished = promisify(stream.finished);
 
-// The axios instance is private to this module
-let _axiosInstance: AxiosInstance | null = null;
+/**
+ * Axios instances (private to this module).
+ * One for sonar host (with auth), one for external requests
+ */
+let _axiosInstances: {
+  internal: AxiosInstance;
+  external: AxiosInstance;
+} | null = null;
 
 async function extractTruststoreCerts(p12Base64: string, password: string = ''): Promise<string[]> {
   // P12/PFX file -> DER -> ASN.1 -> PKCS12
@@ -95,37 +101,51 @@ export async function getHttpAgents(
   return agents;
 }
 
+export function resetAxios() {
+  _axiosInstances = null;
+}
+
 export async function initializeAxios(properties: ScannerProperties) {
   const token = properties[ScannerProperty.SonarToken];
-  const baseURL = properties[ScannerProperty.SonarHostUrl];
+  const baseURL = properties[ScannerProperty.SonarScannerApiBaseUrl];
   const agents = await getHttpAgents(properties);
   const timeout =
     Math.floor(parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) * 1000;
 
-  if (!_axiosInstance) {
-    _axiosInstance = axios.create({
-      baseURL,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      timeout,
-      ...agents,
-    });
+  if (!_axiosInstances) {
+    _axiosInstances = {
+      internal: axios.create({
+        baseURL,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout,
+        ...agents,
+      }),
+      external: axios.create({
+        timeout,
+        ...agents,
+      }),
+    };
   }
 }
 
-export function fetch(config: AxiosRequestConfig) {
-  if (!_axiosInstance) {
+export function fetch<T = unknown>(config: AxiosRequestConfig) {
+  if (!_axiosInstances) {
     throw new Error('Axios instance is not initialized');
   }
-
-  return _axiosInstance.request(config);
+  // Use external instance for absolute URLs
+  if (!config.url?.startsWith('/')) {
+    log(LogLevel.DEBUG, `Not using axios instance for ${config.url}`);
+    return _axiosInstances.external.request<T>(config);
+  }
+  return _axiosInstances.internal.request<T>(config);
 }
 
 export async function download(url: string, destPath: string, overrides?: AxiosRequestConfig) {
   log(LogLevel.DEBUG, `Downloading ${url} to ${destPath}`);
 
-  const response = await fetch({
+  const response = await fetch<NodeJS.ReadStream>({
     url,
     method: 'GET',
     responseType: 'stream',

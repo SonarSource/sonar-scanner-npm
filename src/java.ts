@@ -35,14 +35,19 @@ import {
 } from './file';
 import { LogLevel, log } from './logging';
 import { download, fetch } from './request';
-import { ScannerProperties, ScannerProperty } from './types';
+import {
+  AnalysisJreMetaData,
+  AnalysisJresResponseType,
+  ScannerProperties,
+  ScannerProperty,
+} from './types';
 
-export async function fetchServerVersion(parameters: ScannerProperties): Promise<SemVer> {
+export async function fetchServerVersion(properties: ScannerProperties): Promise<SemVer> {
   let version: SemVer | null = null;
   try {
     // Try and fetch the new version endpoint first
     log(LogLevel.DEBUG, `Fetching API V2 ${API_V2_VERSION_ENDPOINT}`);
-    const response = await fetch({
+    const response = await fetch<string>({
       url: API_V2_VERSION_ENDPOINT,
     });
     version = semver.coerce(response.data);
@@ -53,8 +58,8 @@ export async function fetchServerVersion(parameters: ScannerProperties): Promise
         LogLevel.DEBUG,
         `Unable to fetch API V2 ${API_V2_VERSION_ENDPOINT}: ${error}. Falling back on ${API_OLD_VERSION_ENDPOINT}`,
       );
-      const response = await fetch({
-        url: API_OLD_VERSION_ENDPOINT,
+      const response = await fetch<string>({
+        url: `${properties[ScannerProperty.SonarHostUrl]}${API_OLD_VERSION_ENDPOINT}`,
       });
       version = semver.coerce(response.data);
     } catch (error: unknown) {
@@ -64,7 +69,7 @@ export async function fetchServerVersion(parameters: ScannerProperties): Promise
       // Inform the user of the host url that has failed, most
       log(
         LogLevel.ERROR,
-        `Verify that ${parameters[ScannerProperty.SonarHostUrl]} is a valid SonarQube server`,
+        `Verify that ${properties[ScannerProperty.SonarHostUrl]} is a valid SonarQube server`,
       );
       throw error;
     }
@@ -79,9 +84,9 @@ export async function fetchServerVersion(parameters: ScannerProperties): Promise
 }
 
 export async function serverSupportsJREProvisioning(
-  parameters: ScannerProperties,
+  properties: ScannerProperties,
 ): Promise<boolean> {
-  if (parameters[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
+  if (properties[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
     //TODO: return to true once SC has the new provisioning mechanism in place
     return false;
   }
@@ -89,8 +94,8 @@ export async function serverSupportsJREProvisioning(
   // SonarQube
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
   const SQServerInfo =
-    semver.coerce(parameters[ScannerProperty.SonarScannerInternalSqVersion]) ??
-    (await fetchServerVersion(parameters));
+    semver.coerce(properties[ScannerProperty.SonarScannerInternalSqVersion]) ??
+    (await fetchServerVersion(properties));
   log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
@@ -100,43 +105,44 @@ export async function serverSupportsJREProvisioning(
 
 export async function fetchJRE(properties: ScannerProperties): Promise<string> {
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-  const latestJREData = await fetchLatestSupportedJRE(properties);
-  log(LogLevel.INFO, 'Latest Supported JRE: ', latestJREData);
+  const jreMetaData = await fetchLatestSupportedJRE(properties);
+  log(LogLevel.INFO, 'Latest Supported JRE: ', jreMetaData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
-  const cachedJRE = await getCacheFileLocation(properties, {
-    md5: latestJREData.md5,
-    filename: latestJREData.filename + UNARCHIVE_SUFFIX,
+  const cachedJrePath = await getCacheFileLocation(properties, {
+    checksum: jreMetaData.sha256,
+    filename: jreMetaData.filename + UNARCHIVE_SUFFIX,
   });
-  if (cachedJRE) {
+  properties[ScannerProperty.SonarScannerWasJreCacheHit] = Boolean(cachedJrePath).toString();
+  if (cachedJrePath) {
     log(LogLevel.INFO, 'Using Cached JRE');
-    properties[ScannerProperty.SonarScannerWasJRECacheHit] = 'true';
-
-    return path.join(cachedJRE, latestJREData.javaPath);
-  } else {
-    const { archivePath, unarchivePath: jreDirPath } = await getCacheDirectories(
-      properties,
-      latestJREData,
-    );
-
-    await download(`${API_V2_JRE_ENDPOINT}/${latestJREData.filename}`, archivePath);
-    log(LogLevel.INFO, `Downloaded JRE to ${archivePath}`);
-
-    await validateChecksum(archivePath, latestJREData.md5);
-
-    await extractArchive(archivePath, jreDirPath);
-
-    return path.join(jreDirPath, latestJREData.javaPath);
+    return path.join(cachedJrePath, jreMetaData.javaPath);
   }
+
+  // JRE not found in cache. Download it.
+  const { archivePath, unarchivePath: jreDirPath } = await getCacheDirectories(properties, {
+    checksum: jreMetaData.sha256,
+    filename: jreMetaData.filename,
+  });
+
+  // If the JRE has a download URL, download it
+  const url = jreMetaData.downloadUrl ?? `${API_V2_JRE_ENDPOINT}/${jreMetaData.id}`;
+
+  await download(url, archivePath);
+  await validateChecksum(archivePath, jreMetaData.sha256);
+  await extractArchive(archivePath, jreDirPath);
+  return path.join(jreDirPath, jreMetaData.javaPath);
 }
 
-async function fetchLatestSupportedJRE(properties: ScannerProperties) {
+async function fetchLatestSupportedJRE(
+  properties: ScannerProperties,
+): Promise<AnalysisJreMetaData> {
   const os = properties[ScannerProperty.SonarScannerOs];
   const arch = properties[ScannerProperty.SonarScannerArch];
 
   log(LogLevel.DEBUG, `Downloading JRE for ${os} ${arch} from ${API_V2_JRE_ENDPOINT}`);
 
-  const { data } = await fetch({
+  const { data } = await fetch<AnalysisJresResponseType>({
     url: API_V2_JRE_ENDPOINT,
     params: {
       os,
@@ -144,6 +150,10 @@ async function fetchLatestSupportedJRE(properties: ScannerProperties) {
     },
   });
 
-  log(LogLevel.DEBUG, 'JRE information: ', data);
-  return data;
+  if (data.length === 0) {
+    throw new Error(`No JREs available for your platform ${os} ${arch}`);
+  }
+
+  log(LogLevel.DEBUG, 'JRE Information', data);
+  return data[0];
 }

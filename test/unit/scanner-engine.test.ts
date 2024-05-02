@@ -21,15 +21,16 @@
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { ChildProcess, spawn } from 'child_process';
+import fs from 'fs';
 import sinon from 'sinon';
 import { Readable } from 'stream';
+import { API_V2_SCANNER_ENGINE_ENDPOINT } from '../../src/constants';
 import * as file from '../../src/file';
+import { logWithPrefix } from '../../src/logging';
 import * as request from '../../src/request';
 import { fetchScannerEngine, runScannerEngine } from '../../src/scanner-engine';
-import { ScannerProperties, ScannerProperty } from '../../src/types';
+import { AnalysisEngineResponseType, ScannerProperties, ScannerProperty } from '../../src/types';
 import { ChildProcessMock } from './mocks/ChildProcessMock';
-import { logWithPrefix } from '../../src/logging';
-import fs from 'fs';
 
 const mock = new MockAdapter(axios);
 
@@ -39,8 +40,8 @@ const MOCKED_PROPERTIES: ScannerProperties = {
 };
 
 const MOCK_CACHE_DIRECTORIES = {
-  archivePath: 'mocked/path/to/sonar/cache/md5_test/scanner-engine-1.2.3.zip',
-  unarchivePath: 'mocked/path/to/sonar/cache/md5_test/scanner-engine-1.2.3.zip_extracted',
+  archivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.zip',
+  unarchivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.zip_extracted',
 };
 jest.mock('../../src/constants', () => ({
   ...jest.requireActual('../../src/constants'),
@@ -60,17 +61,27 @@ beforeEach(() => {
 describe('scanner-engine', () => {
   beforeEach(async () => {
     await request.initializeAxios(MOCKED_PROPERTIES);
-    mock.onGet('/batch/index').reply(200, 'scanner-engine-1.2.3.zip|md5_test');
-    mock.onGet('/batch/file?name=scanner-engine-1.2.3.zip').reply(() => {
-      const readable = new Readable({
-        read() {
-          this.push('md5_test');
-          this.push(null); // Indicates end of stream
-        },
+    mock.onGet(API_V2_SCANNER_ENGINE_ENDPOINT).reply(200, {
+      filename: 'scanner-engine-1.2.3.zip',
+      sha256: 'sha_test',
+    } as AnalysisEngineResponseType);
+    mock
+      .onGet(
+        API_V2_SCANNER_ENGINE_ENDPOINT,
+        undefined,
+        expect.objectContaining({
+          Accept: expect.stringMatching(/application\/octet-stream/),
+        }),
+      )
+      .reply(() => {
+        const readable = new Readable({
+          read() {
+            this.push('sha_test');
+            this.push(null); // Indicates end of stream
+          },
+        });
+        return [200, readable];
       });
-
-      return [200, readable];
-    });
 
     jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue(null);
     jest.spyOn(file, 'extractArchive').mockResolvedValue();
@@ -84,7 +95,7 @@ describe('scanner-engine', () => {
       await fetchScannerEngine(MOCKED_PROPERTIES);
 
       expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
-        md5: 'md5_test',
+        checksum: 'sha_test',
         filename: 'scanner-engine-1.2.3.zip',
       });
     });
@@ -98,7 +109,7 @@ describe('scanner-engine', () => {
         const scannerEngine = await fetchScannerEngine(MOCKED_PROPERTIES);
 
         expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
-          md5: 'md5_test',
+          checksum: 'sha_test',
           filename: 'scanner-engine-1.2.3.zip',
         });
         expect(request.download).not.toHaveBeenCalled();
@@ -113,14 +124,14 @@ describe('scanner-engine', () => {
         const scannerEngine = await fetchScannerEngine(MOCKED_PROPERTIES);
 
         expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
-          md5: 'md5_test',
+          checksum: 'sha_test',
           filename: 'scanner-engine-1.2.3.zip',
         });
         expect(request.download).toHaveBeenCalledTimes(1);
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
 
         expect(scannerEngine).toEqual(
-          'mocked/path/to/sonar/cache/md5_test/scanner-engine-1.2.3.zip_extracted',
+          'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.zip_extracted',
         );
       });
     });
@@ -161,7 +172,7 @@ describe('scanner-engine', () => {
     it('should reject when child process exits with code 1', async () => {
       childProcessHandler.setExitCode(1);
 
-      expect(
+      await expect(
         runScannerEngine(
           '/some/path/to/java',
           '/some/path/to/scanner-engine',
