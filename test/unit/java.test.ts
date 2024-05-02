@@ -26,7 +26,12 @@ import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../
 import * as file from '../../src/file';
 import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
 import * as request from '../../src/request';
-import { AnalysisJresResponseType, ScannerProperties, ScannerProperty } from '../../src/types';
+import {
+  AnalysisJresResponseType,
+  CacheStatus,
+  ScannerProperties,
+  ScannerProperty,
+} from '../../src/types';
 
 const mock = new MockAdapter(axios);
 
@@ -142,15 +147,14 @@ describe('java', () => {
 
     describe('when the JRE is cached', () => {
       it('should fetch the latest supported JRE and use the cached version', async () => {
-        await fetchJRE(MOCKED_PROPERTIES);
+        const properties = { ...MOCKED_PROPERTIES };
+        await fetchJRE(properties);
 
         expect(request.fetch).toHaveBeenCalledTimes(1);
         expect(request.download).not.toHaveBeenCalled();
-
-        // Check for the cache
         expect(file.getCacheFileLocation).toHaveBeenCalledTimes(1);
-
         expect(file.extractArchive).not.toHaveBeenCalled();
+        expect(properties[ScannerProperty.SonarScannerWasJreCacheHit]).toBe(CacheStatus.Hit);
       });
     });
 
@@ -167,7 +171,8 @@ describe('java', () => {
       });
 
       it('should download the JRE', async () => {
-        await fetchJRE({ ...MOCKED_PROPERTIES });
+        const properties = { ...MOCKED_PROPERTIES };
+        await fetchJRE(properties);
 
         expect(request.fetch).toHaveBeenCalledWith({
           url: API_V2_JRE_ENDPOINT,
@@ -176,17 +181,14 @@ describe('java', () => {
             arch: MOCKED_PROPERTIES[ScannerProperty.SonarScannerArch],
           },
         });
-
         expect(file.getCacheFileLocation).toHaveBeenCalledTimes(1);
-
         expect(request.download).toHaveBeenCalledWith(
           `${API_V2_JRE_ENDPOINT}/${serverResponse[0].id}`,
           mockCacheDirectories.archivePath,
         );
-
         expect(file.validateChecksum).toHaveBeenCalledTimes(1);
-
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
+        expect(properties[ScannerProperty.SonarScannerWasJreCacheHit]).toBe(CacheStatus.Miss);
       });
 
       it('should fail if no JRE matches', async () => {
@@ -200,7 +202,7 @@ describe('java', () => {
           .reply(200, []);
 
         // Check that it rejects with a specific error
-        expect(fetchJRE({ ...MOCKED_PROPERTIES })).rejects.toThrowError(
+        expect(fetchJRE({ ...MOCKED_PROPERTIES })).rejects.toThrow(
           'No JREs available for your platform linux arm64',
         );
       });

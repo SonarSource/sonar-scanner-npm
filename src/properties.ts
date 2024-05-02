@@ -34,9 +34,9 @@ import {
   SONAR_DIR_DEFAULT,
   SONAR_PROJECT_FILENAME,
 } from './constants';
-import { log, LogLevel } from './logging';
+import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
-import { CliArgs, ScannerProperties, ScannerProperty, ScanOptions } from './types';
+import { CacheStatus, CliArgs, ScanOptions, ScannerProperties, ScannerProperty } from './types';
 
 function getDefaultProperties(): ScannerProperties {
   return {
@@ -307,8 +307,9 @@ function getBootstrapperProperties(startTimestampMs: number): ScannerProperties 
     'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
     'sonar.scanner.appVersion': version,
     'sonar.scanner.bootstrapStartTime': startTimestampMs.toString(),
-    // Bootstrap cache hit/miss is set later after the bootstrapper has run and before scanner engine is started
-    'sonar.scanner.wasJreCacheHit': 'false',
+    // These cache statuses are set during the bootstrapping process.
+    // We already set them here to prevent them from being overridden.
+    'sonar.scanner.wasJreCacheHit': CacheStatus.Disabled,
     'sonar.scanner.wasEngineCacheHit': 'false',
   };
 }
