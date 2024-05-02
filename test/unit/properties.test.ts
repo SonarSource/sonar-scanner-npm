@@ -26,7 +26,7 @@ import {
 } from '../../src/constants';
 import { LogLevel, log } from '../../src/logging';
 import { getHostProperties, getProperties } from '../../src/properties';
-import { ScannerProperty } from '../../src/types';
+import { CacheStatus, ScannerProperty } from '../../src/types';
 import { FakeProjectMock } from './mocks/FakeProjectMock';
 
 jest.mock('../../src/logging');
@@ -615,7 +615,7 @@ describe('getProperties', () => {
           'sonar.scanner.app': 'ignored',
           'sonar.scanner.appVersion': 'ignored',
           'sonar.scanner.bootstrapStartTime': '0000',
-          'sonar.scanner.wasJreCacheHit': 'true',
+          'sonar.scanner.wasJreCacheHit': CacheStatus.Hit,
           'sonar.scanner.wasEngineCacheHit': 'true',
         }),
       });
@@ -627,7 +627,7 @@ describe('getProperties', () => {
             'sonar.scanner.app': 'ignored',
             'sonar.scanner.appVersion': 'ignored',
             'sonar.scanner.bootstrapStartTime': '0000',
-            'sonar.scanner.wasJreCacheHit': 'true',
+            'sonar.scanner.wasJreCacheHit': CacheStatus.Hit,
             'sonar.scanner.wasEngineCacheHit': 'true',
           },
         },

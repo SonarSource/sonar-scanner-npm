@@ -38,6 +38,7 @@ import { download, fetch } from './request';
 import {
   AnalysisJreMetaData,
   AnalysisJresResponseType,
+  CacheStatus,
   ScannerProperties,
   ScannerProperty,
 } from './types';
@@ -113,7 +114,9 @@ export async function fetchJRE(properties: ScannerProperties): Promise<string> {
     checksum: jreMetaData.sha256,
     filename: jreMetaData.filename + UNARCHIVE_SUFFIX,
   });
-  properties[ScannerProperty.SonarScannerWasJreCacheHit] = Boolean(cachedJrePath).toString();
+  properties[ScannerProperty.SonarScannerWasJreCacheHit] = cachedJrePath
+    ? CacheStatus.Hit
+    : CacheStatus.Miss;
   if (cachedJrePath) {
     log(LogLevel.INFO, 'Using Cached JRE');
     return path.join(cachedJrePath, jreMetaData.javaPath);

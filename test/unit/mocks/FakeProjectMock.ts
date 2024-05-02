@@ -20,6 +20,7 @@
 import path from 'path';
 import sinon from 'sinon';
 import { SCANNER_BOOTSTRAPPER_NAME } from '../../../src/constants';
+import { CacheStatus } from '../../../src/types';
 
 const baseEnvVariables = process.env;
 
@@ -59,7 +60,7 @@ export class FakeProjectMock {
       'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
       'sonar.scanner.appVersion': '1.2.3',
       'sonar.scanner.wasEngineCacheHit': 'false',
-      'sonar.scanner.wasJreCacheHit': 'false',
+      'sonar.scanner.wasJreCacheHit': CacheStatus.Disabled,
       'sonar.userHome': expect.stringMatching(/\.sonar$/),
       'sonar.scanner.os': 'windows',
       'sonar.scanner.arch': 'aarch64',

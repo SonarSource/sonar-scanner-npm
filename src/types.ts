@@ -98,3 +98,9 @@ export type AnalysisEngineResponseType = {
   sha256: string;
   downloadUrl?: string;
 };
+
+export enum CacheStatus {
+  Hit = 'hit',
+  Miss = 'miss',
+  Disabled = 'disabled',
+}
