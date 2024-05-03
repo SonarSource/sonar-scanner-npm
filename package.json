@@ -86,6 +86,7 @@
     "arrowParens": "avoid"
   },
   "files": [
-    "build/**"
+    "build/**",
+    "bin/**"
   ]
 }
