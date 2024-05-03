@@ -26,6 +26,7 @@ import {
   DEFAULT_SONAR_EXCLUSIONS,
   ENV_TO_PROPERTY_NAME,
   ENV_VAR_PREFIX,
+  NPM_CONFIG_ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
   SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
@@ -33,9 +34,9 @@ import {
   SONAR_DIR_DEFAULT,
   SONAR_PROJECT_FILENAME,
 } from './constants';
-import { LogLevel, log } from './logging';
+import { log, LogLevel } from './logging';
 import { getArch, getSupportedOS } from './platform';
-import { CliArgs, ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { CliArgs, ScannerProperties, ScannerProperty, ScanOptions } from './types';
 
 function getDefaultProperties(): ScannerProperties {
   return {
@@ -62,6 +63,19 @@ function envNameToSonarPropertyNameMapper(envName: string) {
 }
 
 /**
+ * Convert the name of a sonar property from its environment variable form
+ * (eg npm_config_sonar_scanner_) to its sonar form (eg sonar.scanner.fooBar).
+ */
+function npmConfigEnvNameToSonarPropertyNameMapper(envName: string) {
+  // Extract the name and convert to camel case
+  const sonarScannerKey = envName
+    .substring(NPM_CONFIG_ENV_VAR_PREFIX.length)
+    .toLowerCase()
+    .replace(/_([a-z])/g, g => g[1].toUpperCase());
+  return `sonar.scanner.${sonarScannerKey}`;
+}
+
+/**
  * Build the config.
  */
 function getPackageJsonProperties(
@@ -76,14 +90,14 @@ function getPackageJsonProperties(
   } catch (error) {
     log(LogLevel.INFO, `Unable to read "package.json" file`);
     return {
-      'sonar.exclusions': sonarBaseExclusions,
+      [ScannerProperty.SonarExclusions]: sonarBaseExclusions,
     };
   }
   const pkg = JSON.parse(packageData);
   log(LogLevel.INFO, 'Retrieving info from "package.json" file');
 
   function fileExistsInProjectSync(file: string) {
-    return fs.existsSync(path.resolve(projectBaseDir, file));
+    return fs.existsSync(path.join(projectBaseDir, file));
   }
 
   function dependenceExists(pkgName: string) {
@@ -126,12 +140,12 @@ function getPackageJsonProperties(
         'coverage',
       );
     const uniqueCoverageDirs = Array.from(new Set(potentialCoverageDirs));
-    packageJsonParams['sonar.exclusions'] = sonarBaseExclusions;
+    packageJsonParams[ScannerProperty.SonarExclusions] = sonarBaseExclusions;
     for (const lcovReportDir of uniqueCoverageDirs) {
       const lcovReportPath = path.posix.join(lcovReportDir, 'lcov.info');
       if (fileExistsInProjectSync(lcovReportPath)) {
-        packageJsonParams['sonar.exclusions'] +=
-          (packageJsonParams['sonar.exclusions'].length > 0 ? ',' : '') +
+        packageJsonParams[ScannerProperty.SonarExclusions] +=
+          (packageJsonParams[ScannerProperty.SonarExclusions].length > 0 ? ',' : '') +
           path.posix.join(lcovReportDir, '**');
         // https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/javascript-typescript-test-coverage/
         packageJsonParams['sonar.javascript.lcov.reportPaths'] = lcovReportPath;
@@ -218,6 +232,10 @@ function getScanOptionsProperties(scanOptions: ScanOptions): ScannerProperties {
     properties[ScannerProperty.SonarVerbose] = scanOptions.verbose ? 'true' : 'false';
   }
 
+  if (typeof scanOptions.version !== 'undefined') {
+    properties[ScannerProperty.SonarScannerCliVersion] = scanOptions.version;
+  }
+
   return properties;
 }
 
@@ -245,6 +263,12 @@ function getEnvironmentProperties() {
   // Get generic environment variables
   properties = {
     ...properties,
+    ...Object.fromEntries(
+      Object.entries(env)
+        .filter(([key]) => key.startsWith(NPM_CONFIG_ENV_VAR_PREFIX))
+        .filter(([key]) => !jsonEnvVariables.includes(key))
+        .map(([key, value]) => [npmConfigEnvNameToSonarPropertyNameMapper(key), value as string]),
+    ),
     ...Object.fromEntries(
       Object.entries(env)
         .filter(([key]) => key.startsWith(ENV_VAR_PREFIX))
@@ -343,13 +367,13 @@ export function getProperties(
   startTimestampMs: number,
   cliArgs?: CliArgs,
 ): ScannerProperties {
-  const cliProperties = getCommandLineProperties(cliArgs);
   const envProperties = getEnvironmentProperties();
   const scanOptionsProperties = getScanOptionsProperties(scanOptions);
+  const cliProperties = getCommandLineProperties(cliArgs);
 
   const userProperties: ScannerProperties = {
-    ...scanOptionsProperties,
     ...envProperties,
+    ...scanOptionsProperties,
     ...cliProperties,
   };
 
@@ -384,10 +408,8 @@ export function getProperties(
   const properties = {
     ...getDefaultProperties(), // fallback to default if nothing was provided for these properties
     ...inferredProperties,
-    ...scanOptionsProperties,
     ...httpProxyProperties,
-    ...envProperties,
-    ...cliProperties, // Highest precedence
+    ...userProperties, // Highest precedence
   };
 
   // Hotfix host properties with custom SonarCloud URL

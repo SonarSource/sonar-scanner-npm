@@ -33,7 +33,7 @@ import {
 import { ScannerProperty } from '../../src/types';
 
 const MOCKED_PROPERTIES = {
-  [ScannerProperty.SonarUserHome]: '/path/to/sonar/user/home',
+  [ScannerProperty.SonarUserHome]: '/sonar',
 };
 
 jest.mock('fs');
@@ -77,8 +77,8 @@ describe('file', () => {
     });
 
     describe('tar.gz', () => {
-      const mockFilePath = 'path/to/file.tar.gz';
-      const mockDestDir = 'path/to/dest';
+      const mockFilePath = path.join('path', 'to', 'file.tar.gz');
+      const mockDestDir = path.join('path', 'to', 'dest');
       const mockFileHeader = { name: 'file.txt', mode: 0o777 };
       const mockOn = jest.fn();
       const mockPassThroughStream = new PassThrough();
@@ -126,9 +126,12 @@ describe('file', () => {
         expect(fs.createReadStream).toHaveBeenCalledWith(mockFilePath);
         expect(zlib.createGunzip).toHaveBeenCalled();
         expect(tarStream.extract).toHaveBeenCalled();
-        expect(fs.createWriteStream).toHaveBeenCalledWith(`${mockDestDir}/${mockFileHeader.name}`, {
-          mode: 511,
-        });
+        expect(fs.createWriteStream).toHaveBeenCalledWith(
+          path.join(mockDestDir, mockFileHeader.name),
+          {
+            mode: 511,
+          },
+        );
       });
 
       it('should throw if extract fails', async () => {
@@ -219,19 +222,21 @@ describe('file', () => {
         filename: 'file.txt',
       });
 
-      expect(fs.existsSync).toHaveBeenCalledWith('/path/to/sonar/user/home/cache/md5_test');
+      expect(fs.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
       expect(fs.mkdirSync).not.toHaveBeenCalled();
 
-      expect(archivePath).toEqual('/path/to/sonar/user/home/cache/md5_test/file.txt');
-      expect(unarchivePath).toEqual('/path/to/sonar/user/home/cache/md5_test/file.txt_extracted');
+      expect(archivePath).toEqual(path.join('/', 'sonar', 'cache', 'md5_test', 'file.txt'));
+      expect(unarchivePath).toEqual(
+        path.join('/', 'sonar', 'cache', 'md5_test', 'file.txt_extracted'),
+      );
     });
     it('should create the parent cache directory if it does not exist', async () => {
       jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => false);
       jest.spyOn(fs, 'mkdirSync').mockImplementationOnce(() => undefined);
       await getCacheDirectories(MOCKED_PROPERTIES, { checksum: 'md5_test', filename: 'file.txt' });
 
-      expect(fs.existsSync).toHaveBeenCalledWith('/path/to/sonar/user/home/cache/md5_test');
-      expect(fs.mkdirSync).toHaveBeenCalledWith('/path/to/sonar/user/home/cache/md5_test', {
+      expect(fs.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
+      expect(fs.mkdirSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'), {
         recursive: true,
       });
     });

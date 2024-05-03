@@ -73,6 +73,7 @@ function getLatestVersion(): Promise<string> {
           resolve(version);
         } catch (error) {
           console.error('Error while parsing response', responseData);
+          reject(error);
         }
       });
       response.on('error', error => {
