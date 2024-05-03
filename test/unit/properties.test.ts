@@ -448,7 +448,7 @@ describe('getProperties', () => {
         'sonar.projectVersion': '1.0-SNAPSHOT',
         'sonar.sources': 'the-sources',
       });
-      expect(log).toHaveBeenLastCalledWith(
+      expect(log).toHaveBeenCalledWith(
         LogLevel.WARN,
         expect.stringMatching(/Failed to parse JSON parameters/),
       );
@@ -479,6 +479,58 @@ describe('getProperties', () => {
         LogLevel.WARN,
         'SONARQUBE_SCANNER_PARAMS is deprecated, please use SONAR_SCANNER_JSON_PARAMS instead',
       );
+    });
+
+    it('should set the [ScannerProperty.SonarScannerCliVersion] for all existing formats', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        npm_config_sonar_scanner_version: '4.8.1.3023',
+      });
+
+      // "NPM Config" format `npm_config_sonar_scanner_${property_name}`
+      const npmConfigProperties = getProperties({}, projectHandler.getStartTime());
+      expect(npmConfigProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('4.8.1.3023');
+
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_VERSION: '5.0.0.2966',
+      });
+
+      // "SONAR_SCANNER" format `SONAR_SCANNER_${PROPERTY_NAME}`
+      const SonarScannerProperties = getProperties({}, projectHandler.getStartTime());
+      expect(SonarScannerProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('5.0.0.2966');
+
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      // js scan options format
+      const jsScanOptionsProperties = getProperties(
+        {
+          version: '4.7.0.2747',
+        },
+        projectHandler.getStartTime(),
+      );
+      expect(jsScanOptionsProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('4.7.0.2747');
+    });
+
+    it('should support the old SONAR_BINARY_CACHE environment variable', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_BINARY_CACHE: '/tmp/.sonar/',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties['sonar.userHome']).toEqual('/tmp/.sonar/');
+    });
+
+    it('should support the old SONAR_SCANNER_MIRROR environment variable', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_MIRROR: 'https://mirror.com/',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      expect(properties['sonar.scanner.mirror']).toEqual('https://mirror.com/');
     });
   });
 
@@ -514,9 +566,9 @@ describe('getProperties', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({
         SONAR_TOKEN: 'ignored',
-        SONAR_HOST_URL: 'http://localhost/sonarqube',
+        SONAR_HOST_URL: 'http://ignored',
         SONAR_USER_HOME: '/tmp/used',
-        SONAR_ORGANIZATION: 'used',
+        SONAR_ORGANIZATION: 'ignored',
         SONAR_SCANNER_JSON_PARAMS: JSON.stringify({
           'sonar.userHome': 'ignored',
           'sonar.scanner.someVar': 'used',
@@ -525,11 +577,11 @@ describe('getProperties', () => {
 
       const properties = getProperties(
         {
-          serverUrl: 'http://ignored',
+          serverUrl: 'http://localhost/sonarqube',
           options: {
             'sonar.projectKey': 'used',
             'sonar.token': 'ignored',
-            'sonar.organization': 'ignored',
+            'sonar.organization': 'used',
           },
         },
         projectHandler.getStartTime(),

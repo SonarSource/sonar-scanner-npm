@@ -65,6 +65,12 @@ export async function fetchServerVersion(properties: ScannerProperties): Promise
     } catch (error: unknown) {
       // If it also failed, give up
       log(LogLevel.ERROR, `Failed to fetch server version: ${error}`);
+
+      // Inform the user of the host url that has failed, most
+      log(
+        LogLevel.ERROR,
+        `Verify that ${properties[ScannerProperty.SonarHostUrl]} is a valid SonarQube server`,
+      );
       throw error;
     }
   }

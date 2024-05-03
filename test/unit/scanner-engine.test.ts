@@ -60,7 +60,7 @@ beforeEach(() => {
 
 describe('scanner-engine', () => {
   beforeEach(async () => {
-    request.initializeAxios(MOCKED_PROPERTIES);
+    await request.initializeAxios(MOCKED_PROPERTIES);
     mock.onGet(API_V2_SCANNER_ENGINE_ENDPOINT).reply(200, {
       filename: 'scanner-engine-1.2.3.zip',
       sha256: 'sha_test',
@@ -80,7 +80,6 @@ describe('scanner-engine', () => {
             this.push(null); // Indicates end of stream
           },
         });
-
         return [200, readable];
       });
 
@@ -173,7 +172,7 @@ describe('scanner-engine', () => {
     it('should reject when child process exits with code 1', async () => {
       childProcessHandler.setExitCode(1);
 
-      expect(
+      await expect(
         runScannerEngine(
           '/some/path/to/java',
           '/some/path/to/scanner-engine',

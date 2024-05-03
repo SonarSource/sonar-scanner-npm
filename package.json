@@ -68,9 +68,9 @@
     "sonar-runner"
   ],
   "scripts": {
-    "build": "npm ci && npm run ts-build && npm run check-format && npm run license && npm test && cd tools/orchestrator",
+    "build": "npm ci && npm run ts-build && npm run check-format && npm run license && npm test && cd tools/orchestrator && npm run build",
     "ts-build": "tsc && node scripts/fix-comments.js",
-    "test": "npx jest --coverage",
+    "test": "jest --coverage",
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",

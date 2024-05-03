@@ -73,6 +73,7 @@ export type ScanOptions = {
   caPath?: string;
   logLevel?: string;
   verbose?: boolean;
+  version?: string;
 };
 
 export type CliArgs = {

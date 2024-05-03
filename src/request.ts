@@ -142,13 +142,14 @@ export function fetch<T = unknown>(config: AxiosRequestConfig) {
   return _axiosInstances.internal.request<T>(config);
 }
 
-export async function download(url: string, destPath: string) {
+export async function download(url: string, destPath: string, overrides?: AxiosRequestConfig) {
   log(LogLevel.DEBUG, `Downloading ${url} to ${destPath}`);
 
   const response = await fetch<NodeJS.ReadStream>({
     url,
     method: 'GET',
     responseType: 'stream',
+    ...overrides,
   });
 
   const totalLength = response.headers['content-length'];

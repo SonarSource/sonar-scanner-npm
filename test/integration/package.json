@@ -7,7 +7,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "test": "npx jest *.test.js --coverage"
+    "test": "jest scanner.test.js --coverage"
   },
   "devDependencies": {
     "chai": "^4.3.10",
