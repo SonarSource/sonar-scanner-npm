@@ -199,6 +199,25 @@ describe('scanner-cli', () => {
       );
     });
 
+    it('should only forward non-scanner env vars to Scanner CLI', async () => {
+      const stub = sinon.stub(process, 'env').value({
+        SONAR_TOKEN: 'sqa_somtoken',
+        SONAR_SCANNER_SOME_VAR: 'some_value',
+        CIRRUS_CI_SOME_VAR: 'some_value',
+      });
+
+      await runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner');
+
+      expect(spawn).toHaveBeenCalledTimes(1);
+      const [, , options] = (spawn as jest.Mock).mock.calls.pop();
+      expect(options.env).toEqual({
+        SONARQUBE_SCANNER_PARAMS: JSON.stringify(MOCK_PROPERTIES),
+        CIRRUS_CI_SOME_VAR: 'some_value',
+      });
+
+      stub.restore();
+    });
+
     it('should pass proxy options to scanner', async () => {
       await runScannerCli(
         {},

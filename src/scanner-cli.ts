@@ -20,7 +20,13 @@
 import { spawn } from 'child_process';
 import * as fsExtra from 'fs-extra';
 import path from 'path';
-import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_MIRROR, SCANNER_CLI_VERSION } from './constants';
+import {
+  ENV_TO_PROPERTY_NAME,
+  ENV_VAR_PREFIX,
+  SCANNER_CLI_INSTALL_PATH,
+  SCANNER_CLI_MIRROR,
+  SCANNER_CLI_VERSION,
+} from './constants';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
 import { isLinux, isMac, isWindows } from './platform';
@@ -108,12 +114,19 @@ export async function runScannerCli(
   binPath: string,
 ) {
   log(LogLevel.INFO, 'Starting analysis');
+  // We filter out env properties that are passed to the scanner
+  // otherwise, they would supersede the properties passed to the scanner through SONARQUBE_SCANNER_PARAMS
+  const filteredEnvKeys = ENV_TO_PROPERTY_NAME.map(env => env[0]);
+  const filteredEnv = Object.entries(process.env)
+    .filter(([key]) => !filteredEnvKeys.includes(key))
+    .filter(([key]) => !key.startsWith(ENV_VAR_PREFIX));
+
   const child = spawn(
     binPath,
     [...(scanOptions.jvmOptions ?? []), ...proxyUrlToJavaOptions(properties)],
     {
       env: {
-        ...process.env,
+        ...Object.fromEntries(filteredEnv),
         SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
       },
       shell: isWindows(),
