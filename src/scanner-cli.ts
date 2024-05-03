@@ -27,6 +27,7 @@ import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
 import { isMac, isWindows, isLinux } from './platform';
+import { AxiosRequestConfig } from 'axios';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (isWindows()) {
@@ -102,9 +103,22 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   // Create parent directory if needed
   await fsExtra.ensureDir(installDir);
 
+  // Add basic auth credentials when used in the UR
+  let overrides: AxiosRequestConfig | undefined;
+  if (scannerCliUrl.username && scannerCliUrl.password) {
+    overrides = {
+      headers: {
+        Authorization:
+          'Basic ' +
+          Buffer.from(`${scannerCliUrl.username}:${scannerCliUrl.password}`).toString('base64'),
+      },
+    };
+  }
+
   // Download SonarScanner CLI
   log(LogLevel.INFO, 'Downloading SonarScanner CLI');
-  await download(scannerCliUrl.href, archivePath);
+  log(LogLevel.DEBUG, `Downloading from ${scannerCliUrl.href}`);
+  await download(scannerCliUrl.href, archivePath, overrides);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
   await extractArchive(archivePath, installDir);

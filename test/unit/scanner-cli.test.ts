@@ -18,9 +18,9 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { spawn } from 'child_process';
-import * as fsExtra from 'fs-extra';
 import path from 'path';
 import sinon from 'sinon';
+import * as fsExtra from 'fs-extra';
 import {
   SCANNER_CLI_DEFAULT_BIN_NAME,
   SCANNER_CLI_INSTALL_PATH,
@@ -115,6 +115,7 @@ describe('scanner-cli', () => {
           SCANNER_CLI_INSTALL_PATH,
           'sonar-scanner-5.0.1.3006-linux.zip',
         ),
+        undefined,
       );
       expect(extractArchive).toHaveBeenLastCalledWith(
         path.join(
@@ -148,6 +149,7 @@ describe('scanner-cli', () => {
           SCANNER_CLI_INSTALL_PATH,
           'sonar-scanner-5.0.1.3006-windows.zip',
         ),
+        undefined,
       );
       expect(extractArchive).toHaveBeenLastCalledWith(
         path.join(
@@ -166,6 +168,25 @@ describe('scanner-cli', () => {
       );
 
       stub.restore();
+    });
+
+    it('should persist username and password for scanner-cli download when a mirror is used', async () => {
+      childProcessHandler.setExitCode(1);
+      sinon.stub(process, 'platform').value('win32');
+      await downloadScannerCli({
+        ...MOCK_PROPERTIES,
+        [ScannerProperty.SonarScannerCliMirror]: 'https://myUser:myPassword@mirror.com:80',
+      });
+
+      expect(download).toHaveBeenLastCalledWith(
+        'https://myUser:myPassword@mirror.com:80/sonar-scanner-cli-5.0.1.3006-windows.zip',
+        path.join(
+          MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          'sonar-scanner-5.0.1.3006-windows.zip',
+        ),
+        { headers: { Authorization: 'Basic bXlVc2VyOm15UGFzc3dvcmQ=' } },
+      );
     });
   });
 

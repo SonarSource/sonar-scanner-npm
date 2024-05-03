@@ -19,7 +19,7 @@
  */
 import path from 'path';
 import sinon from 'sinon';
-import { SCANNER_BOOTSTRAPPER_NAME, SCANNER_CLI_VERSION } from '../../../src/constants';
+import { SCANNER_BOOTSTRAPPER_NAME } from '../../../src/constants';
 
 const baseEnvVariables = process.env;
 

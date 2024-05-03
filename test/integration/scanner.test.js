@@ -58,7 +58,11 @@ describe('scanner', function () {
           options: {
             'sonar.projectName': projectKey,
             'sonar.projectKey': projectKey,
-            'sonar.sources': path.join(__dirname, '/fixtures/fake_project_for_integration/src'),
+            'sonar.log.level': 'DEBUG',
+            'sonar.sources': path.join(
+              __dirname.replace(/\\+/g, '/'),
+              '/fixtures/fake_project_for_integration/src',
+            ),
           },
         });
         await waitForAnalysisFinished(TIMEOUT_MS);

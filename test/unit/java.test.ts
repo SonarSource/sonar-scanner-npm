@@ -21,6 +21,7 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import fs from 'fs';
 import path from 'path';
+import { LogLevel, log } from '../../src/logging';
 import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
 import * as file from '../../src/file';
 import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
@@ -35,9 +36,9 @@ const MOCKED_PROPERTIES: ScannerProperties = {
   [ScannerProperty.SonarScannerArch]: 'arm64',
 };
 
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
-  request.initializeAxios(MOCKED_PROPERTIES);
+  await request.initializeAxios(MOCKED_PROPERTIES);
   mock.reset();
   jest.spyOn(request, 'fetch');
   jest.spyOn(request, 'download');
@@ -66,9 +67,15 @@ describe('java', () => {
       mock.onGet('http://sonarqube.com/api/server/version').reply(404, 'Not Found');
       mock.onGet('/api/v2/server/version').reply(404, 'Not Found');
 
-      expect(async () => {
+      await expect(async () => {
         await fetchServerVersion(MOCKED_PROPERTIES);
       }).rejects.toBeDefined();
+
+      // test that we inform the user of the hostUrl being used
+      expect(log).toHaveBeenCalledWith(
+        LogLevel.ERROR,
+        `Verify that ${MOCKED_PROPERTIES[ScannerProperty.SonarHostUrl]} is a valid SonarQube server`,
+      );
     });
 
     it('should fail if version can not be parsed', async () => {
@@ -76,7 +83,7 @@ describe('java', () => {
         .onGet('http://sonarqube.com/api/server/version')
         .reply(200, '<!DOCTYPE><HTML><BODY>FORBIDDEN</BODY></HTML>');
 
-      expect(async () => {
+      await expect(async () => {
         await fetchServerVersion(MOCKED_PROPERTIES);
       }).rejects.toBeDefined();
     });
