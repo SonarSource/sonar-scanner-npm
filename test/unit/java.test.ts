@@ -20,6 +20,7 @@
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import fs from 'fs';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import { LogLevel, log } from '../../src/logging';
 import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
@@ -189,6 +190,15 @@ describe('java', () => {
         expect(file.validateChecksum).toHaveBeenCalledTimes(1);
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
         expect(properties[ScannerProperty.SonarScannerWasJreCacheHit]).toBe(CacheStatus.Miss);
+      });
+
+      it('should remove file when checksum does not match', async () => {
+        jest.spyOn(file, 'validateChecksum').mockRejectedValue(new Error());
+        jest.spyOn(fsExtra, 'remove');
+
+        await expect(fetchJRE(MOCKED_PROPERTIES)).rejects.toBeDefined();
+
+        expect(fsExtra.remove).toHaveBeenCalledWith('/mocked-archive-path');
       });
 
       it('should fail if no JRE matches', async () => {

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
+import fsExtra from 'fs-extra';
 import path from 'path';
 import semver, { SemVer } from 'semver';
 import {
@@ -131,7 +131,12 @@ export async function fetchJRE(properties: ScannerProperties): Promise<string> {
   const url = jreMetaData.downloadUrl ?? `${API_V2_JRE_ENDPOINT}/${jreMetaData.id}`;
 
   await download(url, archivePath);
-  await validateChecksum(archivePath, jreMetaData.sha256);
+  try {
+    await validateChecksum(archivePath, jreMetaData.sha256);
+  } catch (error) {
+    await fsExtra.remove(archivePath);
+    throw error;
+  }
   await extractArchive(archivePath, jreDirPath);
   return path.join(jreDirPath, jreMetaData.javaPath);
 }

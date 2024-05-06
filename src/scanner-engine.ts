@@ -17,15 +17,11 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import fsExtra from 'fs-extra';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import { API_V2_SCANNER_ENGINE_ENDPOINT } from './constants';
-import {
-  extractArchive,
-  getCacheDirectories,
-  getCacheFileLocation,
-  validateChecksum,
-} from './file';
+import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file';
 import { LogLevel, log, logWithPrefix } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download, fetch } from './request';
@@ -63,7 +59,12 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   await download(url, archivePath);
   log(LogLevel.INFO, `Downloaded Scanner Engine to ${archivePath}`);
 
-  await validateChecksum(archivePath, checksum);
+  try {
+    await validateChecksum(archivePath, checksum);
+  } catch (error) {
+    await fsExtra.remove(archivePath);
+    throw error;
+  }
 
   return archivePath;
 }

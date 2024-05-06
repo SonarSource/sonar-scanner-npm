@@ -22,6 +22,7 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { ChildProcess, spawn } from 'child_process';
 import fs from 'fs';
+import fsExtra, { copySync } from 'fs-extra';
 import sinon from 'sinon';
 import { Readable } from 'stream';
 import { API_V2_SCANNER_ENGINE_ENDPOINT } from '../../src/constants';
@@ -98,6 +99,17 @@ describe('scanner-engine', () => {
         checksum: 'sha_test',
         filename: 'scanner-engine-1.2.3.jar',
       });
+    });
+
+    it('should remove file when checksum does not match', async () => {
+      jest.spyOn(file, 'validateChecksum').mockRejectedValue(new Error());
+      jest.spyOn(fsExtra, 'remove');
+
+      await expect(fetchScannerEngine(MOCKED_PROPERTIES)).rejects.toBeDefined();
+
+      expect(fsExtra.remove).toHaveBeenCalledWith(
+        'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
+      );
     });
 
     describe('when the scanner engine is cached', () => {
