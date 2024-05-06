@@ -58,6 +58,12 @@ export enum ScannerProperty {
   SonarScannerInternalSqVersion = 'sonar.scanner.internal.sqVersion',
   SonarScannerCliVersion = 'sonar.scanner.version',
   SonarScannerCliMirror = 'sonar.scanner.mirror',
+  // Deprecated properties:
+  SonarWsTimeout = 'sonar.ws.timeout',
+  HttpProxyHost = 'http.proxyHost',
+  HttpProxyPort = 'http.proxyPort',
+  HttpProxyUser = 'http.proxyUser',
+  HttpProxyPassword = 'http.proxyPassword',
 }
 
 export type ScannerProperties = {

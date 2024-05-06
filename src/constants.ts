@@ -64,3 +64,11 @@ export const SCANNER_CLI_MIRROR =
 export const SCANNER_CLI_INSTALL_PATH = 'native-sonar-scanner';
 
 export const WINDOWS_WHERE_EXE_PATH = 'C:\\Windows\\System32\\where.exe';
+
+export const SCANNER_DEPRECATED_PROPERTIES: ScannerProperty[][] = [
+  [ScannerProperty.SonarWsTimeout, ScannerProperty.SonarScannerResponseTimeout],
+  [ScannerProperty.HttpProxyHost, ScannerProperty.SonarScannerProxyHost],
+  [ScannerProperty.HttpProxyPort, ScannerProperty.SonarScannerProxyPort],
+  [ScannerProperty.HttpProxyUser, ScannerProperty.SonarScannerProxyUser],
+  [ScannerProperty.HttpProxyPassword, ScannerProperty.SonarScannerProxyPassword],
+];
