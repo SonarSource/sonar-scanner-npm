@@ -40,8 +40,8 @@ const MOCKED_PROPERTIES: ScannerProperties = {
 };
 
 const MOCK_CACHE_DIRECTORIES = {
-  archivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.zip',
-  unarchivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.zip_extracted',
+  archivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
+  unarchivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar_extracted',
 };
 jest.mock('../../src/constants', () => ({
   ...jest.requireActual('../../src/constants'),
@@ -62,7 +62,7 @@ describe('scanner-engine', () => {
   beforeEach(async () => {
     await request.initializeAxios(MOCKED_PROPERTIES);
     mock.onGet(API_V2_SCANNER_ENGINE_ENDPOINT).reply(200, {
-      filename: 'scanner-engine-1.2.3.zip',
+      filename: 'scanner-engine-1.2.3.jar',
       sha256: 'sha_test',
     } as AnalysisEngineResponseType);
     mock
@@ -96,7 +96,7 @@ describe('scanner-engine', () => {
 
       expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
         checksum: 'sha_test',
-        filename: 'scanner-engine-1.2.3.zip',
+        filename: 'scanner-engine-1.2.3.jar',
       });
     });
 
@@ -110,7 +110,7 @@ describe('scanner-engine', () => {
 
         expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
           checksum: 'sha_test',
-          filename: 'scanner-engine-1.2.3.zip',
+          filename: 'scanner-engine-1.2.3.jar',
         });
         expect(request.download).not.toHaveBeenCalled();
         expect(file.extractArchive).not.toHaveBeenCalled();
@@ -125,13 +125,12 @@ describe('scanner-engine', () => {
 
         expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
           checksum: 'sha_test',
-          filename: 'scanner-engine-1.2.3.zip',
+          filename: 'scanner-engine-1.2.3.jar',
         });
         expect(request.download).toHaveBeenCalledTimes(1);
-        expect(file.extractArchive).toHaveBeenCalledTimes(1);
 
         expect(scannerEngine).toEqual(
-          'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.zip_extracted',
+          'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
         );
       });
     });
@@ -159,7 +158,10 @@ describe('scanner-engine', () => {
       expect(write).toHaveBeenCalledTimes(1);
       expect(write).toHaveBeenCalledWith(
         JSON.stringify({
-          scannerProperties: MOCKED_PROPERTIES,
+          scannerProperties: Object.entries(MOCKED_PROPERTIES).map(([key, value]) => ({
+            key,
+            value,
+          })),
         }),
       );
       expect(spawn).toHaveBeenCalledWith('java', [
@@ -186,13 +188,13 @@ describe('scanner-engine', () => {
       const stdoutStub = sinon.stub(process.stdout, 'write').value(jest.fn());
 
       const output = [
-        JSON.stringify({ level: 'DEBUG', formattedMessage: 'the message' }),
-        JSON.stringify({ level: 'INFO', formattedMessage: 'another message' }),
+        JSON.stringify({ level: 'DEBUG', message: 'the message' }),
+        JSON.stringify({ level: 'INFO', message: 'another message' }),
         "some non-JSON message which shouldn't crash the bootstrapper",
         JSON.stringify({
           level: 'ERROR',
-          formattedMessage: 'final message',
-          throwable: 'this is a throwable',
+          message: 'final message',
+          stacktrace: 'this is a stacktrace',
         }),
       ];
       childProcessHandler.setOutput(output.join('\n'));

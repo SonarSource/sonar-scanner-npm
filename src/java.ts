@@ -88,8 +88,7 @@ export async function serverSupportsJREProvisioning(
   properties: ScannerProperties,
 ): Promise<boolean> {
   if (properties[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
-    //TODO: return to true once SC has the new provisioning mechanism in place
-    return false;
+    return true;
   }
 
   // SonarQube
@@ -107,7 +106,7 @@ export async function serverSupportsJREProvisioning(
 export async function fetchJRE(properties: ScannerProperties): Promise<string> {
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
   const jreMetaData = await fetchLatestSupportedJRE(properties);
-  log(LogLevel.INFO, 'Latest Supported JRE: ', jreMetaData);
+  log(LogLevel.DEBUG, 'Latest Supported JRE: ', jreMetaData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
   const cachedJrePath = await getCacheFileLocation(properties, {

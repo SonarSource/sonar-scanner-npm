@@ -23,8 +23,8 @@ export type CacheFileData = { checksum: string; filename: string };
 
 export type ScannerLogEntry = {
   level: LogLevel;
-  formattedMessage: string;
-  throwable?: string;
+  message: string;
+  stacktrace?: string;
 };
 
 export enum ScannerProperty {
