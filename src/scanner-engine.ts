@@ -17,15 +17,11 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import fsExtra from 'fs-extra';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import { API_V2_SCANNER_ENGINE_ENDPOINT } from './constants';
-import {
-  extractArchive,
-  getCacheDirectories,
-  getCacheFileLocation,
-  validateChecksum,
-} from './file';
+import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file';
 import { LogLevel, log, logWithPrefix } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download, fetch } from './request';
@@ -54,30 +50,33 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
 
   properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
 
-  const { archivePath, unarchivePath: scannerEnginePath } = await getCacheDirectories(properties, {
+  const { archivePath } = await getCacheDirectories(properties, {
     checksum,
     filename,
   });
   const url = downloadUrl ?? API_V2_SCANNER_ENGINE_ENDPOINT;
   log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
   await download(url, archivePath);
-  log(LogLevel.INFO, `Downloaded Scanner Engine to ${scannerEnginePath}`);
+  log(LogLevel.INFO, `Downloaded Scanner Engine to ${archivePath}`);
 
-  await validateChecksum(archivePath, checksum);
+  try {
+    await validateChecksum(archivePath, checksum);
+  } catch (error) {
+    await fsExtra.remove(archivePath);
+    throw error;
+  }
 
-  log(LogLevel.INFO, `Extracting Scanner Engine to ${scannerEnginePath}`);
-  await extractArchive(archivePath, scannerEnginePath);
-  return scannerEnginePath;
+  return archivePath;
 }
 
 async function logOutput(message: string) {
   try {
     // Try and assume the log comes from the scanner engine
     const parsed = JSON.parse(message) as ScannerLogEntry;
-    logWithPrefix(parsed.level, 'ScannerEngine', parsed.formattedMessage);
-    if (parsed.throwable) {
+    logWithPrefix(parsed.level, 'ScannerEngine', parsed.message);
+    if (parsed.stacktrace) {
       // Console.log without newline
-      process.stdout.write(parsed.throwable);
+      process.stdout.write(parsed.stacktrace);
     }
   } catch (e) {
     process.stdout.write(message);
@@ -93,7 +92,12 @@ export function runScannerEngine(
   log(LogLevel.INFO, 'Running the Scanner Engine');
 
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
-  const propertiesJSON = JSON.stringify({ scannerProperties: properties });
+  const propertiesJSON = JSON.stringify({
+    scannerProperties: Object.entries(properties).map(([key, value]) => ({
+      key,
+      value,
+    })),
+  });
 
   // Run the scanner-engine
   const args = [

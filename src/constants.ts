@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import path from 'path';
 import { ScannerProperty } from './types';
 
 export const SCANNER_BOOTSTRAPPER_NAME = 'ScannerNpm';
@@ -65,3 +64,11 @@ export const SCANNER_CLI_MIRROR =
 export const SCANNER_CLI_INSTALL_PATH = 'native-sonar-scanner';
 
 export const WINDOWS_WHERE_EXE_PATH = 'C:\\Windows\\System32\\where.exe';
+
+export const SCANNER_DEPRECATED_PROPERTIES: ScannerProperty[][] = [
+  [ScannerProperty.SonarWsTimeout, ScannerProperty.SonarScannerResponseTimeout],
+  [ScannerProperty.HttpProxyHost, ScannerProperty.SonarScannerProxyHost],
+  [ScannerProperty.HttpProxyPort, ScannerProperty.SonarScannerProxyPort],
+  [ScannerProperty.HttpProxyUser, ScannerProperty.SonarScannerProxyUser],
+  [ScannerProperty.HttpProxyPassword, ScannerProperty.SonarScannerProxyPassword],
+];

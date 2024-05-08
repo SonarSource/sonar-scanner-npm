@@ -149,6 +149,9 @@ export async function download(url: string, destPath: string, overrides?: AxiosR
     url,
     method: 'GET',
     responseType: 'stream',
+    headers: {
+      Accept: 'application/octet-stream',
+    },
     ...overrides,
   });
 

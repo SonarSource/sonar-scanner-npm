@@ -481,6 +481,40 @@ describe('getProperties', () => {
       );
     });
 
+    it('should warn and replace deprecated properties', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_SCANNER_JSON_PARAMS: JSON.stringify({
+          'sonar.ws.timeout': '000',
+        }),
+      });
+
+      const properties = getProperties(
+        {
+          options: {
+            'sonar.scanner.responseTimeout': '111',
+            'http.proxyHost': 'my-proxy.io',
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toMatchObject({
+        'sonar.scanner.responseTimeout': '111', // Should not replace the deprecated property because its new version is also present
+        'sonar.ws.timeout': '111',
+        'sonar.scanner.proxyHost': 'my-proxy.io', // Should replace the deprecated property with the new one
+        'http.proxyHost': 'my-proxy.io',
+      });
+      expect(log).toHaveBeenCalledWith(
+        LogLevel.WARN,
+        'Both properties "sonar.ws.timeout" and "sonar.scanner.responseTimeout" are set. "sonar.ws.timeout" is deprecated and will be removed in a future version. Value of deprecated property "sonar.ws.timeout" will be ignored.',
+      );
+      expect(log).toHaveBeenCalledWith(
+        LogLevel.WARN,
+        'Property "http.proxyHost" is deprecated and will be removed in a future version. Please use "sonar.scanner.proxyHost" instead.',
+      );
+    });
+
     it('should set the [ScannerProperty.SonarScannerCliVersion] for all existing formats', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({
