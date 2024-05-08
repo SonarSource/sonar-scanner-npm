@@ -19,8 +19,7 @@
  */
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import fs from 'fs';
-import path from 'path';
+import fsExtra from 'fs-extra';
 import { LogLevel, log } from '../../src/logging';
 import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
 import * as file from '../../src/file';
@@ -101,7 +100,7 @@ describe('java', () => {
           ...MOCKED_PROPERTIES,
           [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
         }),
-      ).toBe(false); // TODO: return to true once SC has the new provisioning mechanism in place
+      ).toBe(true);
     });
 
     it(`should return true for SQ version >= ${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`, async () => {
@@ -139,10 +138,6 @@ describe('java', () => {
           },
         })
         .reply(200, serverResponse);
-
-      mock
-        .onGet(`${API_V2_JRE_ENDPOINT}/${serverResponse[0].id}`)
-        .reply(200, fs.createReadStream(path.resolve(__dirname, '../unit/mocks/mock-jre.tar.gz')));
     });
 
     describe('when the JRE is cached', () => {
@@ -189,6 +184,15 @@ describe('java', () => {
         expect(file.validateChecksum).toHaveBeenCalledTimes(1);
         expect(file.extractArchive).toHaveBeenCalledTimes(1);
         expect(properties[ScannerProperty.SonarScannerWasJreCacheHit]).toBe(CacheStatus.Miss);
+      });
+
+      it('should remove file when checksum does not match', async () => {
+        jest.spyOn(file, 'validateChecksum').mockRejectedValue(new Error());
+        jest.spyOn(fsExtra, 'remove');
+
+        await expect(fetchJRE(MOCKED_PROPERTIES)).rejects.toBeDefined();
+
+        expect(fsExtra.remove).toHaveBeenCalledWith('/mocked-archive-path');
       });
 
       it('should fail if no JRE matches', async () => {

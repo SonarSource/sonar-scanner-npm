@@ -28,6 +28,7 @@ import {
   ENV_VAR_PREFIX,
   NPM_CONFIG_ENV_VAR_PREFIX,
   SCANNER_BOOTSTRAPPER_NAME,
+  SCANNER_DEPRECATED_PROPERTIES,
   SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
   SONARCLOUD_URL_REGEX,
@@ -363,6 +364,28 @@ function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {
   return properties;
 }
 
+function hotfixDeprecatedProperties(properties: ScannerProperties): ScannerProperties {
+  for (const [oldProp, newProp] of SCANNER_DEPRECATED_PROPERTIES) {
+    if (typeof properties[oldProp] !== 'undefined') {
+      if (typeof properties[newProp] === 'undefined') {
+        log(
+          LogLevel.WARN,
+          `Property "${oldProp}" is deprecated and will be removed in a future version. Please use "${newProp}" instead.`,
+        );
+        properties[newProp] = properties[oldProp];
+      } else {
+        log(
+          LogLevel.WARN,
+          `Both properties "${oldProp}" and "${newProp}" are set. "${oldProp}" is deprecated and will be removed in a future version. Value of deprecated property "${oldProp}" will be ignored.`,
+        );
+        properties[oldProp] = properties[newProp];
+      }
+    }
+  }
+
+  return properties;
+}
+
 export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
@@ -416,11 +439,11 @@ export function getProperties(
   // Hotfix host properties with custom SonarCloud URL
   const hostProperties = getHostProperties(properties);
 
-  return {
+  return hotfixDeprecatedProperties({
     ...properties,
     // Can't be overridden:
     ...hostProperties,
     ...getBootstrapperProperties(startTimestampMs),
     'sonar.projectBaseDir': projectBaseDir,
-  };
+  });
 }
