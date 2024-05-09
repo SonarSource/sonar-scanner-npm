@@ -57,7 +57,8 @@ function isAlpineLinux(): boolean {
       log(LogLevel.WARN, 'Failed to read /etc/os-release or /usr/lib/os-release');
     }
   }
-  return !!content && (content.match(/^ID=([^\u001b\r\n]*)/m) || [])[1] === 'alpine';
+  const match = /^ID=([^\r\n]*)/m.exec(content ?? '');
+  return !!content && (match ? match[1] === 'alpine' : false);
 }
 
 export function getSupportedOS(): NodeJS.Platform | 'alpine' {

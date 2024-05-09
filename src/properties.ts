@@ -37,7 +37,14 @@ import {
 } from './constants';
 import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
-import { CacheStatus, CliArgs, ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import {
+  CacheStatus,
+  CliArgs,
+  PackageJson,
+  ScanOptions,
+  ScannerProperties,
+  ScannerProperty,
+} from './types';
 
 function getDefaultProperties(): ScannerProperties {
   return {
@@ -84,83 +91,114 @@ function getPackageJsonProperties(
   sonarBaseExclusions: string,
 ): ScannerProperties {
   const packageJsonParams: { [key: string]: string } = {};
-  const packageFile = path.join(projectBaseDir, 'package.json');
-  let packageData;
-  try {
-    packageData = fs.readFileSync(packageFile).toString();
-  } catch (error) {
-    log(LogLevel.INFO, `Unable to read "package.json" file`);
+  const pkg = readPackageJson(projectBaseDir);
+  if (!pkg) {
     return {
       [ScannerProperty.SonarExclusions]: sonarBaseExclusions,
     };
   }
-  const pkg = JSON.parse(packageData);
+
   log(LogLevel.INFO, 'Retrieving info from "package.json" file');
+  populatePackageParams(packageJsonParams, pkg);
+  populateCoverageParams(packageJsonParams, pkg, projectBaseDir, sonarBaseExclusions);
+  populateTestExecutionParams(packageJsonParams, pkg, projectBaseDir);
 
-  function fileExistsInProjectSync(file: string) {
-    return fs.existsSync(path.join(projectBaseDir, file));
+  return packageJsonParams;
+}
+
+function readPackageJson(projectBaseDir: string): PackageJson | null {
+  const packageFile = path.join(projectBaseDir, 'package.json');
+  try {
+    const packageData = fs.readFileSync(packageFile).toString();
+    return JSON.parse(packageData);
+  } catch (error) {
+    log(LogLevel.INFO, `Unable to read "package.json" file`);
+    return null;
   }
+}
 
-  function dependenceExists(pkgName: string) {
-    return ['devDependencies', 'dependencies', 'peerDependencies'].some(function (prop) {
-      return pkg[prop] && pkgName in pkg[prop];
-    });
+function fileExistsInProjectSync(projectBaseDir: string, file: string): boolean {
+  return fs.existsSync(path.join(projectBaseDir, file));
+}
+
+function dependenceExists(pkg: PackageJson, pkgName: string): boolean {
+  return ['devDependencies', 'dependencies', 'peerDependencies'].some(function (prop) {
+    const dependencyGroup = pkg[prop];
+    return (
+      typeof dependencyGroup === 'object' && dependencyGroup !== null && pkgName in dependencyGroup
+    );
+  });
+}
+
+function populatePackageParams(params: { [key: string]: string | {} }, pkg: PackageJson) {
+  const invalidCharacterRegex = /[?$*+~.()'"!:@/]/g;
+  params['sonar.projectKey'] = slugify(pkg.name, {
+    remove: invalidCharacterRegex,
+  });
+  params['sonar.projectName'] = pkg.name;
+  params['sonar.projectVersion'] = pkg.version;
+  if (pkg.description) {
+    params['sonar.projectDescription'] = pkg.description;
   }
+  if (pkg.homepage) {
+    params['sonar.links.homepage'] = pkg.homepage;
+  }
+  if (pkg.bugs?.url) {
+    params['sonar.links.issue'] = pkg.bugs.url;
+  }
+  if (pkg.repository?.url) {
+    params['sonar.links.scm'] = pkg.repository.url;
+  }
+}
 
-  if (pkg) {
-    const invalidCharacterRegex = /[?$*+~.()'"!:@/]/g;
-    packageJsonParams['sonar.projectKey'] = slugify(pkg.name, {
-      remove: invalidCharacterRegex,
-    });
-    packageJsonParams['sonar.projectName'] = pkg.name;
-    packageJsonParams['sonar.projectVersion'] = pkg.version;
-    if (pkg.description) {
-      packageJsonParams['sonar.projectDescription'] = pkg.description;
-    }
-    if (pkg.homepage) {
-      packageJsonParams['sonar.links.homepage'] = pkg.homepage;
-    }
-    if (pkg.bugs?.url) {
-      packageJsonParams['sonar.links.issue'] = pkg.bugs.url;
-    }
-    if (pkg.repository?.url) {
-      packageJsonParams['sonar.links.scm'] = pkg.repository.url;
-    }
+function populateCoverageParams(
+  params: { [key: string]: string },
+  pkg: PackageJson,
+  projectBaseDir: string,
+  sonarBaseExclusions: string,
+) {
+  const potentialCoverageDirs = [
+    // nyc coverage output directory
+    // See: https://github.com/istanbuljs/nyc#configuring-nyc
+    pkg['nyc']?.['report-dir'],
+    // jest coverage output directory
+    // See: http://facebook.github.io/jest/docs/en/configuration.html#coveragedirectory-string
+    pkg['jest']?.['coverageDirectory'],
+  ]
+    .filter(Boolean)
+    .concat(
+      // default coverage output directory
+      'coverage',
+    );
 
-    const potentialCoverageDirs = [
-      // jest coverage output directory
-      // See: http://facebook.github.io/jest/docs/en/configuration.html#coveragedirectory-string
-      pkg['nyc']?.['report-dir'],
-      // nyc coverage output directory
-      // See: https://github.com/istanbuljs/nyc#configuring-nyc
-      pkg['jest']?.['coverageDirectory'],
-    ]
-      .filter(Boolean)
-      .concat(
-        // default coverage output directory
-        'coverage',
-      );
-    const uniqueCoverageDirs = Array.from(new Set(potentialCoverageDirs));
-    packageJsonParams[ScannerProperty.SonarExclusions] = sonarBaseExclusions;
-    for (const lcovReportDir of uniqueCoverageDirs) {
-      const lcovReportPath = path.posix.join(lcovReportDir, 'lcov.info');
-      if (fileExistsInProjectSync(lcovReportPath)) {
-        packageJsonParams[ScannerProperty.SonarExclusions] +=
-          (packageJsonParams[ScannerProperty.SonarExclusions].length > 0 ? ',' : '') +
-          path.posix.join(lcovReportDir, '**');
-        // https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/javascript-typescript-test-coverage/
-        packageJsonParams['sonar.javascript.lcov.reportPaths'] = lcovReportPath;
-        // TODO: use Generic Test Data to remove dependence of SonarJS, it is need transformation lcov to sonar generic coverage format
-      }
+  const uniqueCoverageDirs = Array.from(new Set(potentialCoverageDirs));
+  params[ScannerProperty.SonarExclusions] = sonarBaseExclusions;
+  for (const lcovReportDir of uniqueCoverageDirs) {
+    const lcovReportPath = lcovReportDir && path.posix.join(lcovReportDir, 'lcov.info');
+    if (lcovReportPath && fileExistsInProjectSync(projectBaseDir, lcovReportPath)) {
+      params[ScannerProperty.SonarExclusions] +=
+        (params[ScannerProperty.SonarExclusions].length > 0 ? ',' : '') +
+        path.posix.join(lcovReportDir, '**');
+      // TODO: (SCANNPM-34) use Generic Test Data to remove dependence of SonarJS, it is need transformation lcov to sonar generic coverage format
+      params['sonar.javascript.lcov.reportPaths'] = lcovReportPath;
+      // https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/test-coverage/javascript-typescript-test-coverage/
     }
+  }
+}
 
-    if (dependenceExists('mocha-sonarqube-reporter') && fileExistsInProjectSync('xunit.xml')) {
-      // https://docs.sonarqube.org/display/SONAR/Generic+Test+Data
-      packageJsonParams['sonar.testExecutionReportPaths'] = 'xunit.xml';
-    }
+function populateTestExecutionParams(
+  params: { [key: string]: string },
+  pkg: PackageJson,
+  projectBaseDir: string,
+) {
+  if (
+    dependenceExists(pkg, 'mocha-sonarqube-reporter') &&
+    fileExistsInProjectSync(projectBaseDir, 'xunit.xml')
+  ) {
+    // https://docs.sonarqube.org/display/SONAR/Generic+Test+Data
+    params['sonar.testExecutionReportPaths'] = 'xunit.xml';
     // TODO: (SCANNPM-13) use `glob` to lookup xunit format files and transformation to sonar generic report format
   }
-  return packageJsonParams;
 }
 
 /**

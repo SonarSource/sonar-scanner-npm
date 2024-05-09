@@ -22,10 +22,6 @@ import { ScanOptions } from './types';
 
 export { scan };
 
-/**
- * TODO: SCANNPM-8 Ensure backwards compatibility and assess what to re-export
- */
-
 export function customScanner(scanOptions: ScanOptions) {
   return scan({
     ...scanOptions,

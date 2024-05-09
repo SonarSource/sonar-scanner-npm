@@ -25,7 +25,6 @@ import {
   API_V2_JRE_ENDPOINT,
   API_V2_VERSION_ENDPOINT,
   JRE_ALIAS,
-  SONAR_CACHE_DIR,
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
@@ -33,7 +32,6 @@ import {
   extractArchive,
   getCacheDirectories,
   getCacheFileLocation,
-  getParentCacheDirectory,
   validateChecksum,
 } from './file';
 import { LogLevel, log } from './logging';
@@ -145,7 +143,7 @@ export async function fetchJRE(properties: ScannerProperties): Promise<string> {
     await fsExtra.remove(archivePath);
     throw error;
   }
-  await extractArchive(archivePath, jreDirPath, getParentCacheDirectory(properties));
+  await extractArchive(archivePath, jreDirPath);
   return path.join(jreDirPath, jreMetaData.javaPath);
 }
 

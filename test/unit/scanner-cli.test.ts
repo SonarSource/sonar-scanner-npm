@@ -105,7 +105,6 @@ describe('scanner-cli', () => {
           'sonar-scanner-5.0.1.3006-linux.zip',
         ),
         path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
-        undefined,
       );
 
       stub.restore();
@@ -133,7 +132,6 @@ describe('scanner-cli', () => {
           'sonar-scanner-5.0.1.3006-windows.zip',
         ),
         path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
-        undefined,
       );
       expect(binPath).toBe(
         path.join(

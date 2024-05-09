@@ -29,12 +29,6 @@ import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
 import { LogLevel, log } from './logging';
 import { CacheFileData, ScannerProperties, ScannerProperty } from './types';
 
-// prevent Zip Bomb attacks
-// https://sonarcloud.io/project/security_hotspots?id=SonarSource_sonar-scanner-npm&pullRequest=141&hotspots=AY9ce2j1rNHifkb_WkwD
-const MAX_FILES = 10000;
-const MAX_SIZE = 1000000000; // 1 GB
-const THRESHOLD_RATIO = 10;
-
 export async function getCacheFileLocation(
   properties: ScannerProperties,
   { checksum, filename, alias }: CacheFileData,
@@ -58,7 +52,7 @@ export async function getCacheFileLocation(
   }
 }
 
-export async function extractArchive(fromPath: string, toPath: string, canonicalBasePath: string) {
+export async function extractArchive(fromPath: string, toPath: string) {
   log(LogLevel.DEBUG, `Extracting ${fromPath} to ${toPath}`);
   if (fromPath.endsWith('.tar.gz')) {
     const tarFilePath = fromPath;
@@ -72,11 +66,7 @@ export async function extractArchive(fromPath: string, toPath: string, canonical
         // Ensure the directory exists
         await fsExtra.ensureDir(path.dirname(filePath));
 
-        // prevent zip slip security issue
-        // https://sonarcloud.io/project/issues?open=AY9ce2j1rNHifkb_WkwE&id=SonarSource_sonar-scanner-npm
-        if (filePath.startsWith(canonicalBasePath)) {
-          stream.pipe(fs.createWriteStream(filePath, { mode: header.mode }));
-        }
+        stream.pipe(fs.createWriteStream(filePath, { mode: header.mode }));
 
         // end of file, move onto next file
         stream.on('end', next);
@@ -101,32 +91,8 @@ export async function extractArchive(fromPath: string, toPath: string, canonical
 
     await extractionPromise;
   } else {
-    let fileCount = 0;
-    let totalSize = 0;
-
     const zip = new AdmZip(fromPath);
-    let zipEntries = zip.getEntries();
-    zipEntries.forEach(function (zipEntry) {
-      fileCount++;
-      if (fileCount > MAX_FILES) {
-        throw new Error('Reached max. number of files');
-      }
-
-      let entrySize = zipEntry.getData().length;
-      totalSize += entrySize;
-      if (totalSize > MAX_SIZE) {
-        throw new Error('Reached max. size');
-      }
-
-      let compressionRatio = entrySize / zipEntry.header.compressedSize;
-      if (compressionRatio > THRESHOLD_RATIO) {
-        throw new Error('Reached max. compression ratio');
-      }
-
-      if (!zipEntry.isDirectory) {
-        zip.extractEntryTo(zipEntry.entryName, '.', undefined, true, true);
-      }
-    });
+    zip.extractAllTo(toPath, true, true);
   }
 }
 
@@ -179,6 +145,6 @@ export async function getCacheDirectories(
   return { archivePath, unarchivePath };
 }
 
-export function getParentCacheDirectory(properties: ScannerProperties) {
+function getParentCacheDirectory(properties: ScannerProperties) {
   return path.join(properties[ScannerProperty.SonarUserHome], SONAR_CACHE_DIR);
 }

@@ -54,21 +54,9 @@ jest.mock('fs-extra', () => ({
   remove: jest.fn(),
 }));
 
-const zipEntries = [
-  {
-    getData: jest.fn().mockReturnValue(new Array(500)),
-    header: {
-      compressedSize: 1000,
-    },
-    isDirectory: false,
-    entryName: 'testEntry',
-  },
-];
-
 jest.mock('adm-zip', () => {
   const MockAdmZip = jest.fn();
-  MockAdmZip.prototype.extractEntryTo = jest.fn();
-  MockAdmZip.prototype.getEntries = jest.fn(() => zipEntries);
+  MockAdmZip.prototype.extractAllTo = jest.fn();
   return MockAdmZip;
 });
 
@@ -83,16 +71,10 @@ describe('file', () => {
         const archivePath = 'path/to/archive.zip';
         const extractPath = 'path/to/extract';
 
-        await extractArchive(archivePath, extractPath, 'canonicalBasePath');
+        await extractArchive(archivePath, extractPath);
 
         const mockAdmZipInstance = (AdmZip as jest.MockedClass<typeof AdmZip>).mock.instances[0];
-        expect(mockAdmZipInstance.extractEntryTo).toHaveBeenCalledWith(
-          'testEntry',
-          '.',
-          undefined,
-          true,
-          true,
-        );
+        expect(mockAdmZipInstance.extractAllTo).toHaveBeenCalledWith(extractPath, true, true);
       });
     });
 
@@ -141,7 +123,7 @@ describe('file', () => {
           }
         });
 
-        await extractArchive(mockFilePath, mockDestDir, 'path/to/dest/');
+        await extractArchive(mockFilePath, mockDestDir);
 
         expect(fs.createReadStream).toHaveBeenCalledWith(mockFilePath);
         expect(zlib.createGunzip).toHaveBeenCalled();
@@ -161,9 +143,7 @@ describe('file', () => {
           }
         });
 
-        await expect(
-          extractArchive(mockFilePath, mockDestDir, 'canonicalBasePath'),
-        ).rejects.toThrow('mock error');
+        await expect(extractArchive(mockFilePath, mockDestDir)).rejects.toThrow('mock error');
       });
     });
   });
