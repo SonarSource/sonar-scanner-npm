@@ -38,6 +38,7 @@ const MOCKED_PROPERTIES: ScannerProperties = {
   [ScannerProperty.SonarHostUrl]: 'http://sonarqube.com',
   [ScannerProperty.SonarScannerOs]: 'linux',
   [ScannerProperty.SonarScannerArch]: 'arm64',
+  [ScannerProperty.SonarUserHome]: '/sonar',
 };
 
 beforeEach(async () => {

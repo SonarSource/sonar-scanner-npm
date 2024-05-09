@@ -27,7 +27,7 @@ import {
   SCANNER_CLI_MIRROR,
   SCANNER_CLI_VERSION,
 } from './constants';
-import { extractArchive } from './file';
+import { extractArchive, getParentCacheDirectory } from './file';
 import { LogLevel, log } from './logging';
 import { isLinux, isMac, isWindows } from './platform';
 import { proxyUrlToJavaOptions } from './proxy';
@@ -100,7 +100,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   await download(scannerCliUrl.href, archivePath, overrides);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
-  await extractArchive(archivePath, installDir);
+  await extractArchive(archivePath, installDir, getParentCacheDirectory(properties));
 
   return binPath;
 }

@@ -32,7 +32,6 @@ import {
   validateChecksum,
 } from '../../src/file';
 import { ScannerProperty } from '../../src/types';
-import { remove } from 'fs-extra';
 
 const MOCKED_PROPERTIES = {
   [ScannerProperty.SonarUserHome]: '/sonar',
@@ -55,9 +54,21 @@ jest.mock('fs-extra', () => ({
   remove: jest.fn(),
 }));
 
+const zipEntries = [
+  {
+    getData: jest.fn().mockReturnValue(new Array(500)),
+    header: {
+      compressedSize: 1000,
+    },
+    isDirectory: false,
+    entryName: 'testEntry',
+  },
+];
+
 jest.mock('adm-zip', () => {
   const MockAdmZip = jest.fn();
-  MockAdmZip.prototype.extractAllTo = jest.fn();
+  MockAdmZip.prototype.extractEntryTo = jest.fn();
+  MockAdmZip.prototype.getEntries = jest.fn(() => zipEntries);
   return MockAdmZip;
 });
 
@@ -72,10 +83,16 @@ describe('file', () => {
         const archivePath = 'path/to/archive.zip';
         const extractPath = 'path/to/extract';
 
-        await extractArchive(archivePath, extractPath);
+        await extractArchive(archivePath, extractPath, 'canonicalBasePath');
 
         const mockAdmZipInstance = (AdmZip as jest.MockedClass<typeof AdmZip>).mock.instances[0];
-        expect(mockAdmZipInstance.extractAllTo).toHaveBeenCalledWith(extractPath, true, true);
+        expect(mockAdmZipInstance.extractEntryTo).toHaveBeenCalledWith(
+          'testEntry',
+          '.',
+          undefined,
+          true,
+          true,
+        );
       });
     });
 
@@ -124,7 +141,7 @@ describe('file', () => {
           }
         });
 
-        await extractArchive(mockFilePath, mockDestDir);
+        await extractArchive(mockFilePath, mockDestDir, 'path/to/dest/');
 
         expect(fs.createReadStream).toHaveBeenCalledWith(mockFilePath);
         expect(zlib.createGunzip).toHaveBeenCalled();
@@ -144,7 +161,9 @@ describe('file', () => {
           }
         });
 
-        await expect(extractArchive(mockFilePath, mockDestDir)).rejects.toThrow('mock error');
+        await expect(
+          extractArchive(mockFilePath, mockDestDir, 'canonicalBasePath'),
+        ).rejects.toThrow('mock error');
       });
     });
   });
