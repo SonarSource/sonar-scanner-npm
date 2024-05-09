@@ -24,6 +24,8 @@ import {
   API_OLD_VERSION_ENDPOINT,
   API_V2_JRE_ENDPOINT,
   API_V2_VERSION_ENDPOINT,
+  JRE_ALIAS,
+  SONAR_SCANNER_ALIAS,
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
@@ -96,7 +98,7 @@ export async function serverSupportsJREProvisioning(
   const SQServerInfo =
     semver.coerce(properties[ScannerProperty.SonarScannerInternalSqVersion]) ??
     (await fetchServerVersion(properties));
-  log(LogLevel.INFO, 'SonarQube server version: ', SQServerInfo.version);
+  log(LogLevel.INFO, 'SonarQube server version:', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
   log(LogLevel.DEBUG, `SonarQube Server v${SQServerInfo} supports JRE provisioning: ${supports}`);
@@ -111,26 +113,31 @@ export async function fetchJRE(properties: ScannerProperties): Promise<string> {
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
   const cachedJrePath = await getCacheFileLocation(properties, {
     checksum: jreMetaData.sha256,
-    filename: jreMetaData.filename + UNARCHIVE_SUFFIX,
+    filename: jreMetaData.filename,
+    alias: JRE_ALIAS,
   });
   properties[ScannerProperty.SonarScannerWasJreCacheHit] = cachedJrePath
     ? CacheStatus.Hit
     : CacheStatus.Miss;
   if (cachedJrePath) {
-    log(LogLevel.INFO, 'Using Cached JRE');
-    return path.join(cachedJrePath, jreMetaData.javaPath);
+    log(LogLevel.INFO, 'Using JRE from the cache');
+    return path.join(cachedJrePath + UNARCHIVE_SUFFIX, jreMetaData.javaPath);
   }
 
   // JRE not found in cache. Download it.
   const { archivePath, unarchivePath: jreDirPath } = await getCacheDirectories(properties, {
     checksum: jreMetaData.sha256,
     filename: jreMetaData.filename,
+    alias: JRE_ALIAS,
   });
 
   // If the JRE has a download URL, download it
   const url = jreMetaData.downloadUrl ?? `${API_V2_JRE_ENDPOINT}/${jreMetaData.id}`;
 
+  log(LogLevel.DEBUG, `Starting download of ${JRE_ALIAS}`);
   await download(url, archivePath);
+  log(LogLevel.INFO, `Downloaded ${JRE_ALIAS} to ${archivePath}`);
+
   try {
     await validateChecksum(archivePath, jreMetaData.sha256);
   } catch (error) {
@@ -147,7 +154,7 @@ async function fetchLatestSupportedJRE(
   const os = properties[ScannerProperty.SonarScannerOs];
   const arch = properties[ScannerProperty.SonarScannerArch];
 
-  log(LogLevel.DEBUG, `Downloading JRE for ${os} ${arch} from ${API_V2_JRE_ENDPOINT}`);
+  log(LogLevel.DEBUG, `Downloading JRE information for ${os} ${arch} from ${API_V2_JRE_ENDPOINT}`);
 
   const { data } = await fetch<AnalysisJresResponseType>({
     url: API_V2_JRE_ENDPOINT,
@@ -161,6 +168,5 @@ async function fetchLatestSupportedJRE(
     throw new Error(`No JREs available for your platform ${os} ${arch}`);
   }
 
-  log(LogLevel.DEBUG, 'JRE Information', data);
   return data[0];
 }

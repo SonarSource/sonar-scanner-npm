@@ -63,9 +63,9 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
   log(LogLevel.INFO, `Version: ${version}`);
 
-  log(LogLevel.DEBUG, 'Check if Server supports JRE Provisioning');
+  log(LogLevel.DEBUG, 'Check if Server supports JRE provisioning');
   const supportsJREProvisioning = await serverSupportsJREProvisioning(properties);
-  log(LogLevel.INFO, `JRE Provisioning ${supportsJREProvisioning ? 'is' : 'is NOT'} supported`);
+  log(LogLevel.INFO, `JRE provisioning ${supportsJREProvisioning ? 'is' : 'is NOT'} supported`);
 
   if (!supportsJREProvisioning) {
     log(LogLevel.INFO, 'Falling back on using sonar-scanner-cli');

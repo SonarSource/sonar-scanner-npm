@@ -155,23 +155,9 @@ export async function download(url: string, destPath: string, overrides?: AxiosR
     ...overrides,
   });
 
-  const totalLength = response.headers['content-length'];
-
-  if (totalLength) {
-    let progress = 0;
-
-    response.data.on('data', (chunk: any) => {
-      progress += chunk.length;
-      process.stdout.write(
-        `\r[INFO] Bootstrapper:: Downloaded ${Math.round((progress / totalLength) * 100)}%`,
-      );
-    });
-  } else {
-    log(LogLevel.INFO, 'Download started');
-  }
+  log(LogLevel.INFO, 'Download starting...');
 
   response.data.on('end', () => {
-    totalLength && process.stdout.write('\n');
     log(LogLevel.INFO, 'Download complete');
   });
 

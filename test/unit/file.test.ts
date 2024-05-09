@@ -19,6 +19,7 @@
  */
 import AdmZip from 'adm-zip';
 import fs from 'fs';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import { PassThrough } from 'stream';
 import * as tarStream from 'tar-stream';
@@ -31,6 +32,7 @@ import {
   validateChecksum,
 } from '../../src/file';
 import { ScannerProperty } from '../../src/types';
+import { remove } from 'fs-extra';
 
 const MOCKED_PROPERTIES = {
   [ScannerProperty.SonarUserHome]: '/sonar',
@@ -50,6 +52,7 @@ jest.mock('fs', () => ({
 
 jest.mock('fs-extra', () => ({
   ensureDir: jest.fn(),
+  remove: jest.fn(),
 }));
 
 jest.mock('adm-zip', () => {
@@ -148,7 +151,7 @@ describe('file', () => {
 
   describe('getCacheFileLocation', () => {
     it('should return the file path if the file exists', async () => {
-      const checksum = 'shahash';
+      const checksum = 'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c';
       const filename = 'file.txt';
       const filePath = path.join(
         MOCKED_PROPERTIES[ScannerProperty.SonarUserHome],
@@ -156,12 +159,40 @@ describe('file', () => {
         checksum,
         filename,
       );
-
+      jest
+        .spyOn(fs, 'readFile')
+        .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
       jest.spyOn(fs, 'existsSync').mockReturnValue(true);
 
-      const result = await getCacheFileLocation(MOCKED_PROPERTIES, { checksum, filename });
+      const result = await getCacheFileLocation(MOCKED_PROPERTIES, {
+        checksum,
+        filename,
+        alias: 'test',
+      });
 
       expect(result).toEqual(filePath);
+    });
+
+    it('should validate and remove invalid cached file', async () => {
+      const checksum = 'server-checksum';
+      const filename = 'file.txt';
+      jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+      jest
+        .spyOn(fs, 'readFile')
+        .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
+      jest.spyOn(fsExtra, 'remove');
+
+      await expect(
+        getCacheFileLocation(MOCKED_PROPERTIES, {
+          checksum,
+          filename,
+          alias: 'test',
+        }),
+      ).rejects.toThrow(
+        'Checksum verification failed for /sonar/cache/server-checksum/file.txt. Expected checksum server-checksum but got e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c',
+      );
+
+      expect(fsExtra.remove).toHaveBeenCalledWith('/sonar/cache/server-checksum/file.txt');
     });
 
     it('should return null if the file does not exist', async () => {
@@ -170,7 +201,11 @@ describe('file', () => {
 
       jest.spyOn(fs, 'existsSync').mockReturnValue(false);
 
-      const result = await getCacheFileLocation(MOCKED_PROPERTIES, { checksum, filename });
+      const result = await getCacheFileLocation(MOCKED_PROPERTIES, {
+        checksum,
+        filename,
+        alias: 'test',
+      });
 
       expect(result).toBeNull();
     });
@@ -220,6 +255,7 @@ describe('file', () => {
       const { archivePath, unarchivePath } = await getCacheDirectories(MOCKED_PROPERTIES, {
         checksum: 'md5_test',
         filename: 'file.txt',
+        alias: 'test',
       });
 
       expect(fs.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
@@ -233,7 +269,11 @@ describe('file', () => {
     it('should create the parent cache directory if it does not exist', async () => {
       jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => false);
       jest.spyOn(fs, 'mkdirSync').mockImplementationOnce(() => undefined);
-      await getCacheDirectories(MOCKED_PROPERTIES, { checksum: 'md5_test', filename: 'file.txt' });
+      await getCacheDirectories(MOCKED_PROPERTIES, {
+        checksum: 'md5_test',
+        filename: 'file.txt',
+        alias: 'test',
+      });
 
       expect(fs.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
       expect(fs.mkdirSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'), {

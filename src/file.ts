@@ -31,20 +31,29 @@ import { CacheFileData, ScannerProperties, ScannerProperty } from './types';
 
 export async function getCacheFileLocation(
   properties: ScannerProperties,
-  { checksum, filename }: CacheFileData,
+  { checksum, filename, alias }: CacheFileData,
 ) {
   const filePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   if (fs.existsSync(filePath)) {
-    log(LogLevel.INFO, 'Found Cached: ', filePath);
+    log(LogLevel.DEBUG, alias, 'version found in cache:', filename);
+
+    // validate cache
+    try {
+      await validateChecksum(filePath, checksum);
+    } catch (error) {
+      await fsExtra.remove(filePath);
+      throw error;
+    }
+
     return filePath;
   } else {
-    log(LogLevel.INFO, `No Cache found for ${filePath}`);
+    log(LogLevel.INFO, `No Cache found for ${alias}`);
     return null;
   }
 }
 
 export async function extractArchive(fromPath: string, toPath: string) {
-  log(LogLevel.INFO, `Extracting ${fromPath} to ${toPath}`);
+  log(LogLevel.DEBUG, `Extracting ${fromPath} to ${toPath}`);
   if (fromPath.endsWith('.tar.gz')) {
     const tarFilePath = fromPath;
     const extract = tarStream.extract();
@@ -101,7 +110,7 @@ async function generateChecksum(filepath: string) {
 
 export async function validateChecksum(filePath: string, expectedChecksum: string) {
   if (expectedChecksum) {
-    log(LogLevel.INFO, `Verifying checksum ${expectedChecksum}`);
+    log(LogLevel.DEBUG, `Verifying checksum ${expectedChecksum}`);
     const checksum = await generateChecksum(filePath);
 
     log(LogLevel.DEBUG, `Checksum Value: ${checksum}`);

@@ -22,10 +22,10 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { ChildProcess, spawn } from 'child_process';
 import fs from 'fs';
-import fsExtra, { copySync } from 'fs-extra';
+import fsExtra from 'fs-extra';
 import sinon from 'sinon';
 import { Readable } from 'stream';
-import { API_V2_SCANNER_ENGINE_ENDPOINT } from '../../src/constants';
+import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from '../../src/constants';
 import * as file from '../../src/file';
 import { logWithPrefix } from '../../src/logging';
 import * as request from '../../src/request';
@@ -98,6 +98,7 @@ describe('scanner-engine', () => {
       expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
         checksum: 'sha_test',
         filename: 'scanner-engine-1.2.3.jar',
+        alias: SONAR_SCANNER_ALIAS,
       });
     });
 
@@ -123,6 +124,7 @@ describe('scanner-engine', () => {
         expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
           checksum: 'sha_test',
           filename: 'scanner-engine-1.2.3.jar',
+          alias: SONAR_SCANNER_ALIAS,
         });
         expect(request.download).not.toHaveBeenCalled();
         expect(file.extractArchive).not.toHaveBeenCalled();
@@ -138,6 +140,7 @@ describe('scanner-engine', () => {
         expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
           checksum: 'sha_test',
           filename: 'scanner-engine-1.2.3.jar',
+          alias: SONAR_SCANNER_ALIAS,
         });
         expect(request.download).toHaveBeenCalledTimes(1);
 

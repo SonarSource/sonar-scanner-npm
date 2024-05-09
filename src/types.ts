@@ -19,7 +19,7 @@
  */
 import { LogLevel } from './logging';
 
-export type CacheFileData = { checksum: string; filename: string };
+export type CacheFileData = { checksum: string; filename: string; alias: string };
 
 export type ScannerLogEntry = {
   level: LogLevel;
