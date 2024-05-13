@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { spawn } from 'child_process';
-import * as fsExtra from 'fs-extra';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import sinon from 'sinon';
 import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_VERSION } from '../../src/constants';

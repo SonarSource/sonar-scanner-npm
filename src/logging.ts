@@ -35,6 +35,7 @@ const logLevelValues = {
 };
 
 const DEFAULT_LOG_LEVEL = LogLevel.INFO;
+const LOG_MESSAGE_PADDING = 7;
 
 let logLevel = DEFAULT_LOG_LEVEL;
 
@@ -47,7 +48,7 @@ export function logWithPrefix(level: LogLevel, prefix: string, ...message: unkno
     return;
   }
 
-  const levelStr = `[${level}]`.padEnd(7);
+  const levelStr = `[${level}]`.padEnd(LOG_MESSAGE_PADDING);
   console.log(levelStr, `${prefix}:`, ...message);
 }
 
