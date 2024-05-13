@@ -35,6 +35,9 @@ export const SONAR_CACHE_DIR = 'cache';
 
 export const UNARCHIVE_SUFFIX = '_extracted';
 
+export const SONAR_SCANNER_ALIAS = 'SonarScanner Engine';
+export const JRE_ALIAS = 'JRE';
+
 export const ENV_VAR_PREFIX = 'SONAR_SCANNER_';
 export const NPM_CONFIG_ENV_VAR_PREFIX = 'npm_config_sonar_scanner_';
 

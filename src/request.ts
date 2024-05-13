@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import fs from 'fs';
+import fsExtra from 'fs-extra';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import https from 'https';
 import forge from 'node-forge';
@@ -71,7 +71,7 @@ export async function getHttpAgents(
   const truststorePath = properties[ScannerProperty.SonarScannerTruststorePath];
   if (truststorePath) {
     log(LogLevel.DEBUG, `Using truststore at ${truststorePath}`);
-    const p12Base64 = await fs.promises.readFile(truststorePath, { encoding: 'base64' });
+    const p12Base64 = await fsExtra.promises.readFile(truststorePath, { encoding: 'base64' });
     try {
       const certs = await extractTruststoreCerts(
         p12Base64,
@@ -87,7 +87,7 @@ export async function getHttpAgents(
   const keystorePath = properties[ScannerProperty.SonarScannerKeystorePath];
   if (keystorePath) {
     log(LogLevel.DEBUG, `Using keystore at ${keystorePath}`);
-    httpsAgentOptions.pfx = await fs.promises.readFile(keystorePath);
+    httpsAgentOptions.pfx = await fsExtra.promises.readFile(keystorePath);
     httpsAgentOptions.passphrase = properties[ScannerProperty.SonarScannerKeystorePassword] ?? '';
   }
 
@@ -155,27 +155,13 @@ export async function download(url: string, destPath: string, overrides?: AxiosR
     ...overrides,
   });
 
-  const totalLength = response.headers['content-length'];
-
-  if (totalLength) {
-    let progress = 0;
-
-    response.data.on('data', (chunk: any) => {
-      progress += chunk.length;
-      process.stdout.write(
-        `\r[INFO] Bootstrapper:: Downloaded ${Math.round((progress / totalLength) * 100)}%`,
-      );
-    });
-  } else {
-    log(LogLevel.INFO, 'Download started');
-  }
+  log(LogLevel.INFO, 'Download starting...');
 
   response.data.on('end', () => {
-    totalLength && process.stdout.write('\n');
     log(LogLevel.INFO, 'Download complete');
   });
 
-  const writer = fs.createWriteStream(destPath);
+  const writer = fsExtra.createWriteStream(destPath);
   const streamPipeline = promisify(stream.pipeline);
   await streamPipeline(response.data, writer);
   response.data.pipe(writer);

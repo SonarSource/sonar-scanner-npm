@@ -19,7 +19,7 @@
  */
 import { LogLevel } from './logging';
 
-export type CacheFileData = { checksum: string; filename: string };
+export type CacheFileData = { checksum: string; filename: string; alias: string };
 
 export type ScannerLogEntry = {
   level: LogLevel;
@@ -110,3 +110,24 @@ export enum CacheStatus {
   Miss = 'miss',
   Disabled = 'disabled',
 }
+
+export type PackageJson = {
+  name: string;
+  version: string;
+  scripts?: { [key: string]: string };
+  dependencies?: { [key: string]: string };
+  devDependencies?: { [key: string]: string };
+  [key: string]: unknown;
+  bugs: {
+    url: string;
+    email: string;
+  };
+  repository: {
+    type: string;
+    url: string;
+  };
+  jest?: {
+    coverageDirectory?: string;
+  };
+  nyc?: { 'report-dir'?: string };
+};

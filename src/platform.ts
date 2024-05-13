@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import fs from 'fs';
+import fsExtra from 'fs-extra';
 import { LogLevel, log } from './logging';
 
 export function getArch(): NodeJS.Architecture {
@@ -47,17 +47,18 @@ function isAlpineLinux(): boolean {
   }
   let content: string | undefined;
   try {
-    const fileContent = fs.readFileSync('/etc/os-release');
+    const fileContent = fsExtra.readFileSync('/etc/os-release');
     content = fileContent.toString();
   } catch (error) {
     try {
-      const fileContent = fs.readFileSync('/usr/lib/os-release');
+      const fileContent = fsExtra.readFileSync('/usr/lib/os-release');
       content = fileContent.toString();
     } catch (error) {
       log(LogLevel.WARN, 'Failed to read /etc/os-release or /usr/lib/os-release');
     }
   }
-  return !!content && (content.match(/^ID=([^\u001b\r\n]*)/m) || [])[1] === 'alpine';
+  const match = /^ID=([^\r\n]*)/m.exec(content ?? '');
+  return !!content && (match ? match[1] === 'alpine' : false);
 }
 
 export function getSupportedOS(): NodeJS.Platform | 'alpine' {

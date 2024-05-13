@@ -19,8 +19,7 @@
  */
 import fsExtra from 'fs-extra';
 import { spawn } from 'child_process';
-import fs from 'fs';
-import { API_V2_SCANNER_ENGINE_ENDPOINT } from './constants';
+import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants';
 import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file';
 import { LogLevel, log, logWithPrefix } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
@@ -34,15 +33,19 @@ import {
 } from './types';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
-  log(LogLevel.DEBUG, 'Detecting latest version of Scanner Engine');
+  log(LogLevel.DEBUG, `Detecting latest version of ${SONAR_SCANNER_ALIAS}`);
   const { data } = await fetch<AnalysisEngineResponseType>({ url: API_V2_SCANNER_ENGINE_ENDPOINT });
   const { sha256: checksum, filename, downloadUrl } = data;
-  log(LogLevel.INFO, 'Latest Supported Scanner Engine: ', filename);
+  log(LogLevel.DEBUG, `Latest ${SONAR_SCANNER_ALIAS} version:`, filename);
 
-  log(LogLevel.DEBUG, 'Looking for Cached Scanner Engine');
-  const cachedScannerEngine = await getCacheFileLocation(properties, { checksum, filename });
+  log(LogLevel.DEBUG, `Looking for Cached ${SONAR_SCANNER_ALIAS}`);
+  const cachedScannerEngine = await getCacheFileLocation(properties, {
+    checksum,
+    filename,
+    alias: SONAR_SCANNER_ALIAS,
+  });
   if (cachedScannerEngine) {
-    log(LogLevel.INFO, 'Using Cached Scanner Engine');
+    log(LogLevel.DEBUG, `Using ${SONAR_SCANNER_ALIAS} from the cache`);
     properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'true';
 
     return cachedScannerEngine;
@@ -53,11 +56,12 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   const { archivePath } = await getCacheDirectories(properties, {
     checksum,
     filename,
+    alias: SONAR_SCANNER_ALIAS,
   });
   const url = downloadUrl ?? API_V2_SCANNER_ENGINE_ENDPOINT;
-  log(LogLevel.DEBUG, `Starting download of Scanner Engine`);
+  log(LogLevel.DEBUG, `Starting download of ${SONAR_SCANNER_ALIAS}`);
   await download(url, archivePath);
-  log(LogLevel.INFO, `Downloaded Scanner Engine to ${archivePath}`);
+  log(LogLevel.INFO, `Downloaded ${SONAR_SCANNER_ALIAS} to ${archivePath}`);
 
   try {
     await validateChecksum(archivePath, checksum);
@@ -89,7 +93,7 @@ export function runScannerEngine(
   scanOptions: ScanOptions,
   properties: ScannerProperties,
 ) {
-  log(LogLevel.INFO, 'Running the Scanner Engine');
+  log(LogLevel.DEBUG, `Running the ${SONAR_SCANNER_ALIAS}`);
 
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
   const propertiesJSON = JSON.stringify({
@@ -117,13 +121,13 @@ export function runScannerEngine(
       args,
     };
     log(LogLevel.INFO, 'Dumping data to file and exiting');
-    return fs.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
+    return fsExtra.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
   }
 
-  log(LogLevel.DEBUG, 'Running scanner engine', javaBinPath, ...args);
+  log(LogLevel.DEBUG, `Running ${SONAR_SCANNER_ALIAS}`, javaBinPath, ...args);
   const child = spawn(javaBinPath, args);
 
-  log(LogLevel.DEBUG, 'Writing properties to scanner engine', propertiesJSON);
+  log(LogLevel.DEBUG, `Writing properties to ${SONAR_SCANNER_ALIAS}`, propertiesJSON);
   child.stdin.write(propertiesJSON);
   child.stdin.end();
 
@@ -133,7 +137,7 @@ export function runScannerEngine(
   return new Promise<void>((resolve, reject) => {
     child.on('exit', code => {
       if (code === 0) {
-        log(LogLevel.INFO, 'Scanner engine finished successfully');
+        log(LogLevel.DEBUG, 'Scanner engine finished successfully');
         resolve();
       } else {
         reject(new Error(`Scanner engine failed with code ${code}`));

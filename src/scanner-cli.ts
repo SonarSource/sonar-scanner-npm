@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { spawn } from 'child_process';
-import * as fsExtra from 'fs-extra';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import {
   ENV_TO_PROPERTY_NAME,

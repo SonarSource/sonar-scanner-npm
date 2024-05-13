@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import axios, { AxiosInstance } from 'axios';
-import fs from 'fs';
+import fsExtra from 'fs-extra';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import path from 'path';
 import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants';
@@ -67,7 +67,10 @@ describe('request', () => {
         const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
         const truststorePass = 'password';
         const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
-        const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
+        const certificatePem = fsExtra
+          .readFileSync(certificatePath)
+          .toString()
+          .replace(/\n/g, '\r\n');
 
         const { httpsAgent } = await getHttpAgents({
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
@@ -126,7 +129,7 @@ describe('request', () => {
           [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
         });
 
-        expect(httpsAgent?.options.pfx).toEqual(fs.readFileSync(keystorePath));
+        expect(httpsAgent?.options.pfx).toEqual(fsExtra.readFileSync(keystorePath));
         expect(httpsAgent?.options.passphrase).toBe(keystorePass);
       });
     });
@@ -136,7 +139,10 @@ describe('request', () => {
       const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
       const truststorePass = 'password';
       const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
-      const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
+      const certificatePem = fsExtra
+        .readFileSync(certificatePath)
+        .toString()
+        .replace(/\n/g, '\r\n');
       const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
       const keystorePass = 'password';
 
@@ -152,7 +158,7 @@ describe('request', () => {
       const ca = httpsAgent?.options.ca as string[];
       expect(ca).toHaveLength(1);
       expect(ca).toContain(certificatePem);
-      expect(httpsAgent?.options.pfx).toEqual(fs.readFileSync(keystorePath));
+      expect(httpsAgent?.options.pfx).toEqual(fsExtra.readFileSync(keystorePath));
       expect(httpsAgent?.options.passphrase).toBe(keystorePass);
       expect(httpsAgent?.proxy.toString()).toBe('https://proxy.com/');
     });
