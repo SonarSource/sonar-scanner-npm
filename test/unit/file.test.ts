@@ -18,7 +18,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import AdmZip from 'adm-zip';
-import fs from 'fs';
 import fsExtra from 'fs-extra';
 import path from 'path';
 import { PassThrough } from 'stream';
@@ -37,21 +36,17 @@ const MOCKED_PROPERTIES = {
   [ScannerProperty.SonarUserHome]: '/sonar',
 };
 
-jest.mock('fs');
 jest.mock('tar-stream');
 jest.mock('zlib');
 
-jest.mock('fs', () => ({
+jest.mock('fs-extra', () => ({
+  ensureDir: jest.fn(),
+  remove: jest.fn(),
   createReadStream: jest.fn(),
   createWriteStream: jest.fn(),
   existsSync: jest.fn(),
   readFile: jest.fn(),
   mkdirSync: jest.fn(),
-}));
-
-jest.mock('fs-extra', () => ({
-  ensureDir: jest.fn(),
-  remove: jest.fn(),
 }));
 
 jest.mock('adm-zip', () => {
@@ -95,16 +90,16 @@ describe('file', () => {
 
         mockPassThroughStream.resume = jest.fn();
         mockPassThroughStream.end = jest.fn();
-        jest.spyOn(fs, 'createWriteStream').mockReturnValue({
+        jest.spyOn(fsExtra, 'createWriteStream').mockReturnValue({
           on: jest.fn(),
           once: jest.fn(),
           emit: jest.fn(),
           end: jest.fn(),
           write: jest.fn(),
-        } as unknown as fs.WriteStream);
+        } as unknown as fsExtra.WriteStream);
         jest
-          .spyOn(fs, 'createReadStream')
-          .mockReturnValue({ pipe: jest.fn().mockReturnThis() } as unknown as fs.ReadStream);
+          .spyOn(fsExtra, 'createReadStream')
+          .mockReturnValue({ pipe: jest.fn().mockReturnThis() } as unknown as fsExtra.ReadStream);
         jest
           .spyOn(tarStream, 'extract')
           .mockReturnValue({ on: mockOn } as unknown as tarStream.Extract);
@@ -125,10 +120,10 @@ describe('file', () => {
 
         await extractArchive(mockFilePath, mockDestDir);
 
-        expect(fs.createReadStream).toHaveBeenCalledWith(mockFilePath);
+        expect(fsExtra.createReadStream).toHaveBeenCalledWith(mockFilePath);
         expect(zlib.createGunzip).toHaveBeenCalled();
         expect(tarStream.extract).toHaveBeenCalled();
-        expect(fs.createWriteStream).toHaveBeenCalledWith(
+        expect(fsExtra.createWriteStream).toHaveBeenCalledWith(
           path.join(mockDestDir, mockFileHeader.name),
           {
             mode: 511,
@@ -159,9 +154,9 @@ describe('file', () => {
         filename,
       );
       jest
-        .spyOn(fs, 'readFile')
+        .spyOn(fsExtra, 'readFile')
         .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
-      jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+      jest.spyOn(fsExtra, 'existsSync').mockReturnValue(true);
 
       const result = await getCacheFileLocation(MOCKED_PROPERTIES, {
         checksum,
@@ -175,9 +170,9 @@ describe('file', () => {
     it('should validate and remove invalid cached file', async () => {
       const checksum = 'server-checksum';
       const filename = 'file.txt';
-      jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+      jest.spyOn(fsExtra, 'existsSync').mockReturnValue(true);
       jest
-        .spyOn(fs, 'readFile')
+        .spyOn(fsExtra, 'readFile')
         .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
       jest.spyOn(fsExtra, 'remove');
 
@@ -198,7 +193,7 @@ describe('file', () => {
       const checksum = 'shahash';
       const filename = 'file.txt';
 
-      jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+      jest.spyOn(fsExtra, 'existsSync').mockReturnValue(false);
 
       const result = await getCacheFileLocation(MOCKED_PROPERTIES, {
         checksum,
@@ -213,7 +208,7 @@ describe('file', () => {
   describe('validateChecksum', () => {
     it('should read the file of the path provided', async () => {
       jest
-        .spyOn(fs, 'readFile')
+        .spyOn(fsExtra, 'readFile')
         .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
 
       await validateChecksum(
@@ -221,12 +216,12 @@ describe('file', () => {
         'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c',
       );
 
-      expect(fs.readFile).toHaveBeenCalledWith('path/to/file', expect.any(Function));
+      expect(fsExtra.readFile).toHaveBeenCalledWith('path/to/file', expect.any(Function));
     });
 
     it('should throw an error if the checksum does not match', async () => {
       jest
-        .spyOn(fs, 'readFile')
+        .spyOn(fsExtra, 'readFile')
         .mockImplementation((path, cb) => cb(null, Buffer.from('file content')));
 
       await expect(validateChecksum('path/to/file', 'invalidchecksum')).rejects.toThrow(
@@ -240,7 +235,7 @@ describe('file', () => {
 
     it('should throw an error if the file cannot be read', async () => {
       jest
-        .spyOn(fs, 'readFile')
+        .spyOn(fsExtra, 'readFile')
         .mockImplementation((path, cb) => cb(new Error('File not found'), Buffer.from('')));
 
       await expect(validateChecksum('path/to/file', 'checksum')).rejects.toThrow('File not found');
@@ -249,16 +244,16 @@ describe('file', () => {
 
   describe('getCacheDirectories', () => {
     it('should return the cache directories', async () => {
-      jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => true);
-      jest.spyOn(fs, 'mkdirSync');
+      jest.spyOn(fsExtra, 'existsSync').mockImplementationOnce(() => true);
+      jest.spyOn(fsExtra, 'mkdirSync');
       const { archivePath, unarchivePath } = await getCacheDirectories(MOCKED_PROPERTIES, {
         checksum: 'md5_test',
         filename: 'file.txt',
         alias: 'test',
       });
 
-      expect(fs.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
-      expect(fs.mkdirSync).not.toHaveBeenCalled();
+      expect(fsExtra.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
+      expect(fsExtra.mkdirSync).not.toHaveBeenCalled();
 
       expect(archivePath).toEqual(path.join('/', 'sonar', 'cache', 'md5_test', 'file.txt'));
       expect(unarchivePath).toEqual(
@@ -266,16 +261,16 @@ describe('file', () => {
       );
     });
     it('should create the parent cache directory if it does not exist', async () => {
-      jest.spyOn(fs, 'existsSync').mockImplementationOnce(() => false);
-      jest.spyOn(fs, 'mkdirSync').mockImplementationOnce(() => undefined);
+      jest.spyOn(fsExtra, 'existsSync').mockImplementationOnce(() => false);
+      jest.spyOn(fsExtra, 'mkdirSync').mockImplementationOnce(() => undefined);
       await getCacheDirectories(MOCKED_PROPERTIES, {
         checksum: 'md5_test',
         filename: 'file.txt',
         alias: 'test',
       });
 
-      expect(fs.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
-      expect(fs.mkdirSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'), {
+      expect(fsExtra.existsSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'));
+      expect(fsExtra.mkdirSync).toHaveBeenCalledWith(path.join('/', 'sonar', 'cache', 'md5_test'), {
         recursive: true,
       });
     });

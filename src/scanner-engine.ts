@@ -19,7 +19,6 @@
  */
 import fsExtra from 'fs-extra';
 import { spawn } from 'child_process';
-import fs from 'fs';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants';
 import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file';
 import { LogLevel, log, logWithPrefix } from './logging';
@@ -122,7 +121,7 @@ export function runScannerEngine(
       args,
     };
     log(LogLevel.INFO, 'Dumping data to file and exiting');
-    return fs.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
+    return fsExtra.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
   }
 
   log(LogLevel.DEBUG, `Running ${SONAR_SCANNER_ALIAS}`, javaBinPath, ...args);

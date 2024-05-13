@@ -21,7 +21,6 @@
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { ChildProcess, spawn } from 'child_process';
-import fs from 'fs';
 import fsExtra from 'fs-extra';
 import sinon from 'sinon';
 import { Readable } from 'stream';
@@ -233,7 +232,7 @@ describe('scanner-engine', () => {
 
     it('should dump data to file when dumpToFile property is set', async () => {
       childProcessHandler.setExitCode(1); // Make it so the scanner would fail
-      const writeFile = jest.spyOn(fs.promises, 'writeFile').mockResolvedValue();
+      const writeFile = jest.spyOn(fsExtra.promises, 'writeFile').mockResolvedValue();
 
       await runScannerEngine(
         '/some/path/to/java',

@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import fs from 'fs';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import { getProxyForUrl } from 'proxy-from-env';
 import slugify from 'slugify';
@@ -109,7 +109,7 @@ function getPackageJsonProperties(
 function readPackageJson(projectBaseDir: string): PackageJson | null {
   const packageFile = path.join(projectBaseDir, 'package.json');
   try {
-    const packageData = fs.readFileSync(packageFile).toString();
+    const packageData = fsExtra.readFileSync(packageFile).toString();
     return JSON.parse(packageData);
   } catch (error) {
     log(LogLevel.INFO, `Unable to read "package.json" file`);
@@ -118,7 +118,7 @@ function readPackageJson(projectBaseDir: string): PackageJson | null {
 }
 
 function fileExistsInProjectSync(projectBaseDir: string, file: string): boolean {
-  return fs.existsSync(path.join(projectBaseDir, file));
+  return fsExtra.existsSync(path.join(projectBaseDir, file));
 }
 
 function dependenceExists(pkg: PackageJson, pkgName: string): boolean {
@@ -233,7 +233,7 @@ function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
   try {
     const sonarPropertiesFile = path.join(projectBaseDir, SONAR_PROJECT_FILENAME);
     const properties: ScannerProperties = {};
-    const data = fs.readFileSync(sonarPropertiesFile).toString();
+    const data = fsExtra.readFileSync(sonarPropertiesFile).toString();
     const lines = data.split(/\r?\n/);
     for (const line of lines) {
       const trimmedLine = line.trim();

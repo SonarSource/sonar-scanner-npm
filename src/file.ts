@@ -20,8 +20,7 @@
 
 import AdmZip from 'adm-zip';
 import crypto from 'crypto';
-import fs from 'fs';
-import * as fsExtra from 'fs-extra';
+import fsExtra from 'fs-extra';
 import path from 'path';
 import tarStream from 'tar-stream';
 import zlib from 'zlib';
@@ -34,7 +33,7 @@ export async function getCacheFileLocation(
   { checksum, filename, alias }: CacheFileData,
 ) {
   const filePath = path.join(getParentCacheDirectory(properties), checksum, filename);
-  if (fs.existsSync(filePath)) {
+  if (fsExtra.existsSync(filePath)) {
     log(LogLevel.DEBUG, alias, 'version found in cache:', filename);
 
     // validate cache
@@ -66,7 +65,7 @@ export async function extractArchive(fromPath: string, toPath: string) {
         // Ensure the directory exists
         await fsExtra.ensureDir(path.dirname(filePath));
 
-        stream.pipe(fs.createWriteStream(filePath, { mode: header.mode }));
+        stream.pipe(fsExtra.createWriteStream(filePath, { mode: header.mode }));
 
         // end of file, move onto next file
         stream.on('end', next);
@@ -84,7 +83,7 @@ export async function extractArchive(fromPath: string, toPath: string) {
       });
     });
 
-    const readStream = fs.createReadStream(tarFilePath);
+    const readStream = fsExtra.createReadStream(tarFilePath);
     const gunzip = zlib.createGunzip();
     const nextStep = readStream.pipe(gunzip);
     nextStep.pipe(extract);
@@ -98,7 +97,7 @@ export async function extractArchive(fromPath: string, toPath: string) {
 
 async function generateChecksum(filepath: string) {
   return new Promise((resolve, reject) => {
-    fs.readFile(filepath, (err, data) => {
+    fsExtra.readFile(filepath, (err, data) => {
       if (err) {
         reject(err);
         return;
@@ -137,9 +136,9 @@ export async function getCacheDirectories(
 
   // Create destination directory if it doesn't exist
   const parentCacheDirectory = path.dirname(unarchivePath);
-  if (!fs.existsSync(parentCacheDirectory)) {
+  if (!fsExtra.existsSync(parentCacheDirectory)) {
     log(LogLevel.DEBUG, `Creating Cache directory as it doesn't exist: ${parentCacheDirectory}`);
-    fs.mkdirSync(parentCacheDirectory, { recursive: true });
+    fsExtra.mkdirSync(parentCacheDirectory, { recursive: true });
   }
 
   return { archivePath, unarchivePath };

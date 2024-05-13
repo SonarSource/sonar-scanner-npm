@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import fs from 'fs';
+import fsExtra from 'fs-extra';
 import sinon from 'sinon';
 import { log, LogLevel } from '../../src/logging';
 import * as platform from '../../src/platform';
@@ -60,7 +60,7 @@ describe('getPlatformInfo', () => {
   it('detect alpine', () => {
     const platformStub = sinon.stub(process, 'platform').value('linux');
     const archStub = sinon.stub(process, 'arch').value('x64');
-    const fsReadStub = sinon.stub(fs, 'readFileSync');
+    const fsReadStub = sinon.stub(fsExtra, 'readFileSync');
     fsReadStub.withArgs('/etc/os-release').returns('NAME="Alpine Linux"\nID=alpine');
 
     expect(platform.getSupportedOS()).toEqual('alpine');
@@ -74,7 +74,7 @@ describe('getPlatformInfo', () => {
   it('detect alpine with fallback', () => {
     const platformStub = sinon.stub(process, 'platform').value('linux');
     const archStub = sinon.stub(process, 'arch').value('x64');
-    const fsReadStub = sinon.stub(fs, 'readFileSync');
+    const fsReadStub = sinon.stub(fsExtra, 'readFileSync');
     fsReadStub.withArgs('/usr/lib/os-release').returns('NAME="Alpine Linux"\nID=alpine');
 
     expect(platform.getSupportedOS()).toEqual('alpine');
@@ -88,7 +88,7 @@ describe('getPlatformInfo', () => {
   it('failed to detect alpine', () => {
     const platformStub = sinon.stub(process, 'platform').value('linux');
     const archStub = sinon.stub(process, 'arch').value('x64');
-    const fsReadStub = sinon.stub(fs, 'readFileSync');
+    const fsReadStub = sinon.stub(fsExtra, 'readFileSync');
 
     expect(platform.getSupportedOS()).toEqual('linux');
     expect(platform.getArch()).toEqual('x64');
