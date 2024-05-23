@@ -54,9 +54,6 @@ describe('getProperties', () => {
       'sonar.host.url': SONARCLOUD_URL,
       'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
       'sonar.scanner.internal.isSonarCloud': 'true',
-      'sonar.projectDescription': 'No description.',
-      'sonar.sources': '.',
-      'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
     });
   });
 
@@ -81,9 +78,6 @@ describe('getProperties', () => {
         'sonar.scanner.apiBaseUrl': 'https://dev.sc-dev.io',
         'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.projectKey': 'use-this-project-key',
-        'sonar.projectDescription': 'No description.',
-        'sonar.sources': '.',
-        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
       });
     });
 
@@ -155,9 +149,7 @@ describe('getProperties', () => {
         'sonar.javascript.lcov.reportPaths': 'coverage/lcov.info',
         'sonar.projectKey': 'fake-basic-project',
         'sonar.projectName': 'fake-basic-project',
-        'sonar.projectDescription': 'No description.',
         'sonar.projectVersion': '1.0.0',
-        'sonar.sources': '.',
         'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',coverage/**',
         'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
         'sonar.scanner.appVersion': '1.2.3',
@@ -187,9 +179,7 @@ describe('getProperties', () => {
         'sonar.links.homepage': 'https://github.com/fake/project',
         'sonar.links.issue': 'https://github.com/fake/project/issues',
         'sonar.links.scm': 'git+https://github.com/fake/project.git',
-        'sonar.sources': '.',
         'sonar.testExecutionReportPaths': 'xunit.xml',
-        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
       });
     });
 
@@ -209,9 +199,6 @@ describe('getProperties', () => {
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
-        'sonar.projectDescription': 'No description.',
-        'sonar.sources': '.',
-        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
       });
     });
 
@@ -231,9 +218,6 @@ describe('getProperties', () => {
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
-        'sonar.projectDescription': 'No description.',
-        'sonar.sources': '.',
-        'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
         'sonar.projectKey': 'myfake-basic-project',
         'sonar.projectName': '@my/fake-basic-project',
         'sonar.projectVersion': '1.0.0',
@@ -259,9 +243,7 @@ describe('getProperties', () => {
         'sonar.javascript.lcov.reportPaths': 'jest-coverage/lcov.info',
         'sonar.projectKey': 'fake-basic-project',
         'sonar.projectName': 'fake-basic-project',
-        'sonar.projectDescription': 'No description.',
         'sonar.projectVersion': '1.0.0',
-        'sonar.sources': '.',
         'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',jest-coverage/**',
       });
     });
@@ -285,9 +267,7 @@ describe('getProperties', () => {
         'sonar.javascript.lcov.reportPaths': 'nyc-coverage/lcov.info',
         'sonar.projectKey': 'fake-basic-project',
         'sonar.projectName': 'fake-basic-project',
-        'sonar.projectDescription': 'No description.',
         'sonar.projectVersion': '1.0.0',
-        'sonar.sources': '.',
         'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',nyc-coverage/**',
       });
     });
@@ -635,6 +615,29 @@ describe('getProperties', () => {
         'sonar.userHome': '/tmp/used',
         'sonar.organization': 'used',
         'sonar.scanner.someVar': 'used',
+      });
+    });
+
+    it('should correctly merge package.json and sonar-project.properties', () => {
+      projectHandler.reset('fake_project_with_package_and_sonar_properties');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
+        'sonar.scanner.internal.isSonarCloud': 'false',
+        'sonar.projectKey': 'that-is-the-project-key',
+        'sonar.projectName': 'that-is-the-project-key',
+        'sonar.projectVersion': '1.0.0',
+        'sonar.sources': 'the-sources',
       });
     });
 
