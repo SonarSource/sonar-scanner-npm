@@ -19,7 +19,7 @@
  */
 import path from 'path';
 import sinon from 'sinon';
-import { SCANNER_BOOTSTRAPPER_NAME } from '../../../src/constants';
+import { DEFAULT_SONAR_EXCLUSIONS, SCANNER_BOOTSTRAPPER_NAME } from '../../../src/constants';
 import { CacheStatus } from '../../../src/types';
 
 const baseEnvVariables = process.env;
@@ -55,6 +55,7 @@ export class FakeProjectMock {
 
   getExpectedProperties() {
     return {
+      'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
       'sonar.projectBaseDir': this.projectPath,
       'sonar.scanner.bootstrapStartTime': this.startTimeMs.toString(),
       'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,

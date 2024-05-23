@@ -90,7 +90,6 @@ function getPackageJsonProperties(
   projectBaseDir: string,
   sonarBaseExclusions: string,
 ): ScannerProperties {
-  const packageJsonParams: { [key: string]: string } = {};
   const pkg = readPackageJson(projectBaseDir);
   if (!pkg) {
     return {
@@ -99,6 +98,9 @@ function getPackageJsonProperties(
   }
 
   log(LogLevel.INFO, 'Retrieving info from "package.json" file');
+  const packageJsonParams: { [key: string]: string } = {
+    [ScannerProperty.SonarExclusions]: sonarBaseExclusions,
+  };
   populatePackageParams(packageJsonParams, pkg);
   populateCoverageParams(packageJsonParams, pkg, projectBaseDir, sonarBaseExclusions);
   populateTestExecutionParams(packageJsonParams, pkg, projectBaseDir);
@@ -227,6 +229,7 @@ function getCommandLineProperties(cliArgs?: CliArgs): ScannerProperties {
 
 /**
  * Parse properties stored in sonar project properties file, if it exists.
+ * Return an empty object if the file does not exist.
  */
 function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
   // Read sonar project properties file in project base dir
@@ -246,8 +249,8 @@ function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
 
     return properties;
   } catch (error) {
-    log(LogLevel.WARN, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error}`);
-    throw error;
+    log(LogLevel.DEBUG, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error}`);
+    return {};
   }
 }
 
@@ -439,27 +442,16 @@ export function getProperties(
     ...cliProperties,
   };
 
-  // Compute default base dir respecting order of precedence we use for the final merge
+  // Compute default base dir and exclusions respecting order of precedence we use for the final merge
   const projectBaseDir = userProperties[ScannerProperty.SonarProjectBaseDir] ?? process.cwd();
+  const baseSonarExclusions =
+    userProperties[ScannerProperty.SonarExclusions] ?? DEFAULT_SONAR_EXCLUSIONS;
 
   // Infer specific properties from project files
-  let inferredProperties: ScannerProperties;
-  try {
-    inferredProperties = getSonarFileProperties(projectBaseDir);
-  } catch (error) {
-    inferredProperties = {
-      'sonar.projectDescription': 'No description.',
-      'sonar.sources': '.',
-    };
-
-    const baseSonarExclusions =
-      userProperties[ScannerProperty.SonarExclusions] ?? DEFAULT_SONAR_EXCLUSIONS;
-
-    inferredProperties = {
-      ...inferredProperties,
-      ...getPackageJsonProperties(projectBaseDir, baseSonarExclusions),
-    };
-  }
+  const inferredProperties = {
+    ...getPackageJsonProperties(projectBaseDir, baseSonarExclusions),
+    ...getSonarFileProperties(projectBaseDir),
+  };
 
   // Generate proxy properties from HTTP[S]_PROXY env variables, if not already set
   const httpProxyProperties = getHttpProxyEnvProperties(
