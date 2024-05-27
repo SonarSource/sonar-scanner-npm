@@ -28,3 +28,15 @@ export function customScanner(scanOptions: ScanOptions) {
     localScannerCli: true,
   });
 }
+
+function scanWithCallback(scanOptions: ScanOptions, callback: (error?: unknown) => void) {
+  return scan(scanOptions)
+    .then(() => {
+      callback();
+    })
+    .catch(error => {
+      callback(error);
+    });
+}
+
+export default scanWithCallback;
