@@ -34,7 +34,7 @@ The following example shows how to run an analysis on a JavaScript
 project, and pushing the results to a SonarQube instance:
 
 ```javascript
-const scanner = require('sonarqube-scanner');
+const scanner = require('sonarqube-scanner').default;
 
 scanner(
   {
@@ -47,7 +47,12 @@ scanner(
       'sonar.tests': 'test',
     },
   },
-  () => process.exit(),
+  error => {
+    if (error) {
+      console.error(error);
+    }
+    process.exit();
+  },
 );
 ```
 
