@@ -8,6 +8,8 @@ This module is analyzed on SonarCloud.
 
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=alert_status)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=sqale_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=reliability_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Security](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=security_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Releases](https://img.shields.io/github/release/SonarSource/sonar-scanner-npm.svg)](https://github.com/SonarSource/sonar-scanner-npm/releases)
 
+This is the documentation for v4. If you are using v3, refer to [the v3 documentation](https://github.com/SonarSource/sonar-scanner-npm/tree/37797347a30635647da5a45ed912a9ae77405b85).
+
 ## Installation
 
 _Prerequisite: Node v18+ (for v4 and above)_
@@ -41,7 +43,7 @@ const scanner = require('sonarqube-scanner').default;
 scanner(
   {
     serverUrl: 'https://sonarqube.mycompany.com',
-    token: '019d1e2e04eefdcd0caee1468f39a45e69d33d3f', // use "login" for SQ up to version 9
+    token: '019d1e2e04eefdcd0caee1468f39a45e69d33d3f',
     options: {
       'sonar.projectName': 'My App',
       'sonar.projectDescription': 'Description for "My App" project...',
@@ -64,9 +66,7 @@ scanner(
 
 - `parameters` _Map_
   - `serverUrl` _String_ (optional) The URL of the SonarQube server. Defaults to http://localhost:9000
-  - `login` _String_ (optional) The login used to connect to the SonarQube server up to version 9. Empty by default.
   - `token` _String_ (optional) The token used to connect to the SonarQube server v10+ or SonarCloud. Empty by default.
-  - `caPath` _String_ (optional) the path to a CA to pass as `https.request()` [options](https://nodejs.org/api/https.html#https_https_request_options_callback).
   - `options` _Map_ (optional) Used to pass extra parameters for the analysis. See the [official documentation](http://redirect.sonarsource.com/doc/analysis-parameters.html) for more details.
 - `callback` _Function_ (optional)
   Callback (the execution of the analysis is asynchronous).
@@ -132,7 +132,7 @@ It needs to be [installed manually](https://laptrinhx.com/docker-for-mac-alpine-
 
 Thanks to [Philipp Eschenbach](https://github.com/peh) for troubleshooting this on [issue #59](https://github.com/bellingard/sonar-scanner-npm/issues/59).
 
-## Download From Mirrors
+## Download From Mirrors (SQ < 10.6 only)
 
 By default, the scanner binaries are downloaded from `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/`.
 To use a custom mirror, set `$SONAR_SCANNER_MIRROR`. Or download precise version with `$SONAR_SCANNER_VERSION`
