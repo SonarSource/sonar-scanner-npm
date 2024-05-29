@@ -76,7 +76,6 @@ export type ScanOptions = {
   jvmOptions?: string[];
   localScannerCli?: boolean;
   options?: { [key: string]: string };
-  caPath?: string;
   logLevel?: string;
   verbose?: boolean;
   version?: string;
