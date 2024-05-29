@@ -10,7 +10,9 @@ This module is analyzed on SonarCloud.
 
 ## Installation
 
-_Prerequisite: Node v16+ (otherwise use sonarqube-scanner v2.9.1)_
+_Prerequisite: Node v18+ (for v4 and above)_
+
+_Prerequisite: Node v16+ (for v3, otherwise use sonarqube-scanner v2.9.1)_
 
 This package is available on npm as: `sonarqube-scanner`
 
@@ -105,7 +107,7 @@ Similar to the above, you can specify analysis properties and settings using eit
 
 #### _I constantly get "Impossible to download and extract binary [...] In such situation, the best solution is to install the standard SonarScanner", what can I do?_
 
-You can install manually the [standard SonarScanner](https://redirect.sonarsource.com/doc/install-configure-scanner.html),
+You can install manually the [standard SonarScanner](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner/),
 which requires to have a Java Runtime Environment available too (Java 8+).
 
 It is important to make sure that the SonarScanner `$install_directory/bin` location is added to the system `$PATH` environment variable. This will ensure that `sonar-scanner` command will be resolved by the customScanner, and prevent the error:
@@ -161,7 +163,7 @@ Proxy authentication is supported as well, see below.
 ## Specifying the cache folder
 
 By default, the scanner binaries are cached into `$HOME/.sonar/native-sonar-scanner` folder.
-To use a custom cache fodler instead of `$HOME`, set `$SONAR_BINARY_CACHE`.
+To use a custom cache folder instead of `$HOME`, set `$SONAR_BINARY_CACHE`.
 
 **Example:**
 
