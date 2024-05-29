@@ -427,6 +427,18 @@ function hotfixDeprecatedProperties(properties: ScannerProperties): ScannerPrope
   return properties;
 }
 
+function normalizeProperties(properties: ScannerProperties) {
+  for (const [key, value] of Object.entries(properties)) {
+    if (value === null) {
+      properties[key] = '';
+    } else if (typeof value === 'undefined') {
+      delete properties[key];
+    }
+  }
+
+  return properties;
+}
+
 export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
@@ -459,21 +471,22 @@ export function getProperties(
   );
 
   // Merge properties respecting order of precedence
-  const properties = {
+  let properties = {
     ...getDefaultProperties(), // fallback to default if nothing was provided for these properties
     ...inferredProperties,
     ...httpProxyProperties,
     ...userProperties, // Highest precedence
   };
 
-  // Hotfix host properties with custom SonarCloud URL
-  const hostProperties = getHostProperties(properties);
-
-  return hotfixDeprecatedProperties({
+  properties = hotfixDeprecatedProperties({
     ...properties,
     // Can't be overridden:
-    ...hostProperties,
+    ...getHostProperties(properties), // Hotfix host properties with custom SonarCloud URL
     ...getBootstrapperProperties(startTimestampMs),
     'sonar.projectBaseDir': projectBaseDir,
   });
+
+  properties = normalizeProperties(properties);
+
+  return properties;
 }

@@ -57,6 +57,29 @@ describe('getProperties', () => {
     });
   });
 
+  it('should ignore undefined values and convert null to empty strings', () => {
+    projectHandler.reset('fake_project_with_no_package_file');
+    projectHandler.setEnvironmentVariables({});
+
+    const properties = getProperties(
+      {
+        options: {
+          'sonar.analysis.mode': undefined as unknown as string,
+          'sonar.analysis.mode2': null as unknown as string,
+        },
+      },
+      projectHandler.getStartTime(),
+    );
+
+    expect(properties).toEqual({
+      ...projectHandler.getExpectedProperties(),
+      'sonar.host.url': SONARCLOUD_URL,
+      'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
+      'sonar.scanner.internal.isSonarCloud': 'true',
+      'sonar.analysis.mode2': '',
+    });
+  });
+
   describe('should handle JS API scan options params correctly', () => {
     it('should detect custom SonarCloud endpoint', () => {
       projectHandler.reset('fake_project_with_no_package_file');
@@ -558,7 +581,7 @@ describe('getProperties', () => {
           serverUrl: 'http://localhost/sonarqube',
         },
         projectHandler.getStartTime(),
-        { define: ['sonar.token=my-token', '-javaagent:/ignored-value.jar'] },
+        { define: ['sonar.token=my-token'] },
       );
 
       expect(properties).toEqual({
