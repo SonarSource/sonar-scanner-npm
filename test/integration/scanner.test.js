@@ -59,8 +59,8 @@ describe('scanner', function () {
             'sonar.projectName': projectKey,
             'sonar.projectKey': projectKey,
             'sonar.log.level': 'DEBUG',
-            'sonar.scanner.version': '6.0.0.4373',
-            'sonar.scanner.mirror': `https://${process.env.ARTIFACTORY_PRIVATE_USERNAME}:${process.env.ARTIFACTORY_PRIVATE_PASSWORD}@repox.jfrog.io/artifactory/sonarsource-public-builds/org/sonarsource/scanner/cli/sonar-scanner-cli/6.0.0.4373/`,
+            'sonar.scanner.version': '6.0.0.4419',
+            'sonar.scanner.mirror': `https://${process.env.ARTIFACTORY_PRIVATE_USERNAME}:${process.env.ARTIFACTORY_PRIVATE_PASSWORD}@repox.jfrog.io/artifactory/sonarsource-public-builds/org/sonarsource/scanner/cli/sonar-scanner-cli/6.0.0.4419/`,
             'sonar.sources': path.join(
               __dirname.replace(/\\+/g, '/'),
               '/fixtures/fake_project_for_integration/src',
