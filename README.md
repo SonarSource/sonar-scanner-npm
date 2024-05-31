@@ -65,7 +65,7 @@ scanner(
 **Arguments**
 
 - `parameters` _Map_
-  - `serverUrl` _String_ (optional) The URL of the SonarQube server. Defaults to http://localhost:9000
+  - `serverUrl` _String_ (optional) The URL of the SonarQube server. Defaults to https://sonarcloud.io
   - `token` _String_ (optional) The token used to connect to the SonarQube server v10+ or SonarCloud. Empty by default.
   - `options` _Map_ (optional) Used to pass extra parameters for the analysis. See the [official documentation](http://redirect.sonarsource.com/doc/analysis-parameters.html) for more details.
 - `callback` _Function_ (optional)
