@@ -35,6 +35,10 @@ jobs:
         with:
           node-version: 18
       - run: mv .github/workflows/.npmrc .npmrc
+      - name: Build npm package
+        run: |
+          npm install
+          npm run build
       - name: Publish npm package
         env:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
