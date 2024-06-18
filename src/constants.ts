@@ -61,7 +61,7 @@ export const API_V2_SCANNER_ENGINE_ENDPOINT = '/analysis/engine';
 export const API_OLD_VERSION_ENDPOINT = '/api/server/version';
 
 export const SCANNER_CLI_DEFAULT_BIN_NAME = 'sonar-scanner';
-export const SCANNER_CLI_VERSION = '5.0.1.3006';
+export const SCANNER_CLI_VERSION = '6.0.0.4432';
 export const SCANNER_CLI_MIRROR =
   'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 export const SCANNER_CLI_INSTALL_PATH = 'native-sonar-scanner';
