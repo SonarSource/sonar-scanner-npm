@@ -22,6 +22,7 @@ import path from 'path';
 import { getProxyForUrl } from 'proxy-from-env';
 import slugify from 'slugify';
 import { version } from '../package.json';
+import { getProperties as getPropertiesFile } from 'properties-file';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
   ENV_TO_PROPERTY_NAME,
@@ -235,19 +236,8 @@ function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
   // Read sonar project properties file in project base dir
   try {
     const sonarPropertiesFile = path.join(projectBaseDir, SONAR_PROJECT_FILENAME);
-    const properties: ScannerProperties = {};
-    const data = fsExtra.readFileSync(sonarPropertiesFile).toString();
-    const lines = data.split(/\r?\n/);
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine.length === 0 || trimmedLine.startsWith('#')) {
-        continue;
-      }
-      const [key, value] = trimmedLine.split('=');
-      properties[key] = value;
-    }
-
-    return properties;
+    const data = fsExtra.readFileSync(sonarPropertiesFile);
+    return getPropertiesFile(data) as ScannerProperties;
   } catch (error) {
     log(LogLevel.DEBUG, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error}`);
     return {};

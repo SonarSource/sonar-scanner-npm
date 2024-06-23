@@ -664,6 +664,30 @@ describe('getProperties', () => {
       });
     });
 
+    it('should correctly parse sonar-project.properties', () => {
+      projectHandler.reset('fake_project_with_sonar_properties');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          serverUrl: 'http://localhost/sonarqube',
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'http://localhost/sonarqube',
+        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
+        'sonar.scanner.internal.isSonarCloud': 'false',
+        'sonar.exclusions': '**/node_modules/**,**/docs-dist/**',
+        'sonar.scanner.dummy.path': 'C:path\toproject',
+        'sonar.scanner.dummy.space.around.eq': 'value',
+        'sonar.scanner.dummy.whitespace.at.beginning': ' value',
+        'sonar.scanner.empty.property': '',
+      });
+    });
+
     it('does not let user override bootstrapper-only properties', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({
