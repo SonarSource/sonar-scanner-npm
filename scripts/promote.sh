@@ -14,5 +14,4 @@ export SHELLOPTS
 cirrus_jfrog_promote
 
 github-notify-promotion
-burgr-notify-promotion
 
