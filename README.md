@@ -12,7 +12,7 @@ This is the documentation for v4. If you are using v3, refer to [the v3 document
 
 ## Installation
 
-_Prerequisite: Node v18+ (for v4 and above)_
+_Prerequisite: Node v18+ (for v4 and above)_ - doesn't return non-zero code comparing to v3
 
 _Prerequisite: Node v16+ (for v3, otherwise use sonarqube-scanner v2.9.1)_
 
