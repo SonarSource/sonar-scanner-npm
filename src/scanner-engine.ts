@@ -136,11 +136,16 @@ export function runScannerEngine(
 
   return new Promise<void>((resolve, reject) => {
     child.on('exit', code => {
-      if (code === 0) {
-        log(LogLevel.DEBUG, 'Scanner engine finished successfully');
-        resolve();
+      if (typeof code === 'number') {
+        if (code === 0) {
+          log(LogLevel.DEBUG, 'Scanner engine finished successfully');
+          resolve();
+        } else {
+          reject(new Error(`Scanner engine failed with code ${code}`));
+          process.exit(code);
+        }
       } else {
-        reject(new Error(`Scanner engine failed with code ${code}`));
+        reject(new Error('Scanner engine exited with an unexpected state.'));
       }
     });
   });

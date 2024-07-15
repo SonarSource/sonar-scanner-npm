@@ -185,8 +185,10 @@ describe('scanner-engine', () => {
       ]);
     });
 
-    it('should reject when child process exits with code 1', async () => {
-      childProcessHandler.setExitCode(1);
+    it('should exit process (with same code) when child process exits with code 1', async () => {
+      const CHILD_PROCESS_EXIT_CODE = 1;
+      const mockExit = jest.spyOn(process, 'exit').mockImplementation();
+      childProcessHandler.setExitCode(CHILD_PROCESS_EXIT_CODE);
 
       await expect(
         runScannerEngine(
@@ -196,6 +198,8 @@ describe('scanner-engine', () => {
           MOCKED_PROPERTIES,
         ),
       ).rejects.toBeInstanceOf(Error);
+
+      expect(mockExit).toHaveBeenCalledWith(CHILD_PROCESS_EXIT_CODE);
     });
 
     it('should output scanner engine output', async () => {
@@ -231,6 +235,7 @@ describe('scanner-engine', () => {
     });
 
     it('should dump data to file when dumpToFile property is set', async () => {
+      const mockExit = jest.spyOn(process, 'exit').mockImplementation();
       childProcessHandler.setExitCode(1); // Make it so the scanner would fail
       const writeFile = jest.spyOn(fsExtra.promises, 'writeFile').mockResolvedValue();
 
