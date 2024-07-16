@@ -146,6 +146,7 @@ export function runScannerEngine(
         }
       } else {
         reject(new Error('Scanner engine exited with an unexpected state.'));
+        process.exit(1);
       }
     });
   });

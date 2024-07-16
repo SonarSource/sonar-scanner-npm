@@ -202,6 +202,22 @@ describe('scanner-engine', () => {
       expect(mockExit).toHaveBeenCalledWith(CHILD_PROCESS_EXIT_CODE);
     });
 
+    it('should exit with code 1 when the child process exits with an unexpected state', async () => {
+      const mockExit = jest.spyOn(process, 'exit').mockImplementation();
+      childProcessHandler.setExitCode(null);
+
+      await expect(
+        runScannerEngine(
+          '/some/path/to/java',
+          '/some/path/to/scanner-engine',
+          {},
+          MOCKED_PROPERTIES,
+        ),
+      ).rejects.toBeInstanceOf(Error);
+
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
     it('should output scanner engine output', async () => {
       const stdoutStub = sinon.stub(process.stdout, 'write').value(jest.fn());
 
