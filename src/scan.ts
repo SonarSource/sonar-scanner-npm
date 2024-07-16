@@ -33,7 +33,7 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
     await runScan(scanOptions, cliArgs);
   } catch (error) {
     log(LogLevel.ERROR, `An error occurred: ${error}`);
-    process.exit(1);
+    throw error;
   }
 }
 

@@ -185,10 +185,8 @@ describe('scanner-engine', () => {
       ]);
     });
 
-    it('should exit process (with same code) when child process exits with code 1', async () => {
-      const CHILD_PROCESS_EXIT_CODE = 1;
-      const mockExit = jest.spyOn(process, 'exit').mockImplementation();
-      childProcessHandler.setExitCode(CHILD_PROCESS_EXIT_CODE);
+    it('should exit process (with same code) when child process exits with code 2', async () => {
+      childProcessHandler.setExitCode(2);
 
       await expect(
         runScannerEngine(
@@ -199,11 +197,10 @@ describe('scanner-engine', () => {
         ),
       ).rejects.toBeInstanceOf(Error);
 
-      expect(mockExit).toHaveBeenCalledWith(CHILD_PROCESS_EXIT_CODE);
+      expect(process.exitCode).toEqual(2);
     });
 
     it('should exit with code 1 when the child process exits with an unexpected state', async () => {
-      const mockExit = jest.spyOn(process, 'exit').mockImplementation();
       childProcessHandler.setExitCode(null);
 
       await expect(
@@ -215,7 +212,7 @@ describe('scanner-engine', () => {
         ),
       ).rejects.toBeInstanceOf(Error);
 
-      expect(mockExit).toHaveBeenCalledWith(1);
+      expect(process.exitCode).toEqual(1);
     });
 
     it('should output scanner engine output', async () => {

@@ -142,11 +142,11 @@ export function runScannerEngine(
           resolve();
         } else {
           reject(new Error(`Scanner engine failed with code ${code}`));
-          process.exit(code);
+          process.exitCode = code;
         }
       } else {
         reject(new Error('Scanner engine exited with an unexpected state.'));
-        process.exit(1);
+        process.exitCode = 1;
       }
     });
   });

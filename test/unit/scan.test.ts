@@ -107,13 +107,14 @@ describe('scan', () => {
     });
 
     it('should fail if local scanner is requested but not found', async () => {
-      jest.spyOn(process, 'exit').mockImplementation();
       jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
       jest.spyOn(scannerEngine, 'runScannerEngine');
       jest.spyOn(scannerCli, 'runScannerCli');
       jest.spyOn(sonarProcess, 'locateExecutableFromPath').mockResolvedValue(null);
 
-      await scan({ serverUrl: 'http://localhost:9000', localScannerCli: true });
+      await expect(
+        scan({ serverUrl: 'http://localhost:9000', localScannerCli: true }),
+      ).rejects.toThrow(Error);
 
       expect(scannerCli.downloadScannerCli).not.toHaveBeenCalled();
       expect(scannerCli.runScannerCli).not.toHaveBeenCalled();
@@ -121,7 +122,6 @@ describe('scan', () => {
         logging.LogLevel.ERROR,
         expect.stringMatching(/SonarScanner CLI not found in PATH/),
       );
-      expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
 
@@ -173,18 +173,19 @@ describe('scan', () => {
     });
 
     it('should fail when skipping JRE provisioning without java in PATH', async () => {
-      jest.spyOn(process, 'exit').mockImplementation();
       jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(true);
       jest.spyOn(java, 'fetchJRE');
       jest.spyOn(scannerEngine, 'runScannerEngine');
       jest.spyOn(sonarProcess, 'locateExecutableFromPath').mockResolvedValue(null);
 
-      await scan({
-        serverUrl: 'http://localhost:9000',
-        options: {
-          [ScannerProperty.SonarScannerSkipJreProvisioning]: 'true',
-        },
-      });
+      await expect(
+        scan({
+          serverUrl: 'http://localhost:9000',
+          options: {
+            [ScannerProperty.SonarScannerSkipJreProvisioning]: 'true',
+          },
+        }),
+      ).rejects.toThrow(Error);
 
       expect(scannerEngine.runScannerEngine).not.toHaveBeenCalled();
       expect(scannerCli.runScannerCli).not.toHaveBeenCalled();
@@ -192,7 +193,6 @@ describe('scan', () => {
         logging.LogLevel.ERROR,
         expect.stringMatching(/Java not found in PATH/),
       );
-      expect(process.exit).toHaveBeenCalledWith(1);
     });
   });
 });
