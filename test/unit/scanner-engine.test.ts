@@ -235,7 +235,7 @@ describe('scanner-engine', () => {
     });
 
     it('should dump data to file when dumpToFile property is set', async () => {
-      const mockExit = jest.spyOn(process, 'exit').mockImplementation();
+      jest.spyOn(process, 'exit').mockImplementation();
       childProcessHandler.setExitCode(1); // Make it so the scanner would fail
       const writeFile = jest.spyOn(fsExtra.promises, 'writeFile').mockResolvedValue();
 
