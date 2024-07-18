@@ -20,7 +20,7 @@
 import { ChildProcess, exec, spawn } from 'child_process';
 
 export class ChildProcessMock {
-  private exitCode: number | null = 0;
+  private exitCode: number = 0;
 
   private stdout: string = '';
   private stderr: string = '';
@@ -34,7 +34,7 @@ export class ChildProcessMock {
     jest.mocked(exec).mockImplementation((this.handleExec as any).bind(this));
   }
 
-  setExitCode(exitCode: number | null) {
+  setExitCode(exitCode: number) {
     this.exitCode = exitCode;
   }
 
