@@ -112,7 +112,9 @@ describe('scan', () => {
       jest.spyOn(scannerCli, 'runScannerCli');
       jest.spyOn(process, 'locateExecutableFromPath').mockResolvedValue(null);
 
-      await scan({ serverUrl: 'http://localhost:9000', localScannerCli: true });
+      await expect(
+        scan({ serverUrl: 'http://localhost:9000', localScannerCli: true }),
+      ).rejects.toThrow(Error);
 
       expect(scannerCli.downloadScannerCli).not.toHaveBeenCalled();
       expect(scannerCli.runScannerCli).not.toHaveBeenCalled();
@@ -176,12 +178,14 @@ describe('scan', () => {
       jest.spyOn(scannerEngine, 'runScannerEngine');
       jest.spyOn(process, 'locateExecutableFromPath').mockResolvedValue(null);
 
-      await scan({
-        serverUrl: 'http://localhost:9000',
-        options: {
-          [ScannerProperty.SonarScannerSkipJreProvisioning]: 'true',
-        },
-      });
+      await expect(
+        scan({
+          serverUrl: 'http://localhost:9000',
+          options: {
+            [ScannerProperty.SonarScannerSkipJreProvisioning]: 'true',
+          },
+        }),
+      ).rejects.toThrow(Error);
 
       expect(scannerEngine.runScannerEngine).not.toHaveBeenCalled();
       expect(scannerCli.runScannerCli).not.toHaveBeenCalled();
