@@ -74,4 +74,5 @@ export const SCANNER_DEPRECATED_PROPERTIES: ScannerProperty[][] = [
   [ScannerProperty.HttpProxyPort, ScannerProperty.SonarScannerProxyPort],
   [ScannerProperty.HttpProxyUser, ScannerProperty.SonarScannerProxyUser],
   [ScannerProperty.HttpProxyPassword, ScannerProperty.SonarScannerProxyPassword],
+  [ScannerProperty.SonarLogin, ScannerProperty.SonarToken],
 ];
