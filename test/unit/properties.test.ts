@@ -497,6 +497,7 @@ describe('getProperties', () => {
           options: {
             'sonar.scanner.responseTimeout': '111',
             'http.proxyHost': 'my-proxy.io',
+            'sonar.login': 'my-login',
           },
         },
         projectHandler.getStartTime(),
@@ -507,6 +508,8 @@ describe('getProperties', () => {
         'sonar.ws.timeout': '111',
         'sonar.scanner.proxyHost': 'my-proxy.io', // Should replace the deprecated property with the new one
         'http.proxyHost': 'my-proxy.io',
+        'sonar.login': 'my-login', // Should not replace the deprecated property because its new version is not present
+        'sonar.token': 'my-login',
       });
       expect(log).toHaveBeenCalledWith(
         LogLevel.WARN,

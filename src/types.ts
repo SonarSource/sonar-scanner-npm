@@ -64,6 +64,7 @@ export enum ScannerProperty {
   HttpProxyPort = 'http.proxyPort',
   HttpProxyUser = 'http.proxyUser',
   HttpProxyPassword = 'http.proxyPassword',
+  SonarLogin = 'sonar.login',
 }
 
 export type ScannerProperties = {
