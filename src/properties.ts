@@ -19,10 +19,10 @@
  */
 import fsExtra from 'fs-extra';
 import path from 'path';
+import { getProperties as getPropertiesFile } from 'properties-file';
 import { getProxyForUrl } from 'proxy-from-env';
 import slugify from 'slugify';
 import { version } from '../package.json';
-import { getProperties as getPropertiesFile } from 'properties-file';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
   ENV_TO_PROPERTY_NAME,
@@ -135,11 +135,15 @@ function dependenceExists(pkg: PackageJson, pkgName: string): boolean {
 
 function populatePackageParams(params: { [key: string]: string | {} }, pkg: PackageJson) {
   const invalidCharacterRegex = /[?$*+~.()'"!:@/]/g;
-  params['sonar.projectKey'] = slugify(pkg.name, {
-    remove: invalidCharacterRegex,
-  });
-  params['sonar.projectName'] = pkg.name;
-  params['sonar.projectVersion'] = pkg.version;
+  if (pkg.name) {
+    params['sonar.projectKey'] = slugify(pkg.name, {
+      remove: invalidCharacterRegex,
+    });
+    params['sonar.projectName'] = pkg.name;
+  }
+  if (pkg.version) {
+    params['sonar.projectVersion'] = pkg.version;
+  }
   if (pkg.description) {
     params['sonar.projectDescription'] = pkg.description;
   }

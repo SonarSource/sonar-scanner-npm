@@ -170,8 +170,6 @@ describe('getProperties', () => {
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.javascript.lcov.reportPaths': 'coverage/lcov.info',
-        'sonar.projectKey': 'fake-basic-project',
-        'sonar.projectName': 'fake-basic-project',
         'sonar.projectVersion': '1.0.0',
         'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',coverage/**',
         'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
