@@ -4,48 +4,61 @@ on:
       - feat/jd/BUILD-5492-test-release
 
 jobs:
-  publish:
+  publish_existing_package:
     permissions:
       contents: read
       id-token: write # required for SonarSource/vault-action-wrapper
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
-      ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
+      # RELEASE_TAG: ${{ github.event.release.tag_name }}
       NPM_REPOSITORY: 'sonarsource-npm-public'
-      SCOPE: ''
       PACKAGE: 'sonarqube-scanner'
+      RELEASE_TAG: '4.2.0.2280'
     steps:
       - name: Vault
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
           secrets:
-            development/artifactory/token/SonarSource-sonar-scanner-npm-qa-deployer access_token  | qa_deployer_access_token;
             development/artifactory/token/SonarSource-sonar-scanner-npm-promoter access_token  | promoter_access_token;
             development/kv/data/npmjs sonartech_npm_token  | npm_token;
             development/kv/data/repox artifactory_url  | repox_url;
       - name: Setup JFrog for deploy
         uses: SonarSource/jfrog-setup-wrapper@907e87c3d2081a98d2ab8cb03284ee6711f1ee83 # tag=3.2.3
         with:
-          jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).qa_deployer_access_token }}
+          jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - run: mv .cirrus/npmrc .npmrc
-      - run: mv .github/workflows/.npmrc .npmrc
-      - name: Publish npm package
+      - name: Create local repository directory
+        id: local_repo
+        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> $GITHUB_OUTPUT
+      - name: Get the version
+        id: get_version
+        run: |
+          IFS=. read -r major minor patch build <<< "$RELEASE_TAG"
+          echo "build=${build}" >> $GITHUB_OUTPUT
+          echo "patch=${patch}" >> $GITHUB_OUTPUT
+          echo "minor=${minor}" >> $GITHUB_OUTPUT
+          echo "major=${major}" >> $GITHUB_OUTPUT
+      - name: Download Artifacts
+        uses: SonarSource/gh-action_release/download-build@master
+        with:
+          build-number: ${{ steps.get_version.outputs.build }}
+          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
+          remote-repo: sonarsource-npm-public-builds
+          flat-download: true
+          download-checksums: false
+
+      - name: Publish npm package to npmjs
+        working-directory: ${{ steps.local_repo.outputs.dir }}
         env:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
         run: |
-          jfrog rt npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
-          jfrog rt npm-ci
-          # Skip publishing, test auth with npm install instead
-          npm ci
-          npm run build
-          jfrog rt npm-publish --build-name=$PACKAGE --build-number=${{ github.event.release.tag_name }}
-          jfrog rt build-publish $PACKAGE ${{ github.event.release.tag_name }}
+          file=$(find -name "*.tgz" -printf "%f")
+          npm publish --dry-run "$file"
+
       - name: Promote npm package
         env:
           REPOX_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
@@ -54,5 +67,4 @@ jobs:
         run: |
           jfrog config add repox --artifactory-url $REPOX_URL --access-token $PROMOTE_ACCESS_TOKEN
           jfrog config use repox
-          jfrog rt bpr --status it-passed $PACKAGE $RELEASE_TAG sonarsource-npm-public-builds
-          jfrog rt bpr --status released $PACKAGE $RELEASE_TAG sonarsource-npm-public-releases
+          jfrog rt bpr --status released ${{ github.event.repository.name }} ${{ steps.get_version.outputs.build }} sonarsource-npm-public-releases
