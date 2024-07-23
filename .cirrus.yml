@@ -62,6 +62,7 @@ build_task:
   <<: *NPMRC_SCRIPT_DEFINITION
   build_script:
     - if [ -n "${CIRRUS_BASE_BRANCH}" ]; then git fetch origin "${CIRRUS_BASE_BRANCH}"; fi
+    - npm ci
     - npm run build
   sonarcloud_analysis_script:
     - node ./scripts/ci-analysis.js

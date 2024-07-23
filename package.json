@@ -69,7 +69,7 @@
     "sonar-runner"
   ],
   "scripts": {
-    "build": "npm ci && npm run ts-build && npm run check-format && npm run license && npm test && cd tools/orchestrator && npm run build",
+    "build": "npm run ts-build && npm run check-format && npm run license && npm test && cd tools/orchestrator && npm run build",
     "ts-build": "tsc && node scripts/fix-comments.js",
     "test": "jest --coverage",
     "test-integration": "cd test/integration && npm test",

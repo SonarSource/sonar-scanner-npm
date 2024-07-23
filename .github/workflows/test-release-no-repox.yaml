@@ -33,10 +33,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Build npm package
-        run: |
-          npm install
-          npm run build
       - run: mv .github/workflows/.npmrc .npmrc
       - name: Publish npm package
         env:
@@ -45,7 +41,8 @@ jobs:
           jfrog rt npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
           jfrog rt npm-ci
           # Skip publishing, test auth with npm install instead
-          npm install
+          npm ci
+          npm run build
           jfrog rt npm-publish --build-name=$PACKAGE --build-number=${{ github.event.release.tag_name }}
           jfrog rt build-publish $PACKAGE ${{ github.event.release.tag_name }}
       - name: Promote npm package

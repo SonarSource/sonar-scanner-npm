@@ -34,13 +34,6 @@ jobs:
         with:
           node-version: 18
       - run: mv .cirrus/npmrc .npmrc
-      - name: Build npm package
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).qa_deployer_access_token }}
-        run: |
-          npm install
-          npm run build
       - run: mv .github/workflows/.npmrc .npmrc
       - name: Publish npm package
         env:
@@ -49,7 +42,8 @@ jobs:
           jfrog rt npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
           jfrog rt npm-ci
           # Skip publishing, test auth with npm install instead
-          npm install
+          npm ci
+          npm run build
           jfrog rt npm-publish --build-name=$PACKAGE --build-number=${{ github.event.release.tag_name }}
           jfrog rt build-publish $PACKAGE ${{ github.event.release.tag_name }}
       - name: Promote npm package

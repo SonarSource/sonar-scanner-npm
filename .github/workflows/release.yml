@@ -34,19 +34,14 @@ jobs:
         with:
           node-version: 18
       - run: mv .cirrus/npmrc .npmrc
-      - name: Build npm package
-        env:
-          ARTIFACTORY_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
-          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).qa_deployer_access_token }}
-        run: |
-          npm install
-          npm run build
       - name: Publish npm package
         env:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
         run: |
           jfrog rt npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
           jfrog rt npm-ci
+          npm ci
+          npm run build
           npm publish
           jfrog rt npm-publish --build-name=$PACKAGE --build-number=${{ github.event.release.tag_name }}
           jfrog rt build-publish $PACKAGE ${{ github.event.release.tag_name }}
