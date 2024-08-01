@@ -1,0 +1,83 @@
+on:
+  push:
+    branches:
+      - feat/jd/BUILD-5492-test-release
+
+jobs:
+  publish_existing_package:
+    permissions:
+      contents: read
+      id-token: write # required for SonarSource/vault-action-wrapper
+    runs-on: ubuntu-latest
+    env:
+      # RELEASE_TAG: ${{ github.event.release.tag_name }}
+      NPM_REPOSITORY: 'sonarsource-npm-public'
+      PACKAGE: 'sonarqube-scanner'
+      RELEASE_TAG: '4.2.0.2312'
+    steps:
+      - name: Vault
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets:
+            development/artifactory/token/SonarSource-sonar-scanner-npm-promoter access_token  | promoter_access_token;
+            development/kv/data/npmjs sonartech_npm_token  | npm_token;
+            development/kv/data/repox artifactory_url  | repox_url;
+      - name: Setup JFrog for deploy
+        uses: SonarSource/jfrog-setup-wrapper@907e87c3d2081a98d2ab8cb03284ee6711f1ee83 # tag=3.2.3
+        with:
+          jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Create local repository directory
+        id: local_repo
+        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> $GITHUB_OUTPUT
+      - name: Get the version
+        id: get_version
+        run: |
+          IFS=. read -r major minor patch build <<< "$RELEASE_TAG"
+          echo "build=${build}" >> $GITHUB_OUTPUT
+          echo "version=${major}.${minor}.${patch}" >> $GITHUB_OUTPUT
+
+      - name: Download Artifacts
+        uses: SonarSource/gh-action_release/download-build@master
+        with:
+          build-number: ${{ steps.get_version.outputs.build }}
+          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
+          remote-repo: sonarsource-npm-public-dev #to use a test build without husky failing
+          flat-download: true
+          download-checksums: false
+
+      - name: Extract .tgz package
+        working-directory: ${{ steps.local_repo.outputs.dir }}
+        run: |
+          file=$(find . -name "*.tgz" -printf "%f")
+          mkdir package
+          tar -xzf "$file" -C package --strip-components=1
+
+      - name: Update package version
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
+        run: npm version --no-git-tag-version ${{ steps.get_version.outputs.version }}
+
+      - name: Verify package version
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
+        run: cat package.json
+
+      - name: Publish npm package to npmjs
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
+        env:
+          NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
+        run: |
+          npm publish --dry-run
+
+      # - name: Promote npm package
+      #   env:
+      #     REPOX_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
+      #     PROMOTE_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
+      #     CI: true
+      #   run: |
+      #     jfrog config add repox --artifactory-url $REPOX_URL --access-token $PROMOTE_ACCESS_TOKEN
+      #     jfrog config use repox
+      #     jfrog rt bpr --status released ${{ github.event.repository.name }} ${{ steps.get_version.outputs.build }} sonarsource-npm-public-releases
