@@ -65,17 +65,13 @@ jobs:
         working-directory: ${{ steps.local_repo.outputs.dir }}/package
         run: cat package.json
 
-      - name: Repackage .tgz
-        working-directory: ${{ steps.local_repo.outputs.dir }}/package
-        run: npm pack
-
       - name: Publish npm package to npmjs
-        working-directory: ${{ steps.local_repo.outputs.dir }}
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
         env:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
+          HUSKY: 0
         run: |
-          file=$(find -name "*.tgz" -printf "%f")
-          npm publish --dry-run "$file"
+          npm publish --dry-run --ignore-scripts
 
       # - name: Promote npm package
       #   env:
