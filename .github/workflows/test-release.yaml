@@ -13,7 +13,7 @@ jobs:
       # RELEASE_TAG: ${{ github.event.release.tag_name }}
       NPM_REPOSITORY: 'sonarsource-npm-public'
       PACKAGE: 'sonarqube-scanner'
-      RELEASE_TAG: '4.2.0.2280'
+      RELEASE_TAG: '4.2.0.2299'
     steps:
       - name: Vault
         id: secrets
@@ -39,9 +39,7 @@ jobs:
         run: |
           IFS=. read -r major minor patch build <<< "$RELEASE_TAG"
           echo "build=${build}" >> $GITHUB_OUTPUT
-          echo "patch=${patch}" >> $GITHUB_OUTPUT
-          echo "minor=${minor}" >> $GITHUB_OUTPUT
-          echo "major=${major}" >> $GITHUB_OUTPUT
+          echo "version=${major}.${minor}.${patch}" >> $GITHUB_OUTPUT
       - name: Download Artifacts
         uses: SonarSource/gh-action_release/download-build@master
         with:
@@ -57,6 +55,7 @@ jobs:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
         run: |
           file=$(find -name "*.tgz" -printf "%f")
+          npm version --no-git-tag-version ${{ steps.get_version.outputs.version }}
           npm publish --dry-run "$file"
 
       - name: Promote npm package
