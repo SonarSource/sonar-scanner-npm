@@ -13,7 +13,7 @@ jobs:
       # RELEASE_TAG: ${{ github.event.release.tag_name }}
       NPM_REPOSITORY: 'sonarsource-npm-public'
       PACKAGE: 'sonarqube-scanner'
-      RELEASE_TAG: '4.2.0.2298'
+      RELEASE_TAG: '4.2.0.2312'
     steps:
       - name: Vault
         id: secrets
@@ -46,7 +46,7 @@ jobs:
         with:
           build-number: ${{ steps.get_version.outputs.build }}
           local-repo-dir: ${{ steps.local_repo.outputs.dir }}
-          remote-repo: sonarsource-npm-public-builds
+          remote-repo: sonarsource-npm-public-dev #to use a test build without husky failing
           flat-download: true
           download-checksums: false
 
@@ -69,9 +69,8 @@ jobs:
         working-directory: ${{ steps.local_repo.outputs.dir }}/package
         env:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
-          HUSKY: 0
         run: |
-          npm publish --dry-run --ignore-scripts
+          npm publish --dry-run
 
       # - name: Promote npm package
       #   env:
