@@ -50,13 +50,24 @@ jobs:
           flat-download: true
           download-checksums: false
 
-      - name: Update package version
+      - name: Extract .tgz package
         working-directory: ${{ steps.local_repo.outputs.dir }}
+        run: |
+          file=$(find . -name "*.tgz" -printf "%f")
+          mkdir package
+          tar -xzf "$file" -C package --strip-components=1
+
+      - name: Update package version
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
         run: npm version --no-git-tag-version ${{ steps.get_version.outputs.version }}
 
       - name: Verify package version
-        working-directory: ${{ steps.local_repo.outputs.dir }}
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
         run: cat package.json
+
+      - name: Repackage .tgz
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
+        run: npm pack
 
       - name: Publish npm package to npmjs
         working-directory: ${{ steps.local_repo.outputs.dir }}
