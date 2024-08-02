@@ -33,17 +33,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Create local repository directory
+
+      - name: Create local directory
         id: local_repo
         run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> $GITHUB_OUTPUT
+
       - name: Get the version
         id: get_version
         run: |
           IFS=. read -r major minor patch build <<< "$RELEASE_TAG"
           echo "build=${build}" >> $GITHUB_OUTPUT
-          echo "patch=${patch}" >> $GITHUB_OUTPUT
-          echo "minor=${minor}" >> $GITHUB_OUTPUT
-          echo "major=${major}" >> $GITHUB_OUTPUT
+          echo "version=${major}.${minor}.${patch}" >> $GITHUB_OUTPUT
+
       - name: Download Artifacts
         uses: SonarSource/gh-action_release/download-build@master
         with:
@@ -52,6 +53,7 @@ jobs:
           remote-repo: sonarsource-npm-public-builds
           flat-download: true
           download-checksums: false
+
       - name: Promote npm package
         env:
           REPOX_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
@@ -61,10 +63,21 @@ jobs:
           jfrog config add repox --artifactory-url $REPOX_URL --access-token $PROMOTE_ACCESS_TOKEN
           jfrog config use repox
           jfrog rt bpr --status released ${{ github.event.repository.name }} ${{ steps.get_version.outputs.build }} sonarsource-npm-public-releases
-      - name: Publish npm package to npmjs
+
+      - name: Extract .tgz package
         working-directory: ${{ steps.local_repo.outputs.dir }}
+        run: |
+          file=$(find . -name "*.tgz" -printf "%f")
+          mkdir package
+          tar -xzf "$file" -C package --strip-components=1
+
+      - name: Update package version
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
+        run: npm version --no-git-tag-version ${{ steps.get_version.outputs.version }}
+
+      - name: Publish npm package to npmjs
+        working-directory: ${{ steps.local_repo.outputs.dir }}/package
         env:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
         run: |
-          file=$(find -name "*.tgz" -printf "%f")
-          npm publish "$file"
+          npm publish
