@@ -75,6 +75,9 @@ jobs:
         working-directory: ${{ steps.local_repo.outputs.dir }}/package
         run: npm version --no-git-tag-version ${{ steps.get_version.outputs.version }}
 
+      - name: Use NPM registry configuration
+        run: mv .github/workflows/.npmrc ~/.npmrc
+
       - name: Publish npm package to npmjs
         working-directory: ${{ steps.local_repo.outputs.dir }}/package
         env:
