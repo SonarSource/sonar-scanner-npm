@@ -116,9 +116,7 @@ export async function initializeAxios(properties: ScannerProperties) {
     _axiosInstances = {
       internal: axios.create({
         baseURL,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         timeout,
         ...agents,
       }),
