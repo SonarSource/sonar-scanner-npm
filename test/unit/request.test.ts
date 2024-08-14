@@ -208,6 +208,24 @@ describe('request', () => {
         timeout: 23000,
       });
     });
+
+    it('should initialize axios without token', async () => {
+      jest.spyOn(axios, 'create');
+
+      await initializeAxios({
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
+        [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
+      });
+
+      expect(axios.create).toHaveBeenCalledWith({
+        baseURL: SONARCLOUD_API_BASE_URL,
+        headers: {},
+        timeout: 0,
+      });
+      expect(axios.create).toHaveBeenCalledWith({
+        timeout: 0,
+      });
+    });
   });
 
   describe('fetch', () => {
