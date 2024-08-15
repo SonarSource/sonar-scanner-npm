@@ -128,6 +128,7 @@ export async function runScannerCli(
       env: {
         ...Object.fromEntries(filteredEnv),
         SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
+        SONAR_SCANNER_OPTS: process.env.SONAR_SCANNER_OPTS,
       },
       shell: isWindows(),
     },
