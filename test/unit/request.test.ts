@@ -45,9 +45,9 @@ describe('request', () => {
           [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
         });
         expect(agents.httpAgent).toBeInstanceOf(HttpProxyAgent);
-        expect(agents.httpAgent?.proxy.toString()).toBe('https://proxy.com/');
+        expect(agents.httpAgent?.proxy.toString()).toBe('http://proxy.com/');
         expect(agents.httpsAgent).toBeInstanceOf(HttpsProxyAgent);
-        expect(agents.httpsAgent?.proxy.toString()).toBe('https://proxy.com/');
+        expect(agents.httpsAgent?.proxy.toString()).toBe('http://proxy.com/');
       });
 
       it('should not define agents when no proxy is provided', async () => {
@@ -160,7 +160,7 @@ describe('request', () => {
       expect(ca).toContain(certificatePem);
       expect(httpsAgent?.options.pfx).toEqual(fsExtra.readFileSync(keystorePath));
       expect(httpsAgent?.options.passphrase).toBe(keystorePass);
-      expect(httpsAgent?.proxy.toString()).toBe('https://proxy.com/');
+      expect(httpsAgent?.proxy.toString()).toBe('http://proxy.com/');
     });
   });
 

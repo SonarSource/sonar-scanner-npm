@@ -58,7 +58,7 @@ describe('proxy', () => {
       };
       getProxyUrl(properties);
 
-      expect(getProxyUrl(properties)?.toString()).toBe('https://some-proxy.io/');
+      expect(getProxyUrl(properties)?.toString()).toBe('http://some-proxy.io/');
     });
 
     it('should detect proxy with host and port', () => {
