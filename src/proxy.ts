@@ -21,24 +21,15 @@ import { URL } from 'url';
 import { LogLevel, log } from './logging';
 import { ScannerProperties, ScannerProperty } from './types';
 
-const DEFAULT_HTTPS_PROXY_PORT = 443;
-const DEFAULT_HTTP_PROXY_PORT = 80;
-
 export function getProxyUrl(properties: ScannerProperties): URL | undefined {
   const proxyHost = properties[ScannerProperty.SonarScannerProxyHost];
-  const serverUsesHttps = properties[ScannerProperty.SonarHostUrl].startsWith('https');
 
   if (proxyHost) {
-    // We assume that the proxy protocol is the same as the endpoint.
-    const protocol = serverUsesHttps ? 'https' : 'http';
-    const proxyPort =
-      properties[ScannerProperty.SonarScannerProxyPort] ??
-      (serverUsesHttps ? DEFAULT_HTTPS_PROXY_PORT : DEFAULT_HTTP_PROXY_PORT);
+    const proxyPort = properties[ScannerProperty.SonarScannerProxyPort] ?? '80';
     const proxyUser = properties[ScannerProperty.SonarScannerProxyUser] ?? '';
     const proxyPassword = properties[ScannerProperty.SonarScannerProxyPassword] ?? '';
-    const proxyUrl = new URL(
-      `${protocol}://${proxyUser}:${proxyPassword}@${proxyHost}:${proxyPort}`,
-    );
+    // SCANNPM-47 We assume the proxy is HTTP. HTTPS proxies are not supported by the scanner yet (CONNECT over TLS)
+    const proxyUrl = new URL(`http://${proxyUser}:${proxyPassword}@${proxyHost}:${proxyPort}`);
     log(LogLevel.DEBUG, `Detecting proxy: ${proxyUrl}`);
     return proxyUrl;
   } else if (
