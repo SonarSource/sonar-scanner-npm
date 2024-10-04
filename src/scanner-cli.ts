@@ -34,6 +34,7 @@ import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
 import { AxiosRequestConfig } from 'axios';
+import semver from 'semver';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (isWindows()) {
@@ -51,13 +52,19 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
 /**
  * Where to download the SonarScanner CLI
  */
-function getScannerCliUrl(properties: ScannerProperties, version: string): URL {
+function getScannerCliUrl(properties: ScannerProperties, versionStr: string): URL {
   // Get location to download scanner-cli from
 
   // Not in default to avoid populating it for non scanner-cli users
   const scannerCliMirror = properties[ScannerProperty.SonarScannerCliMirror] ?? SCANNER_CLI_MIRROR;
+  const version = semver.coerce(versionStr);
+  if (!version) {
+    throw new Error(`Version "${versionStr}" does not have a correct format."`);
+  }
+  const arch = version.compare('6.1.0') >= 0 ? '-x64' : '';
+
   const scannerCliFileName =
-    'sonar-scanner-cli-' + version + '-' + normalizePlatformName() + '.zip';
+    'sonar-scanner-cli-' + versionStr + '-' + normalizePlatformName() + arch + '.zip';
   return new URL(scannerCliFileName, scannerCliMirror);
 }
 
