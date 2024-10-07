@@ -90,7 +90,7 @@ describe('scanner-cli', () => {
         ),
       );
       expect(download).toHaveBeenLastCalledWith(
-        `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_CLI_VERSION}-linux.zip`,
+        `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_CLI_VERSION}-linux-x64.zip`,
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
@@ -117,7 +117,7 @@ describe('scanner-cli', () => {
       const binPath = await downloadScannerCli(MOCK_PROPERTIES);
 
       expect(download).toHaveBeenLastCalledWith(
-        `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_CLI_VERSION}-windows.zip`,
+        `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_CLI_VERSION}-windows-x64.zip`,
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
@@ -153,7 +153,7 @@ describe('scanner-cli', () => {
       });
 
       expect(download).toHaveBeenLastCalledWith(
-        `https://myUser:myPassword@mirror.com:80/sonar-scanner-cli-${SCANNER_CLI_VERSION}-windows.zip`,
+        `https://myUser:myPassword@mirror.com:80/sonar-scanner-cli-${SCANNER_CLI_VERSION}-windows-x64.zip`,
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
