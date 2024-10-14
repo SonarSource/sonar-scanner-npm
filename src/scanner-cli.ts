@@ -17,9 +17,11 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import { AxiosRequestConfig } from 'axios';
 import { spawn } from 'child_process';
 import fsExtra from 'fs-extra';
 import path from 'path';
+import semver from 'semver';
 import {
   ENV_TO_PROPERTY_NAME,
   ENV_VAR_PREFIX,
@@ -33,8 +35,6 @@ import { isLinux, isMac, isWindows } from './platform';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
-import { AxiosRequestConfig } from 'axios';
-import semver from 'semver';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (isWindows()) {
@@ -52,31 +52,33 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
 /**
  * Where to download the SonarScanner CLI
  */
-function getScannerCliUrl(properties: ScannerProperties, versionStr: string): URL {
+function getScannerCliUrl(
+  properties: ScannerProperties,
+  versionStr: string,
+  archStr?: string,
+): URL {
   // Get location to download scanner-cli from
 
   // Not in default to avoid populating it for non scanner-cli users
   const scannerCliMirror = properties[ScannerProperty.SonarScannerCliMirror] ?? SCANNER_CLI_MIRROR;
-  const version = semver.coerce(versionStr);
-  if (!version) {
-    throw new Error(`Version "${versionStr}" does not have a correct format."`);
-  }
-  const arch = version.compare('6.1.0') >= 0 ? '-x64' : '';
 
-  const scannerCliFileName =
-    'sonar-scanner-cli-' + versionStr + '-' + normalizePlatformName() + arch + '.zip';
+  const archSuffix = archStr ? `-${archStr}` : '';
+  const scannerCliFileName = `sonar-scanner-cli-${versionStr}-${normalizePlatformName()}${archSuffix}.zip`;
   return new URL(scannerCliFileName, scannerCliMirror);
 }
 
 export async function downloadScannerCli(properties: ScannerProperties): Promise<string> {
-  const version = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
-  if (!/^[\d.]+$/.test(version)) {
-    throw new Error(`Version "${version}" does not have a correct format."`);
+  const versionStr = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
+  const version = semver.coerce(versionStr);
+  if (!version) {
+    throw new Error(`Version "${versionStr}" does not have a correct format."`);
   }
+  const archStr = version.compare('6.1.0') >= 0 ? 'x64' : undefined;
+  const archSuffix = archStr ? `-${archStr}` : '';
 
   // Build paths
   const binExt = normalizePlatformName() === 'windows' ? '.bat' : '';
-  const dirName = `sonar-scanner-${version}-${normalizePlatformName()}`;
+  const dirName = `sonar-scanner-${versionStr}-${normalizePlatformName()}${archSuffix}`;
   const installDir = path.join(properties[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH);
   const archivePath = path.join(installDir, `${dirName}.zip`);
   const binPath = path.join(installDir, dirName, 'bin', `sonar-scanner${binExt}`);
@@ -89,7 +91,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   await fsExtra.ensureDir(installDir);
 
   // Add basic auth credentials when used in the UR
-  const scannerCliUrl = getScannerCliUrl(properties, version);
+  const scannerCliUrl = getScannerCliUrl(properties, versionStr, archStr);
   let overrides: AxiosRequestConfig | undefined;
   if (scannerCliUrl.username && scannerCliUrl.password) {
     overrides = {
