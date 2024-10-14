@@ -47,6 +47,14 @@ const MOCK_PROPERTIES = {
   [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION,
 };
 
+const SCANNER_CLI_VERSION_NO_ARCH = '6.0.0';
+const MOCK_PROPERTIES_NO_ARCH = {
+  [ScannerProperty.SonarToken]: 'token',
+  [ScannerProperty.SonarHostUrl]: 'http://localhost:9000',
+  [ScannerProperty.SonarUserHome]: 'path/to/user/home',
+  [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION_NO_ARCH,
+};
+
 beforeEach(() => {
   childProcessHandler.reset();
 });
@@ -65,12 +73,27 @@ describe('scanner-cli', () => {
       const scannerBinPath = path.join(
         MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
         SCANNER_CLI_INSTALL_PATH,
-        `sonar-scanner-${SCANNER_CLI_VERSION}-linux/bin/sonar-scanner`,
+        `sonar-scanner-${SCANNER_CLI_VERSION}-linux-x64/bin/sonar-scanner`,
       );
       const stub = sinon.stub(process, 'platform').value('linux');
       jest.spyOn(fsExtra, 'exists').mockImplementation(_path => Promise.resolve(true));
 
       expect(await downloadScannerCli(MOCK_PROPERTIES)).toBe(scannerBinPath);
+      expect(download).not.toHaveBeenCalled();
+
+      stub.restore();
+    });
+
+    it('should use already downloaded version without arch', async () => {
+      const scannerBinPath = path.join(
+        MOCK_PROPERTIES_NO_ARCH[ScannerProperty.SonarUserHome],
+        SCANNER_CLI_INSTALL_PATH,
+        `sonar-scanner-${SCANNER_CLI_VERSION_NO_ARCH}-linux/bin/sonar-scanner`,
+      );
+      const stub = sinon.stub(process, 'platform').value('linux');
+      jest.spyOn(fsExtra, 'exists').mockImplementation(_path => Promise.resolve(true));
+
+      expect(await downloadScannerCli(MOCK_PROPERTIES_NO_ARCH)).toBe(scannerBinPath);
       expect(download).not.toHaveBeenCalled();
 
       stub.restore();
@@ -86,7 +109,7 @@ describe('scanner-cli', () => {
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
-          `sonar-scanner-${SCANNER_CLI_VERSION}-linux/bin/sonar-scanner`,
+          `sonar-scanner-${SCANNER_CLI_VERSION}-linux-x64/bin/sonar-scanner`,
         ),
       );
       expect(download).toHaveBeenLastCalledWith(
@@ -94,7 +117,7 @@ describe('scanner-cli', () => {
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
-          `sonar-scanner-${SCANNER_CLI_VERSION}-linux.zip`,
+          `sonar-scanner-${SCANNER_CLI_VERSION}-linux-x64.zip`,
         ),
         undefined,
       );
@@ -102,7 +125,41 @@ describe('scanner-cli', () => {
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
-          `sonar-scanner-${SCANNER_CLI_VERSION}-linux.zip`,
+          `sonar-scanner-${SCANNER_CLI_VERSION}-linux-x64.zip`,
+        ),
+        path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
+      );
+
+      stub.restore();
+    });
+
+    it('should download SonarScanner CLI if it does not exist on Unix without arch', async () => {
+      jest.spyOn(fsExtra, 'exists').mockImplementation(_path => Promise.resolve(false));
+      const stub = sinon.stub(process, 'platform').value('linux');
+
+      const binPath = await downloadScannerCli(MOCK_PROPERTIES_NO_ARCH);
+
+      expect(binPath).toBe(
+        path.join(
+          MOCK_PROPERTIES_NO_ARCH[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          `sonar-scanner-${SCANNER_CLI_VERSION_NO_ARCH}-linux/bin/sonar-scanner`,
+        ),
+      );
+      expect(download).toHaveBeenLastCalledWith(
+        `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_CLI_VERSION_NO_ARCH}-linux.zip`,
+        path.join(
+          MOCK_PROPERTIES_NO_ARCH[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          `sonar-scanner-${SCANNER_CLI_VERSION_NO_ARCH}-linux.zip`,
+        ),
+        undefined,
+      );
+      expect(extractArchive).toHaveBeenLastCalledWith(
+        path.join(
+          MOCK_PROPERTIES_NO_ARCH[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          `sonar-scanner-${SCANNER_CLI_VERSION_NO_ARCH}-linux.zip`,
         ),
         path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
       );
@@ -121,7 +178,7 @@ describe('scanner-cli', () => {
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
-          `sonar-scanner-${SCANNER_CLI_VERSION}-windows.zip`,
+          `sonar-scanner-${SCANNER_CLI_VERSION}-windows-x64.zip`,
         ),
         undefined,
       );
@@ -129,7 +186,7 @@ describe('scanner-cli', () => {
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
-          `sonar-scanner-${SCANNER_CLI_VERSION}-windows.zip`,
+          `sonar-scanner-${SCANNER_CLI_VERSION}-windows-x64.zip`,
         ),
         path.join(MOCK_PROPERTIES[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH),
       );
@@ -137,7 +194,7 @@ describe('scanner-cli', () => {
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
-          `sonar-scanner-${SCANNER_CLI_VERSION}-windows/bin/sonar-scanner.bat`,
+          `sonar-scanner-${SCANNER_CLI_VERSION}-windows-x64/bin/sonar-scanner.bat`,
         ),
       );
 
@@ -157,7 +214,7 @@ describe('scanner-cli', () => {
         path.join(
           MOCK_PROPERTIES[ScannerProperty.SonarUserHome],
           SCANNER_CLI_INSTALL_PATH,
-          `sonar-scanner-${SCANNER_CLI_VERSION}-windows.zip`,
+          `sonar-scanner-${SCANNER_CLI_VERSION}-windows-x64.zip`,
         ),
         { headers: { Authorization: 'Basic bXlVc2VyOm15UGFzc3dvcmQ=' } },
       );
