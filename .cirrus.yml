@@ -35,7 +35,6 @@ npmrc_script_definition: &NPMRC_SCRIPT_DEFINITION
     - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/test/integration/.npmrc
 
 ec2_instance: &INSTANCE_DEFINITION
-  experimental: true # see https://github.com/cirruslabs/cirrus-ci-docs/issues/1051
   region: eu-central-1
   type: t3.medium
   image: base-windows-jdk17-v*
