@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
 import AdmZip from 'adm-zip';
 import crypto from 'crypto';
 import fsExtra from 'fs-extra';
@@ -62,15 +61,19 @@ export async function extractArchive(fromPath: string, toPath: string) {
         // Create the full path for the file
         const filePath = path.join(toPath, header.name);
 
-        // Ensure the directory exists
+        // Ensure the parent directory exists
         await fsExtra.ensureDir(path.dirname(filePath));
 
+        // If the file is a directory, don't write it to disk
+        if (header.type === 'directory') {
+          next();
+          stream.resume();
+          return;
+        }
+
         stream.pipe(fsExtra.createWriteStream(filePath, { mode: header.mode }));
-
-        // end of file, move onto next file
-        stream.on('end', next);
-
-        stream.resume(); // just auto drain the stream
+        stream.on('end', next); // End of file, move onto next file
+        stream.resume(); // Auto drain the stream
       });
 
       extract.on('finish', () => {
