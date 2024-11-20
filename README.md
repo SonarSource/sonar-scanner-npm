@@ -1,10 +1,10 @@
-# NPM module to run SonarQube/SonarCloud analyses
+# NPM module to run SonarQube Server and Cloud analyses
 
-`sonarqube-scanner` makes it very easy to trigger [SonarQube](https://www.sonarqube.org)
-/ [SonarCloud](https://sonarcloud.io) analyses on a JavaScript code base, without needing
+`sonarqube-scanner` makes it very easy to trigger SonarQube [Server](https://www.sonarqube.org)
+and [Cloud](https://sonarcloud.io) analyses on a JavaScript code base, without needing
 to install any specific tool or (Java) runtime.
 
-This module is analyzed on SonarCloud.
+This module is analyzed on SonarQube Cloud.
 
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=alert_status)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=sqale_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=reliability_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Security](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=security_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Releases](https://img.shields.io/github/release/SonarSource/sonar-scanner-npm.svg)](https://github.com/SonarSource/sonar-scanner-npm/releases)
 
@@ -65,8 +65,8 @@ scanner(
 **Arguments**
 
 - `parameters` _Map_
-  - `serverUrl` _String_ (optional) The URL of the SonarQube server. Defaults to https://sonarcloud.io
-  - `token` _String_ (optional) The token used to connect to the SonarQube server v10+ or SonarCloud. Empty by default.
+  - `serverUrl` _String_ (optional) The URL of the SonarQube Server or Cloud host. Defaults to https://sonarcloud.io
+  - `token` _String_ (optional) The token used to connect to the SonarQube Server v10+ or SonarQube Cloud. Empty by default.
   - `options` _Map_ (optional) Used to pass extra parameters for the analysis. See the [official documentation](http://redirect.sonarsource.com/doc/analysis-parameters.html) for more details.
 - `callback` _Function_ (optional)
   Callback (the execution of the analysis is asynchronous).
@@ -76,7 +76,7 @@ scanner(
 _Prerequisite: you've installed the package globally._
 
 If you want to run an analysis without having to configure anything in the first place, simply run the `sonar-scanner` command. The following
-example assumes that you have installed SonarQube locally:
+example assumes that you have installed SonarQube Server locally:
 
 ```
 cd my-project
