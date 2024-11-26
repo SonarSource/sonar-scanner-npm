@@ -60,8 +60,8 @@ async function extractTruststoreCerts(p12Base64: string, password: string = ''):
 
 export async function getHttpAgents(
   properties: ScannerProperties,
-): Promise<Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent'>> {
-  const agents: Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent'> = {};
+): Promise<Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent' | 'proxy'>> {
+  const agents: Pick<AxiosRequestConfig, 'httpAgent' | 'httpsAgent' | 'proxy'> = {};
   const proxyUrl = getProxyUrl(properties);
 
   // Accumulate https agent options
@@ -94,6 +94,7 @@ export async function getHttpAgents(
   if (proxyUrl) {
     agents.httpsAgent = new HttpsProxyAgent({ proxy: proxyUrl.toString(), ...httpsAgentOptions });
     agents.httpAgent = new HttpProxyAgent({ proxy: proxyUrl.toString() });
+    agents.proxy = false; // SCANNPM-58 Avoid conflicts between axios's proxy option and custom http(s) agents
   } else if (Object.keys(httpsAgentOptions).length > 0) {
     // Only create an agent if there are options
     agents.httpsAgent = new https.Agent({ ...httpsAgentOptions });
