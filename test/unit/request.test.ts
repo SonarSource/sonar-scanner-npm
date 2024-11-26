@@ -48,6 +48,7 @@ describe('request', () => {
         expect(agents.httpAgent?.proxy.toString()).toBe('http://proxy.com/');
         expect(agents.httpsAgent).toBeInstanceOf(HttpsProxyAgent);
         expect(agents.httpsAgent?.proxy.toString()).toBe('http://proxy.com/');
+        expect(agents.proxy).toBe(false);
       });
 
       it('should not define agents when no proxy is provided', async () => {
@@ -56,6 +57,7 @@ describe('request', () => {
         });
         expect(agents.httpAgent).toBeUndefined();
         expect(agents.httpsAgent).toBeUndefined();
+        expect(agents.proxy).toBeUndefined();
         expect(agents).toEqual({});
       });
     });
@@ -90,12 +92,13 @@ describe('request', () => {
         const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-invalid.p12');
         const truststorePass = 'password';
 
-        const { httpsAgent } = await getHttpAgents({
+        const { proxy, httpsAgent } = await getHttpAgents({
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
           [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
         });
 
+        expect(proxy).toBeUndefined();
         expect(httpsAgent).toBeUndefined();
         expect(logging.log).toHaveBeenCalledWith(
           logging.LogLevel.WARN,
@@ -108,12 +111,13 @@ describe('request', () => {
         const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-empty.p12');
         const truststorePass = 'password';
 
-        const { httpsAgent } = await getHttpAgents({
+        const { proxy, httpsAgent } = await getHttpAgents({
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
           [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
         });
 
+        expect(proxy).toBeUndefined();
         const ca = httpsAgent?.options.ca as string[];
         expect(ca).toHaveLength(0);
       });
@@ -123,12 +127,13 @@ describe('request', () => {
         const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
         const keystorePass = 'password';
 
-        const { httpsAgent } = await getHttpAgents({
+        const { proxy, httpsAgent } = await getHttpAgents({
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerKeystorePath]: keystorePath,
           [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
         });
 
+        expect(proxy).toBeUndefined();
         expect(httpsAgent?.options.pfx).toEqual(fsExtra.readFileSync(keystorePath));
         expect(httpsAgent?.options.passphrase).toBe(keystorePass);
       });
@@ -146,7 +151,7 @@ describe('request', () => {
       const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
       const keystorePass = 'password';
 
-      const { httpsAgent } = await getHttpAgents({
+      const { httpsAgent, proxy } = await getHttpAgents({
         [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
         [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
@@ -154,6 +159,8 @@ describe('request', () => {
         [ScannerProperty.SonarScannerKeystorePath]: keystorePath,
         [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
       });
+
+      expect(proxy).toBe(false);
 
       const ca = httpsAgent?.options.ca as string[];
       expect(ca).toHaveLength(1);
