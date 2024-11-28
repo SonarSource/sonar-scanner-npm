@@ -160,19 +160,24 @@ describe('scanner-engine', () => {
         } as unknown as ChildProcess['stdin'],
       });
 
+      const properties = {
+        ...MOCKED_PROPERTIES,
+        [ScannerProperty.SonarScannerJavaOptions]: '-Xmx512m',
+      };
+
       await runScannerEngine(
         'java',
         '/some/path/to/scanner-engine',
         {
           jvmOptions: ['-Dsome.custom.opt=123'],
         },
-        MOCKED_PROPERTIES,
+        properties,
       );
 
       expect(write).toHaveBeenCalledTimes(1);
       expect(write).toHaveBeenCalledWith(
         JSON.stringify({
-          scannerProperties: Object.entries(MOCKED_PROPERTIES).map(([key, value]) => ({
+          scannerProperties: Object.entries(properties).map(([key, value]) => ({
             key,
             value,
           })),
@@ -180,6 +185,7 @@ describe('scanner-engine', () => {
       );
       expect(spawn).toHaveBeenCalledWith('java', [
         '-Dsome.custom.opt=123',
+        '-Xmx512m',
         '-jar',
         '/some/path/to/scanner-engine',
       ]);
