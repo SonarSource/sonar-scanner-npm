@@ -225,8 +225,8 @@ function getCommandLineProperties(cliArgs?: CliArgs): ScannerProperties {
 
   // Parse CLI args (eg: -Dsonar.token=xxx)
   for (const arg of define) {
-    const [key, value] = arg.split('=');
-    properties[key] = value;
+    const [key, ...value] = arg.split('=');
+    properties[key] = value.join('=');
   }
 
   return properties;
