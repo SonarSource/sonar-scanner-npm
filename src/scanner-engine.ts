@@ -107,6 +107,9 @@ export function runScannerEngine(
   const args = [
     ...proxyUrlToJavaOptions(properties),
     ...(scanOptions.jvmOptions ?? []),
+    ...(properties[ScannerProperty.SonarScannerJavaOptions]
+      ? properties[ScannerProperty.SonarScannerJavaOptions].split(' ')
+      : []),
     '-jar',
     scannerEnginePath,
   ];
