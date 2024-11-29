@@ -53,6 +53,7 @@ function getDefaultProperties(): ScannerProperties {
       process.env.HOME ?? process.env.USERPROFILE ?? '',
       SONAR_DIR_DEFAULT,
     ),
+    [ScannerProperty.SonarWorkingDirectory]: '.scannerwork',
     [ScannerProperty.SonarScannerOs]: getSupportedOS(),
     [ScannerProperty.SonarScannerArch]: getArch(),
   };
