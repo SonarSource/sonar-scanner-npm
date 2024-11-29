@@ -41,7 +41,7 @@ const MOCKED_PROPERTIES: ScannerProperties = {
 
 const MOCK_CACHE_DIRECTORIES = {
   archivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
-  unarchivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar_extracted',
+  unarchivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar_unzip',
 };
 jest.mock('../../src/constants', () => ({
   ...jest.requireActual('../../src/constants'),
