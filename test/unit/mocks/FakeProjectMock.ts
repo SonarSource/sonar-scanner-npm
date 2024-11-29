@@ -55,6 +55,7 @@ export class FakeProjectMock {
 
   getExpectedProperties() {
     return {
+      'sonar.working.directory': '.scannerwork',
       'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
       'sonar.projectBaseDir': this.projectPath,
       'sonar.scanner.bootstrapStartTime': this.startTimeMs.toString(),
