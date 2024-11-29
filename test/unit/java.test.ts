@@ -157,7 +157,7 @@ describe('java', () => {
     describe('when the JRE is not cached', () => {
       const mockCacheDirectories = {
         archivePath: '/mocked-archive-path',
-        unarchivePath: '/mocked-archive-path_extracted',
+        unarchivePath: '/mocked-archive-path_unzip',
       };
       beforeEach(() => {
         jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue(null);

@@ -116,6 +116,7 @@ describe('getProperties', () => {
           options: {
             'sonar.projectKey': 'use-this-project-key',
             'sonar.scanner.os': 'some-os',
+            'sonar.working.directory': '.override',
           },
         },
         projectHandler.getStartTime(),
@@ -133,6 +134,7 @@ describe('getProperties', () => {
         'sonar.projectVersion': '1.0-SNAPSHOT',
         'sonar.sources': 'the-sources',
         'sonar.scanner.os': 'some-os',
+        'sonar.working.directory': '.override',
       });
     });
 
