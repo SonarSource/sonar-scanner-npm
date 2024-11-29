@@ -34,6 +34,7 @@ export enum ScannerProperty {
   SonarExclusions = 'sonar.exclusions',
   SonarHostUrl = 'sonar.host.url',
   SonarUserHome = 'sonar.userHome',
+  SonarWorkingDirectory = 'sonar.working.directory',
   SonarScannerApiBaseUrl = 'sonar.scanner.apiBaseUrl',
   SonarScannerOs = 'sonar.scanner.os',
   SonarScannerArch = 'sonar.scanner.arch',
