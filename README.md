@@ -179,16 +179,18 @@ or alternatively set variable in `.npmrc`
 
 ## Download behind proxy
 
-In order to be able to download binaries when you're behind a proxy it will be enough to set the `http_proxy` or `https_proxy` environment variable. Both support proxies using plain HTTP or HTTPS.
+We support the environment variables `http_proxy`/`https_proxy`/`no_proxy` to be able to download binaries behind a proxy.
 
 **Example:**
 
 ```shell
 export http_proxy=http://mycompanyproxy.com:PORT
 export https_proxy=http://mycompanyproxy.com:PORT
+#export no_proxy=.some-domain.io # (Optional)
 
 export http_proxy=https://encryptedcompanyproxy.com:PORT
 export https_proxy=https://encryptedcompanyproxy.com:PORT
+#export no_proxy=.some-domain.io # (Optional)
 ```
 
 **Behind authenticated proxy:**
@@ -196,9 +198,11 @@ export https_proxy=https://encryptedcompanyproxy.com:PORT
 ```shell
 export http_proxy=http://user:password@mycompanyproxy.com:PORT
 export https_proxy=http://user:password@mycompanyproxy.com:PORT
+#export no_proxy=.some-domain.io # (Optional)
 
 export http_proxy=https://user:password@encryptedcompanyproxy.com:PORT
 export https_proxy=https://user:password@encryptedcompanyproxy.com:PORT
+#export no_proxy=.some-domain.io # (Optional)
 ```
 
 ## License
