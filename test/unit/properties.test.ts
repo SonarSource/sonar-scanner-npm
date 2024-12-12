@@ -686,22 +686,17 @@ describe('getProperties', () => {
       projectHandler.reset('fake_project_with_sonar_properties');
       projectHandler.setEnvironmentVariables({});
 
-      const properties = getProperties(
-        {
-          serverUrl: 'http://localhost/sonarqube',
-        },
-        projectHandler.getStartTime(),
-      );
+      const properties = getProperties({}, projectHandler.getStartTime());
 
       expect(properties).toEqual({
         ...projectHandler.getExpectedProperties(),
-        'sonar.host.url': 'http://localhost/sonarqube',
-        'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
+        'sonar.host.url': 'http://localhost:1234',
+        'sonar.scanner.apiBaseUrl': 'http://localhost:1234/api/v2',
         'sonar.scanner.internal.isSonarCloud': 'false',
         'sonar.exclusions': '**/node_modules/**,**/docs-dist/**',
         'sonar.scanner.dummy.path': 'C:path\toproject',
         'sonar.scanner.dummy.space.around.eq': 'value',
-        'sonar.scanner.dummy.whitespace.at.beginning': ' value',
+        'sonar.scanner.dummy.whitespace.at.beginning': 'value', // SCANNPM-44 Leading whitespaces are NOT preserved
         'sonar.scanner.empty.property': '',
       });
     });

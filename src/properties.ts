@@ -354,7 +354,7 @@ function getBootstrapperProperties(startTimestampMs: number): ScannerProperties 
  * Get endpoint properties from scanner properties.
  */
 export function getHostProperties(properties: ScannerProperties): ScannerProperties {
-  const sonarHostUrl = properties[ScannerProperty.SonarHostUrl]?.replace(/\/$/, '');
+  const sonarHostUrl = properties[ScannerProperty.SonarHostUrl]?.replace(/\/$/, '')?.trim();
   const sonarApiBaseUrl = properties[ScannerProperty.SonarScannerApiBaseUrl];
   const sonarCloudSpecified =
     properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
@@ -427,6 +427,8 @@ function normalizeProperties(properties: ScannerProperties) {
       properties[key] = '';
     } else if (typeof value === 'undefined') {
       delete properties[key];
+    } else {
+      properties[key] = value.toString().trim();
     }
   }
 
