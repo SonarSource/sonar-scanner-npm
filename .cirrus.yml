@@ -34,11 +34,12 @@ npmrc_script_definition: &NPMRC_SCRIPT_DEFINITION
     - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/tools/orchestrator/.npmrc
     - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/test/integration/.npmrc
 
-ec2_instance: &INSTANCE_DEFINITION
-  region: eu-central-1
-  type: t3.medium
-  image: base-windows-jdk17-v*
-  platform: windows
+ec2_instance_definition: &INSTANCE_DEFINITION
+  ec2_instance:
+    region: eu-central-1
+    type: t3.medium
+    image: base-windows-jdk17-v*
+    platform: windows
 
 qa_script_definition: &QA_SCRIPT_DEFINITION
   setup_script:
