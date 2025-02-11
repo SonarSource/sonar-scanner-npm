@@ -3,7 +3,7 @@
 set -euo pipefail
 
 PROJECT=sonar-scanner-npm
-VERSION=$(grep version package.json | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+VERSION="0.0.0"
 source cirrus-env BUILD
 npm version --no-git-tag-version --allow-same-version "$VERSION-$BUILD_NUMBER"
 

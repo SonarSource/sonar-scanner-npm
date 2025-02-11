@@ -11,11 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_NAME: ${{ github.event.release.name }}
       REPOX_URL: 'https://repox.jfrog.io/artifactory'
       ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
       NPM_REPOSITORY: 'sonarsource-npm-public'
-      SCOPE: ''
-      PACKAGE: 'sonarqube-scanner'
+      SCOPE: '@sonar'
+      PACKAGE: 'scan'
     steps:
       - name: Vault
         id: secrets
@@ -41,39 +42,24 @@ jobs:
       - name: Get the version
         id: get_version
         run: |
-          IFS=. read -r major minor patch build <<< "$RELEASE_TAG"
-          echo "build=${build}" >> $GITHUB_OUTPUT
+          IFS=. read -r major minor patch <<< "$RELEASE_NAME"
           echo "version=${major}.${minor}.${patch}" >> $GITHUB_OUTPUT
 
       - name: Download Artifacts
-        uses: SonarSource/gh-action_release/download-build@master
-        with:
-          build-number: ${{ steps.get_version.outputs.build }}
-          local-repo-dir: ${{ steps.local_repo.outputs.dir }}
-          remote-repo: sonarsource-npm-public-builds
-          flat-download: true
-          download-checksums: false
-
-      - name: Promote npm package
-        env:
-          REPOX_URL: ${{ fromJSON(steps.secrets.outputs.vault).repox_url }}
-          PROMOTE_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
-          CI: true
+        working-directory: ${{ steps.local_repo.outputs.dir }}
         run: |
-          jfrog config add repox --artifactory-url $REPOX_URL --access-token $PROMOTE_ACCESS_TOKEN
-          jfrog config use repox
-          jfrog rt bpr --status released ${{ github.event.repository.name }} ${{ steps.get_version.outputs.build }} sonarsource-npm-public-releases
+          jf rt dl "sonarsource-npm-public-dev/@sonar/scan/-/@sonar/scan-0.0.0-${GITHUB_SHA}.tgz" --flat
+          ls -la
 
       - name: Extract .tgz package
         working-directory: ${{ steps.local_repo.outputs.dir }}
         run: |
-          file=$(find . -name "*.tgz" -printf "%f")
           mkdir package
-          tar -xzf "$file" -C package --strip-components=1
+          tar -xzf "scan-0.0.0-${GITHUB_SHA}.tgz" -C package --strip-components=1
 
       - name: Update package version
         working-directory: ${{ steps.local_repo.outputs.dir }}/package
-        run: npm version --no-git-tag-version ${{ steps.get_version.outputs.version }}
+        run: npm version --no-git-tag-version ${RELEASE_TAG}
 
       - name: Use NPM registry configuration
         run: mv .github/workflows/.npmrc ~/.npmrc
@@ -83,4 +69,6 @@ jobs:
         env:
           NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
         run: |
-          npm publish
+          npm publish --dry-run
+          echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
+          npm publish --dry-run

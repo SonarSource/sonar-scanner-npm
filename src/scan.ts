@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { version } from '../package.json';
 import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
 import { fetchJRE, serverSupportsJREProvisioning } from './java';
 import { LogLevel, log, setLogLevel } from './logging';
@@ -62,7 +61,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   await initializeAxios(properties);
 
   log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
-  log(LogLevel.INFO, `Version: ${version}`);
+  log(LogLevel.INFO, `Version: ${process.env.npm_package_version}`);
 
   log(LogLevel.DEBUG, 'Check if Server supports JRE provisioning');
   const supportsJREProvisioning = await serverSupportsJREProvisioning(properties);

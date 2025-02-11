@@ -46,6 +46,10 @@ export class FakeProjectMock {
   }
 
   setEnvironmentVariables(values: { [key: string]: string }) {
+    if (values.npm_package_version === undefined) {
+      values.npm_package_version = '1.2.3';
+    }
+
     sinon.stub(process, 'env').value(values);
   }
 

@@ -20,7 +20,8 @@
 
 import { scan } from './scan';
 import { program } from 'commander';
-import { version } from '../package.json';
+
+const version = process.env.npm_package_version!;
 
 program
   .option('-D, --define <property=value...>', 'Define property')

@@ -22,7 +22,6 @@ import path from 'path';
 import { getProperties as getPropertiesFile } from 'properties-file';
 import { getProxyForUrl } from 'proxy-from-env';
 import slugify from 'slugify';
-import { version } from '../package.json';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
   ENV_TO_PROPERTY_NAME,
@@ -342,7 +341,7 @@ function getEnvironmentProperties() {
 function getBootstrapperProperties(startTimestampMs: number): ScannerProperties {
   return {
     'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
-    'sonar.scanner.appVersion': version,
+    'sonar.scanner.appVersion': process.env.npm_package_version!,
     'sonar.scanner.bootstrapStartTime': startTimestampMs.toString(),
     // These cache statuses are set during the bootstrapping process.
     // We already set them here to prevent them from being overridden.

@@ -24,7 +24,7 @@ const path = require('path');
 const LICENSE_HEADER = fs.readFileSync(path.resolve(__dirname, 'file-header.ts')).toString().trim();
 
 // Read every .js file in the ../build directory
-const directoryPath = path.resolve(__dirname, '../build/src');
+const directoryPath = path.resolve(__dirname, '../build');
 
 const fileNames = fs.readdirSync(directoryPath);
 for (const fileName of fileNames) {

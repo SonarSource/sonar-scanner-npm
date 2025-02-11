@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VERSION=$(grep version package.json | head -1  | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+VERSION="0.0.0"
 
 source cirrus-env QA
 
@@ -13,4 +13,4 @@ source cirrus-env QA
 
 cd test/integration
 npm install
-npm install --no-save "https://$ARTIFACTORY_PRIVATE_USERNAME:$ARTIFACTORY_PRIVATE_PASSWORD@repox.jfrog.io/artifactory/$ARTIFACTORY_DEPLOY_REPO/sonarqube-scanner/-/sonarqube-scanner-$VERSION-$BUILD_NUMBER.tgz"
+npm install --no-save "https://$ARTIFACTORY_PRIVATE_USERNAME:$ARTIFACTORY_PRIVATE_PASSWORD@repox.jfrog.io/artifactory/$ARTIFACTORY_DEPLOY_REPO/@sonar/scan/-/@sonar/scan-$VERSION-$COMMIT_ID.tgz"

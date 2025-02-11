@@ -6,7 +6,7 @@ set -x
 
 source cirrus-env PROMOTE
 
-PROJECT_VERSION=$(grep version package.json | head -1  | awk -F: '{ print $2 }' | sed 's/[",]//g').$BUILD_NUMBER
+PROJECT_VERSION=0.0.0.$BUILD_NUMBER
 export PROJECT_VERSION
 
 export SHELLOPTS

@@ -31,10 +31,6 @@ import { FakeProjectMock } from './mocks/FakeProjectMock';
 
 jest.mock('../../src/logging');
 
-jest.mock('../../package.json', () => ({
-  version: '1.2.3',
-}));
-
 const projectHandler = new FakeProjectMock();
 
 afterEach(() => {

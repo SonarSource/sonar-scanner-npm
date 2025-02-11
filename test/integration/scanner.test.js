@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const { scan } = require('sonarqube-scanner');
+const { scan } = require('@sonar/scan');
 const path = require('path');
 const { assert } = require('chai');
 const {

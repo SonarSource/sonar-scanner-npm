@@ -19,8 +19,8 @@
  */
 const path = require('path');
 
-// Regular users will call 'require('sonarqube-scanner')' - but not here: eat your own dog food! :-)
-const scanner = require('../build/src').scan;
+// Regular users will call 'require('@sonar/scan')' - but not here: eat your own dog food! :-)
+const scanner = require('../build').scan;
 
 // We just run an analysis and push it to SonarCloud
 // (No need to pass the server URL and the token, we're using the Travis
