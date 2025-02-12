@@ -1,28 +1,4 @@
 {
-  "name": "@sonar/scan",
-  "description": "SonarQube/SonarCloud Scanner for the JavaScript world",
-  "homepage": "https://github.com/SonarSource/sonar-scanner-npm",
-  "author": {
-    "name": "Fabrice Bellingard",
-    "email": "fabrice.bellingard@sonarsource.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SonarSource/sonar-scanner-npm.git"
-  },
-  "bugs": {
-    "url": "https://github.com/SonarSource/sonar-scanner-npm/issues"
-  },
-  "license": "LGPL-3.0-only",
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
-  "bin": {
-    "sonar": "bin/sonar-scanner",
-    "sonar-scanner": "bin/sonar-scanner"
-  },
-  "engines": {
-    "node": ">= 18"
-  },
   "dependencies": {
     "adm-zip": "0.5.12",
     "axios": "1.7.7",
@@ -31,6 +7,7 @@
     "hpagent": "1.2.0",
     "jest-sonar-reporter": "2.0.0",
     "node-forge": "^1.3.1",
+    "package-manifest-generator": "^1.0.0-alpha.4",
     "properties-file": "3.5.4",
     "proxy-from-env": "^1.1.0",
     "semver": "7.6.0",
@@ -60,17 +37,8 @@
     "ts-jest": "29.1.2",
     "typescript": "5.4.3"
   },
-  "keywords": [
-    "sonarqube",
-    "sonarcloud",
-    "sonarqube-scanner",
-    "sonarqube-runner",
-    "sonar-scanner",
-    "sonar-runner"
-  ],
   "scripts": {
-    "build": "npm ci && npm run ts-build && npm run check-format && npm run license && npm test && cd tools/orchestrator && npm run build",
-    "ts-build": "tsc && node scripts/fix-comments.js",
+    "build": "tsc && pmg --entries=build/**/*.js --output=build/package.json --version=$VERSION",
     "test": "jest --coverage",
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",
@@ -85,9 +53,5 @@
     "trailingComma": "all",
     "singleQuote": true,
     "arrowParens": "avoid"
-  },
-  "files": [
-    "build/**",
-    "bin/**"
-  ]
+  }
 }

@@ -35,40 +35,37 @@ jobs:
         with:
           node-version: 18
 
-      - name: Create local directory
-        id: local_repo
-        run: echo "dir=$(mktemp -d repo.XXXXXXXX)" >> $GITHUB_OUTPUT
-
-      - name: Get the version
-        id: get_version
+      - name: Setup
         run: |
-          IFS=. read -r major minor patch <<< "$RELEASE_NAME"
-          echo "version=${major}.${minor}.${patch}" >> $GITHUB_OUTPUT
+          npm config set //registry.npmjs.org/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
+          npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
 
-      - name: Download Artifacts
-        working-directory: ${{ steps.local_repo.outputs.dir }}
+      - name: Build the package
         run: |
-          jf rt dl "sonarsource-npm-public-dev/@sonar/scan/-/@sonar/scan-0.0.0-${GITHUB_SHA}.tgz" --flat
-          ls -la
+          npm ci
+          VERSION=${RELEASE_TAG} npm run build
 
-      - name: Extract .tgz package
-        working-directory: ${{ steps.local_repo.outputs.dir }}
+      #      - name: Publish the package to Artifactory
+      #        run: |
+      #          cd build
+      #          npm publish --dry-run
+      #          echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
+      #          npm publish --dry-run
+      #
+      - name: Publish the package to npm
         run: |
-          mkdir package
-          tar -xzf "scan-0.0.0-${GITHUB_SHA}.tgz" -C package --strip-components=1
-
-      - name: Update package version
-        working-directory: ${{ steps.local_repo.outputs.dir }}/package
-        run: npm version --no-git-tag-version ${RELEASE_TAG}
-
-      - name: Use NPM registry configuration
-        run: mv .github/workflows/.npmrc ~/.npmrc
-
-      - name: Publish npm package to npmjs
-        working-directory: ${{ steps.local_repo.outputs.dir }}/package
-        env:
-          NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
-        run: |
+          cd build
+          npm config set //registry.npmjs.org/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
+          npm config list
           npm publish --dry-run
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
           npm publish --dry-run
+
+#      - name: Publish npm package to npmjs
+#        working-directory: ${{ steps.local_repo.outputs.dir }}/package
+#        env:
+#          NPM_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
+#        run: |
+#          npm publish --dry-run
+#          echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
+#          npm publish --dry-run
