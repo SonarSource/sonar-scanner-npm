@@ -341,7 +341,7 @@ function getEnvironmentProperties() {
 function getBootstrapperProperties(startTimestampMs: number): ScannerProperties {
   return {
     'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
-    'sonar.scanner.appVersion': process.env.npm_package_version!,
+    'sonar.scanner.appVersion': '__VERSION__',
     'sonar.scanner.bootstrapStartTime': startTimestampMs.toString(),
     // These cache statuses are set during the bootstrapping process.
     // We already set them here to prevent them from being overridden.

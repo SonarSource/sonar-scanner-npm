@@ -61,9 +61,8 @@ describe('scan', () => {
 
   it('should output the current version of the scanner', async () => {
     jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
-    process.env.npm_package_version = 'MOCK.VERSION';
     await scan({});
-    expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: MOCK.VERSION');
+    expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: __VERSION__');
   });
 
   it('should output the current platform', async () => {

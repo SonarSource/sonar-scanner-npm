@@ -28,12 +28,6 @@ container_definition: &CONTAINER_DEFINITION
   region: eu-central-1
   namespace: default
 
-npmrc_script_definition: &NPMRC_SCRIPT_DEFINITION
-  npmrc_script:
-    - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/.npmrc
-    - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/tools/orchestrator/.npmrc
-    - cp .cirrus/npmrc $CIRRUS_WORKING_DIR/test/integration/.npmrc
-
 ec2_instance_definition: &INSTANCE_DEFINITION
   ec2_instance:
     region: eu-central-1
@@ -42,13 +36,17 @@ ec2_instance_definition: &INSTANCE_DEFINITION
     platform: windows
 
 qa_script_definition: &QA_SCRIPT_DEFINITION
+  build_cache:
+    folder: build
+    fingerprint_script: echo $CIRRUS_BUILD_ID
   setup_script:
-    - COMMIT_ID=$(git rev-parse HEAD) ./scripts/qa.sh
-    - cd tools/orchestrator && npm run build
+    - rm node_modules -rf
+    - (cd build && npm pack)
+    - cp build/sonar-scan-SNAPSHOT.tgz test/integration
+    - (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
+    - (cd tools/orchestrator && npm run build)
   test_script:
-    # required by orchestrator
-    - export ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN
-    - npm run test-integration
+    - ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN npm run test-integration
 
 build_task:
   eks_container:
@@ -57,46 +55,39 @@ build_task:
     memory: 8G
   env:
     SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
-  <<: *NPMRC_SCRIPT_DEFINITION
-  build_script:
-    - if [ -n "${CIRRUS_BASE_BRANCH}" ]; then git fetch origin "${CIRRUS_BASE_BRANCH}"; fi
-    - npm run build
+  build_cache:
+    folder: build
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+    populate_script:
+      - npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=${ARTIFACTORY_ACCESS_TOKEN}
+      - npm ci
+      - npm run build
+  test_script:
+    - npm run test
   sonarcloud_analysis_script:
     - node ./scripts/ci-analysis.js
-  publish_script:
-    - PROJECT=sonar-scanner-npm
-    - VERSION="0.0.0"
-    - source cirrus-env BUILD
-    - COMMIT_ID=$(git rev-parse HEAD)
-    - npm version --no-git-tag-version --allow-same-version "$VERSION-$COMMIT_ID"
-    - jfrog c add repox --url https://repox.jfrog.io/ --access-token $ARTIFACTORY_DEPLOY_ACCESS_TOKEN
-    - jfrog c use repox
-    - jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPO
-    # upload to repox QA repository
-    - jfrog npm publish --build-name=$PROJECT --build-number="$BUILD_NUMBER"
-    # add VCS information to build-info
-    - jfrog rt build-add-git $PROJECT "$BUILD_NUMBER"
-    # publish build-info
-    - jfrog rt build-publish $PROJECT "$BUILD_NUMBER"
 
-mend_task:
-  depends_on:
-    - build
-  eks_container:
-    <<: *CONTAINER_DEFINITION
-    cpu: 2
-    memory: 2G
-  # run only on master and long-term branches
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && ($CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*")
-  env:
-    #    TODO replace secret with vault
-    WS_APIKEY: ENCRYPTED[!3929c6148b9dfc751a2d17c590b15d755f82cd9c108f2de5f24a5b32f2a0c26144e921fab7e2c959fc2824d6d6d1550d!]
-  run_script:
-    - .cirrus/run_ws_scan.sh
-  allow_failures: 'true'
-  always:
-    mend_artifacts:
-      path: 'whitesource/**/*'
+# todo: disabled for now until we figure out how to include it in the release action
+#mend_task:
+#  depends_on:
+#    - build
+#  eks_container:
+#    <<: *CONTAINER_DEFINITION
+#    cpu: 2
+#    memory: 2G
+#  only_if: $CIRRUS_USER_COLLABORATOR == 'true'
+#  env:
+#    #    TODO replace secret with vault
+#    WS_APIKEY: ENCRYPTED[!3929c6148b9dfc751a2d17c590b15d755f82cd9c108f2de5f24a5b32f2a0c26144e921fab7e2c959fc2824d6d6d1550d!]
+#  run_script:
+#    - export VERSION=$(git rev-parse HEAD)
+#    - export WS_PROJECTNAME="${CIRRUS_REPO_FULL_NAME} ${VERSION}"
+#    - export BUILD_NUMBER=${VERSION}
+#    - source ws_scan.sh
+#  allow_failures: 'true'
+#  always:
+#    mend_artifacts:
+#      path: 'whitesource/**/*'
 
 qa_task:
   depends_on:
@@ -106,7 +97,6 @@ qa_task:
     <<: *CONTAINER_DEFINITION
     cpu: 4
     memory: 8G
-  <<: *NPMRC_SCRIPT_DEFINITION
   <<: *QA_SCRIPT_DEFINITION
 
 qa_win_task:
@@ -114,21 +104,4 @@ qa_win_task:
     - build
   <<: *ONLY_SONARSOURCE_QA
   <<: *INSTANCE_DEFINITION
-  <<: *NPMRC_SCRIPT_DEFINITION
   <<: *QA_SCRIPT_DEFINITION
-
-promote_task:
-  depends_on:
-    - qa
-    - qa_win
-  <<: *ONLY_SONARSOURCE_QA
-  eks_container:
-    <<: *CONTAINER_DEFINITION
-    cpu: 1
-    memory: 1G
-  env:
-    ARTIFACTORY_PROMOTE_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
-    GITHUB_TOKEN: VAULT[development/github/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promotion token]
-    ARTIFACTS: sonarqube-scanner:tgz
-  script:
-    - ./scripts/promote.sh

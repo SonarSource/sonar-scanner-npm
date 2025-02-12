@@ -46,10 +46,6 @@ export class FakeProjectMock {
   }
 
   setEnvironmentVariables(values: { [key: string]: string }) {
-    if (values.npm_package_version === undefined) {
-      values.npm_package_version = '1.2.3';
-    }
-
     sinon.stub(process, 'env').value(values);
   }
 
@@ -64,7 +60,7 @@ export class FakeProjectMock {
       'sonar.projectBaseDir': this.projectPath,
       'sonar.scanner.bootstrapStartTime': this.startTimeMs.toString(),
       'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
-      'sonar.scanner.appVersion': '1.2.3',
+      'sonar.scanner.appVersion': '__VERSION__',
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': CacheStatus.Disabled,
       'sonar.userHome': expect.stringMatching(/\.sonar$/),
