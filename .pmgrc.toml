@@ -1,0 +1,34 @@
+[data]
+name = "@sonar/scan"
+version = "SNAPSHOT"
+main = "src/index.js"
+types = "src/index.d.ts"
+description = "SonarQube/SonarCloud Scanner for the JavaScript world"
+homepage = "https://github.com/SonarSource/sonar-scanner-npm"
+license = "LGPL-3.0-only"
+keywords = [
+  "sonarqube",
+  "sonarcloud",
+  "sonarqube-scanner",
+  "sonarqube-runner",
+  "sonar-scanner",
+  "sonar-runner"
+]
+
+[data.author]
+name = "Fabrice Bellingard"
+email = "fabrice.bellingard@sonarsource.com"
+
+[data.repository]
+type = "git"
+url = "git+https://github.com/SonarSource/sonar-scanner-npm.git"
+
+[data.bugs]
+url = "https://github.com/SonarSource/sonar-scanner-npm/issues"
+
+[data.bin]
+sonar = "bin/sonar-scanner.js"
+sonar-scanner = "bin/sonar-scanner.js"
+
+[data.engines]
+node = ">= 18"
