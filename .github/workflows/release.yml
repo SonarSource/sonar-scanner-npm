@@ -49,12 +49,12 @@ jobs:
         run: |
           jfrog config add repox --url https://repox.jfrog.io --access-token ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
           jfrog config use repox
-          jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_REPOSITORY_NAME
-          cd build
-          jfrog npm publish --build-name $BUILD_NAME --build-number $RELEASE_TAG
           jfrog rt build-add-git $BUILD_NAME $RELEASE_TAG
           jfrog rt build-publish $BUILD_NAME $RELEASE_TAG
           jfrog rt build-promote --status released $BUILD_NAME $RELEASE_TAG $ARTIFACTORY_REPOSITORY_NAME
+          cd build
+          jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_REPOSITORY_NAME
+          jfrog npm publish --build-name $BUILD_NAME --build-number $RELEASE_TAG
 
       - name: Publish the package to npm
         run: |
