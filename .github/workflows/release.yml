@@ -40,10 +40,8 @@ jobs:
           cp LICENSE build
           cp README.md build
 
-      - name: Setup JFrog for deploy
-        uses: SonarSource/jfrog-setup-wrapper@907e87c3d2081a98d2ab8cb03284ee6711f1ee83 # tag=3.2.3
-        with:
-          jfrogAccessToken: ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
+      - name: Install JFrog CLI
+        uses: SonarSource/jfrog-setup-wrapper@v3
 
       - name: Publish the package to Artifactory
         run: |
@@ -59,6 +57,7 @@ jobs:
       - name: Publish the package to npm
         run: |
           cd build
-          npm publish --dry-run
+          [ ${{ github.event.release.prerelease }} == true ] && TAG="next" || TAG="latest"
+          npm publish --tag=$TAG --access=public
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
-          npm publish --dry-run
+          npm publish --tag=$TAG --access=public

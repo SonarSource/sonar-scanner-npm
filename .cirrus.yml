@@ -40,7 +40,6 @@ qa_script_definition: &QA_SCRIPT_DEFINITION
     folder: build
     fingerprint_script: echo $CIRRUS_BUILD_ID
   setup_script:
-    - rm node_modules -rf
     - (cd build && npm pack)
     - cp build/sonar-scan-SNAPSHOT.tgz test/integration
     - (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
