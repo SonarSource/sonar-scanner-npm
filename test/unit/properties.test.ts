@@ -31,10 +31,6 @@ import { FakeProjectMock } from './mocks/FakeProjectMock';
 
 jest.mock('../../src/logging');
 
-jest.mock('../../package.json', () => ({
-  version: '1.2.3',
-}));
-
 const projectHandler = new FakeProjectMock();
 
 afterEach(() => {
@@ -192,7 +188,7 @@ describe('getProperties', () => {
         'sonar.projectVersion': '1.0.0',
         'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',coverage/**',
         'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
-        'sonar.scanner.appVersion': '1.2.3',
+        'sonar.scanner.appVersion': '__VERSION__',
       });
     });
 

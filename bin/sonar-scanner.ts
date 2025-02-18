@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  * sonar-scanner-npm
  * Copyright (C) 2022-2024 SonarSource SA
@@ -17,22 +18,4 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-
-const fs = require('fs');
-const path = require('path');
-
-const LICENSE_HEADER = fs.readFileSync(path.resolve(__dirname, 'file-header.ts')).toString().trim();
-
-// Read every .js file in the ../build directory
-const directoryPath = path.resolve(__dirname, '../build/src');
-
-const fileNames = fs.readdirSync(directoryPath);
-for (const fileName of fileNames) {
-  // Read the file, drop the license header, re-prepend it and write the file
-  const filePath = path.join(directoryPath, fileName);
-  const fileContent = fs.readFileSync(filePath, 'utf8');
-  const fileWithoutHeader = fileContent.replace(LICENSE_HEADER, '');
-  const newFileContent = `${LICENSE_HEADER}\n${fileWithoutHeader}`;
-
-  fs.writeFileSync(filePath, newFileContent);
-}
+require('../src/runner');

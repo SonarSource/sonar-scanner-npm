@@ -20,11 +20,10 @@
 
 import { scan } from './scan';
 import { program } from 'commander';
-import { version } from '../package.json';
 
 program
   .option('-D, --define <property=value...>', 'Define property')
-  .version(version, '-v, --version', 'Display version information')
+  .version('__VERSION__', '-v, --version', 'Display version information')
   .option('-X, --debug', 'Produce execution debug output');
 
 export function parseArgs() {

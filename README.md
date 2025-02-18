@@ -16,18 +16,18 @@ _Prerequisite: Node v18+ (for v4 and above)_
 
 _Prerequisite: Node v16+ (for v3, otherwise use sonarqube-scanner v2.9.1)_
 
-This package is available on npm as: `sonarqube-scanner`
+This package is available on npm as: `@sonar/scan`
 
-To add code analysis to your build files, simply add the package to your project dev dependencies:
+To add code analysis to your build files, simply install the package to your project dev dependencies:
 
 ```sh
-npm install -D sonarqube-scanner
+npm install -D @sonar/scan
 ```
 
 To install the scanner globally and be able to run analyses on the command line:
 
 ```sh
-npm install -g sonarqube-scanner
+npm install -g @sonar/scan
 ```
 
 ## Usage: add code analysis to your build files
@@ -38,7 +38,7 @@ The following example shows how to run an analysis on a JavaScript
 project, and pushing the results to a SonarQube instance:
 
 ```javascript
-const scanner = require('sonarqube-scanner').default;
+const scanner = require('@sonar/scan').default;
 
 scanner(
   {
@@ -98,7 +98,7 @@ sonar-scanner
 To run analyses without explicitly installing the scanner, run the following command instead:
 
 ```sh
-npx sonarqube-scanner
+npx @sonar/scan
 ```
 
 Similar to the above, you can specify analysis properties and settings using either a `package.json` file, a `sonar-project.properties` file, or command line arguments.
@@ -114,15 +114,15 @@ It is important to make sure that the SonarScanner `$install_directory/bin` loca
 
 ```javascript
 Error: Local install of SonarScanner not found.
-    at getLocalSonarScannerExecutable (<project_dir>/node_modules/sonarqube-scanner/src/sonar-scanner-executable.js:153:11)
-    at scanUsingCustomScanner (<project_dir>/node_modules/sonarqube-scanner/src/index.js:52:3)
+    at getLocalSonarScannerExecutable (<project_dir>/node_modules/@sonar/scan/src/sonar-scanner-executable.js:153:11)
+    at scanUsingCustomScanner (<project_dir>/node_modules/@sonar/scan/src/index.js:52:3)
 ...
 ```
 
 Once local installation is done, you can replace the 2nd line of the example:
 
 ```javascript
-var scanner = require('sonarqube-scanner').customScanner;
+var scanner = require('@sonar/scan').customScanner;
 ```
 
 ### In my Docker container, the scanner fails with ".../jre/bin/java: not found", how do I solve this?
@@ -207,4 +207,4 @@ export https_proxy=https://user:password@encryptedcompanyproxy.com:PORT
 
 ## License
 
-`sonarqube-scanner` is licensed under the [LGPL v3 License](http://www.gnu.org/licenses/lgpl.txt).
+`@sonar/scan` is licensed under the [LGPL v3 License](http://www.gnu.org/licenses/lgpl.txt).

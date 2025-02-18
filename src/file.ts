@@ -64,13 +64,6 @@ export async function extractArchive(fromPath: string, toPath: string) {
         // Ensure the parent directory exists
         await fsExtra.ensureDir(path.dirname(filePath));
 
-        // If the file is a directory, don't write it to disk
-        if (header.type === 'directory') {
-          next();
-          stream.resume();
-          return;
-        }
-
         stream.pipe(fsExtra.createWriteStream(filePath, { mode: header.mode }));
         stream.on('end', next); // End of file, move onto next file
         stream.resume(); // Auto drain the stream
