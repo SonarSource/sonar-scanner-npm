@@ -28,7 +28,7 @@ scanner(
 );
 ```
 
-**Syntax:** sonarqube-scanner **(** `parameters`, [`callback`] **)**
+**Syntax:** scanner **(** `parameters`, [`callback`] **)**
 
 **Arguments**
 
@@ -43,12 +43,12 @@ scanner(
 
 _Prerequisite: you've installed the package globally._
 
-If you want to run an analysis without having to configure anything in the first place, simply run the `sonar-scanner` command. The following
+If you want to run an analysis without having to configure anything in the first place, simply run the `sonar` command. The following
 example assumes that you have installed SonarQube Server locally:
 
 ```
 cd my-project
-sonar-scanner
+sonar
 ```
 
 **Specifying properties/settings**
@@ -59,7 +59,7 @@ sonar-scanner
 
   - Example:
 
-    `sonar-scanner -Dsonar.host.url=https://myserver.com -Dsonar.token=019d1e2e04e`
+    `sonar -Dsonar.host.url=https://myserver.com -Dsonar.token=019d1e2e04e`
 
 ## Usage: run analyses with npx
 
