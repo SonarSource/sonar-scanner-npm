@@ -11,6 +11,10 @@ keywords = [
   "sonar-scanner",
   "sonar-runner"
 ]
+homepage = "https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/npm/introduction/"
+
+[data.bugs]
+url = "https://community.sonarsource.com/tag/scanner"
 
 [data.bin]
 sonar = "bin/sonar-scanner.js"
