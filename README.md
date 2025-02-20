@@ -16,7 +16,7 @@ _Prerequisite: Node v18+ (for v4 and above)_
 
 _Prerequisite: Node v16+ (for [v3](https://github.com/SonarSource/sonar-scanner-npm/tree/3.5.0), otherwise use sonarqube-scanner [v2.9.1](https://github.com/SonarSource/sonar-scanner-npm/tree/2.9.1))_
 
-[This package is available on npm as: `@sonar/scan`](https://www.npmjs.com/package/@sonar/scan)
+This package is available on npm as: [`@sonar/scan`](https://www.npmjs.com/package/@sonar/scan)
 
 To install the scanner globally and be able to run analyses on the command line:
 
