@@ -5,9 +5,9 @@ env:
 
   ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
   ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
-  ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
+  #  ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
   ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
-  ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
+  ARTIFACTORY_DEPLOY_REPOSITORY: sonarsource-npm-public-qa
   ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
 
   SONAR_TOKEN: VAULT[development/kv/data/sonarcloud data.token]
@@ -45,7 +45,7 @@ qa_script_definition: &QA_SCRIPT_DEFINITION
     - (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
     - (cd tools/orchestrator && npm run build)
   test_script:
-    - ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN npm run test-integration
+    - npm run test-integration
 
 build_task:
   eks_container:
@@ -65,6 +65,21 @@ build_task:
     - npm run test
   sonarcloud_analysis_script:
     - node ./scripts/ci-analysis.js
+
+publish_task:
+  depends_on:
+    - build
+  eks_container:
+    <<: *CONTAINER_DEFINITION
+    cpu: 2
+    memory: 2G
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_PR == ""
+  publish_script:
+    - jfrog c add repox --url https://repox.jfrog.io/ --access-token $ARTIFACTORY_ACCESS_TOKEN
+    - jfrog c use repox
+    - jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_DEPLOY_REPOSITORY
+    - jfrog npm publish --build-name=$PROJECT --build-number=$CIRRUS_CHANGE_IN_REPO
+    - jfrog rt build-publish $PROJECT $CIRRUS_CHANGE_IN_REPO
 
 mend_task:
   depends_on:
