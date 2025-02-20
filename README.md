@@ -34,6 +34,10 @@ cd my-project
 sonar
 ```
 
+## Documentation
+
+For the extended information, please refer to its [documentation](https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/npm/introduction/).
+
 ## License
 
 `@sonar/scan` is licensed under the [LGPL v3 License](http://www.gnu.org/licenses/lgpl.txt).
