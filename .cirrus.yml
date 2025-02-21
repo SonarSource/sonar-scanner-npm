@@ -1,16 +1,15 @@
 env:
-  CIRRUS_VAULT_URL: https://vault.sonar.build:8200
-  CIRRUS_VAULT_AUTH_PATH: jwt-cirrusci
-  CIRRUS_VAULT_ROLE: cirrusci-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}
-
-  ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
-  ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
-  ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
   ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
-  ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
+  ARTIFACTORY_DEPLOY_REPOSITORY: 'sonarsource-npm-public-qa'
   ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
+  ARTIFACTORY_RELEASE_REPOSITORY: 'sonarsource-npm-public-releases'
+  ARTIFACTORY_PROMOTER_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
+
+  NPM_TOKEN: VAULT[development/kv/data/npmjs sonartech_npm_token]
 
   SONAR_TOKEN: VAULT[development/kv/data/sonarcloud data.token]
+
+  BUILD_NAME: 'sonar-scanner-npm'
   # Use bash (instead of sh on linux or cmd.exe on windows)
   CIRRUS_SHELL: bash
 
@@ -45,15 +44,15 @@ qa_script_definition: &QA_SCRIPT_DEFINITION
     - (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
     - (cd tools/orchestrator && npm run build)
   test_script:
-    - ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN npm run test-integration
+    - npm run test-integration
 
 build_task:
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 4
     memory: 8G
-  env:
-    SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
+  #  env:
+  #    SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
   build_cache:
     folder: build
     fingerprint_script: echo $CIRRUS_BUILD_ID
@@ -65,6 +64,36 @@ build_task:
     - npm run test
   sonarcloud_analysis_script:
     - node ./scripts/ci-analysis.js
+
+release_task:
+  depends_on:
+    - build
+  eks_container:
+    <<: *CONTAINER_DEFINITION
+    cpu: 2
+    memory: 2G
+  only_if: $CIRRUS_TAG != ""
+  build_cache:
+    folder: build
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+  setup_the_registries_script:
+    - npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+    - npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=$ARTIFACTORY_PROMOTER_TOKEN
+  publish_to_artifactory_script:
+    - jfrog config add repox --url https://repox.jfrog.io --access-token $ARTIFACTORY_PROMOTER_TOKEN
+    - jfrog config use repox
+    - jfrog npm-config --repo-resolve npm --repo-deploy $ARTIFACTORY_RELEASE_REPOSITORY
+    - cd build
+    - jfrog npm publish --build-name $BUILD_NAME --build-number $VERSION
+    - jfrog rt build-add-git $BUILD_NAME $VERSION
+    - jfrog rt build-publish $BUILD_NAME $VERSION
+    - jfrog rt build-promote --status released $BUILD_NAME $VERSION $ARTIFACTORY_RELEASE_REPOSITORY
+  publish_to_npm_script: |
+    cd build
+    [ ${ { github.event.release.prerelease } } == true ] && TAG="next" || TAG="latest"
+    npm publish --tag=$TAG --access=public --dry-run
+    echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
+    npm publish --tag=$TAG --access=public --dry-run
 
 mend_task:
   depends_on:
