@@ -1,6 +1,17 @@
 ## FAQ
 
 #### _I constantly get "Impossible to download and extract binary [...] In such situation, the best solution is to install the standard SonarScanner", what can I do?_
+### Using pnpm, I get the `Packages are hard linked from the content-addressable store to the virtual store.` error
+
+You will need to change your command with one of the error message's suggestions:
+
+```
+pnpm --package=@sonar/scan dlx sonar
+pnpm --package=@sonar/scan dlx sonar-scanner
+```
+
+We have introduced a new alias `sonar` which require pnpm to specify which one to use.
+
 
 You can install manually the [standard SonarScanner](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner/),
 which requires to have a Java Runtime Environment available too (Java 8+).
