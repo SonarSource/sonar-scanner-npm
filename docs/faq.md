@@ -1,6 +1,17 @@
 ## FAQ
 
-#### _I constantly get "Impossible to download and extract binary [...] In such situation, the best solution is to install the standard SonarScanner", what can I do?_
+### Using pnpm, I get the `Packages are hard linked from the content-addressable store to the virtual store.` error
+
+You will need to change your command with one of the error message's suggestions:
+
+```
+pnpm --package=@sonar/scan dlx sonar
+pnpm --package=@sonar/scan dlx sonar-scanner
+```
+
+We have introduced a new alias `sonar` which require pnpm to specify which one to use.
+
+### _I constantly get "Impossible to download and extract binary [...] In such situation, the best solution is to install the standard SonarScanner", what can I do?_
 
 You can install manually the [standard SonarScanner](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner/),
 which requires to have a Java Runtime Environment available too (Java 8+).
@@ -27,7 +38,7 @@ It needs to be [installed manually](https://laptrinhx.com/docker-for-mac-alpine-
 
 Thanks to [Philipp Eschenbach](https://github.com/peh) for troubleshooting this on [issue #59](https://github.com/bellingard/sonar-scanner-npm/issues/59).
 
-## Download From Mirrors (SQ < 10.6 only)
+### Download From Mirrors (SQ < 10.6 only)
 
 By default, the scanner binaries are downloaded from `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/`.
 To use a custom mirror, set `$SONAR_SCANNER_MIRROR`. Or download precise version with `$SONAR_SCANNER_VERSION`
@@ -55,7 +66,7 @@ export SONAR_SCANNER_MIRROR=https://username:password@repo.example.com/mirrors/s
 
 Proxy authentication is supported as well, see below.
 
-## Specifying the cache folder
+### Specifying the cache folder
 
 By default, the scanner binaries are cached into `$HOME/.sonar/native-sonar-scanner` folder.
 To use a custom cache folder instead of `$HOME`, set `$SONAR_BINARY_CACHE`.
@@ -72,7 +83,7 @@ or alternatively set variable in `.npmrc`
     sonar_binary_cache=/Users/myaccount/cache
 ```
 
-## Download behind proxy
+### Download behind proxy
 
 We support the environment variables `http_proxy`/`https_proxy`/`no_proxy` to be able to download binaries behind a proxy.
 
