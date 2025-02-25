@@ -34,6 +34,13 @@ cd my-project
 sonar
 ```
 
+or you can use `npx` without installing:
+
+```
+cd my-project
+npx @sonar/scan
+```
+
 ## Documentation
 
 For the extended information, please refer to its [documentation](https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/npm/introduction/).
