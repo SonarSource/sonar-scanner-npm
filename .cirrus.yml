@@ -1,21 +1,18 @@
 env:
-  CIRRUS_VAULT_URL: https://vault.sonar.build:8200
-  CIRRUS_VAULT_AUTH_PATH: jwt-cirrusci
-  CIRRUS_VAULT_ROLE: cirrusci-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}
-
-  ARTIFACTORY_URL: https://repox.jfrog.io/artifactory
-  ARTIFACTORY_PRIVATE_USERNAME: vault-${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader
-  ARTIFACTORY_PRIVATE_PASSWORD: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
   ARTIFACTORY_DEPLOY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-qa-deployer access_token]
-  ARTIFACTORY_DEPLOY_REPO: sonarsource-npm-public-qa
+  ARTIFACTORY_DEPLOY_REPOSITORY: 'sonarsource-npm-public-qa'
   ARTIFACTORY_ACCESS_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-private-reader access_token]
+  ARTIFACTORY_RELEASE_REPOSITORY: 'sonarsource-npm-public-releases'
+  ARTIFACTORY_PROMOTER_TOKEN: VAULT[development/artifactory/token/${CIRRUS_REPO_OWNER}-${CIRRUS_REPO_NAME}-promoter access_token]
 
   SONAR_TOKEN: VAULT[development/kv/data/sonarcloud data.token]
+
+  BUILD_NAME: 'sonar-scanner-npm'
   # Use bash (instead of sh on linux or cmd.exe on windows)
   CIRRUS_SHELL: bash
 
 only_sonarsource_qa: &ONLY_SONARSOURCE_QA
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && $CIRRUS_TAG == "" && ($CIRRUS_PR != "" || $CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*" || $CIRRUS_BRANCH =~ "dogfood-on-.*")
+  only_if: $CIRRUS_USER_COLLABORATOR == 'true'
 
 container_definition: &CONTAINER_DEFINITION
   dockerfile: .cirrus/Dockerfile
@@ -41,19 +38,17 @@ qa_script_definition: &QA_SCRIPT_DEFINITION
     fingerprint_script: echo $CIRRUS_BUILD_ID
   setup_script:
     - (cd build && npm pack)
-    - cp build/sonar-scan-SNAPSHOT.tgz test/integration
-    - (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
+    - cp build/sonar-scan-$VERSION.tgz test/integration
+    - (cd test/integration && npm install --no-save sonar-scan-$VERSION.tgz)
     - (cd tools/orchestrator && npm run build)
   test_script:
-    - ARTIFACTORY_ACCESS_TOKEN=$ARTIFACTORY_DEPLOY_ACCESS_TOKEN npm run test-integration
+    - npm run test-integration
 
 build_task:
   eks_container:
     <<: *CONTAINER_DEFINITION
     cpu: 4
     memory: 8G
-  env:
-    SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
   build_cache:
     folder: build
     fingerprint_script: echo $CIRRUS_BUILD_ID
@@ -78,7 +73,6 @@ mend_task:
     #    TODO replace secret with vault
     WS_APIKEY: ENCRYPTED[!3929c6148b9dfc751a2d17c590b15d755f82cd9c108f2de5f24a5b32f2a0c26144e921fab7e2c959fc2824d6d6d1550d!]
   run_script:
-    - export VERSION=$(git rev-parse HEAD)
     - export WS_PROJECTNAME="${CIRRUS_REPO_FULL_NAME}"
     - export BUILD_NUMBER=${VERSION}
     - source ws_scan.sh
