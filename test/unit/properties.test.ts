@@ -780,7 +780,7 @@ describe('getProperties', () => {
       },
     );
 
-    it('should set the "sonar.scanner.sonarcloudUrl" and "sonar.scanner.apiBaseUrl" properties when "sonar.region" is set to a supported value', () => {
+    it('should set the depending properties correctly when "sonar.region" is set to a supported value', () => {
       projectHandler.reset('whatever');
       projectHandler.setEnvironmentVariables({});
 
@@ -788,6 +788,29 @@ describe('getProperties', () => {
         {
           options: {
             [ScannerProperty.SonarRegion]: REGION_US,
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      expect(properties).toEqual({
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'https://sonarqube.us',
+        'sonar.scanner.apiBaseUrl': 'https://api.sonarqube.us',
+        'sonar.scanner.internal.isSonarCloud': 'true',
+        'sonar.region': 'us',
+      });
+    });
+
+    it('should set the depending properties correctly when "sonar.host.url" is set and "sonar.region" and is set to a supported value', () => {
+      projectHandler.reset('whatever');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          options: {
+            [ScannerProperty.SonarRegion]: REGION_US,
+            [ScannerProperty.SonarHostUrl]: 'https://sonarqube.us',
           },
         },
         projectHandler.getStartTime(),
