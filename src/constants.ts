@@ -28,6 +28,7 @@ export const SONARCLOUD_API_BASE_URL = 'https://api.sonarcloud.io';
 export const SONARCLOUD_API_BASE_URL_US = 'https://api.sonarqube.us';
 
 export const SONARCLOUD_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarcloud\.io)/;
+export const SONARCLOUD_US_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarqube\.us)/;
 
 export const REGION_US = 'us';
 export const REGIONS = [REGION_US];

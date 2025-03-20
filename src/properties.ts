@@ -34,6 +34,7 @@ import {
   SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
   SONARCLOUD_URL_REGEX,
+  SONARCLOUD_US_URL_REGEX,
   SONAR_DIR_DEFAULT,
   SONAR_PROJECT_FILENAME,
 } from './constants';
@@ -358,9 +359,7 @@ function getBootstrapperProperties(startTimestampMs: number): ScannerProperties 
 export function getHostProperties(properties: ScannerProperties): ScannerProperties {
   const sonarHostUrl = properties[ScannerProperty.SonarHostUrl]?.replace(/\/$/, '')?.trim();
   const sonarApiBaseUrl = properties[ScannerProperty.SonarScannerApiBaseUrl];
-  const sonarCloudSpecified =
-    properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
-    SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '');
+  const sonarCloudSpecified = isSonarCloud(properties, sonarHostUrl);
 
   if (!sonarHostUrl || sonarCloudSpecified) {
     const region = (properties[ScannerProperty.SonarRegion] ?? '').toLowerCase();
@@ -397,6 +396,12 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
       [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? `${sonarHostUrl}/api/v2`,
     };
   }
+}
+
+function isSonarCloud(properties: ScannerProperties, sonarHostUrl: string,) {
+  return properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
+    SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '') ||
+    SONARCLOUD_US_URL_REGEX.exec(sonarHostUrl ?? '');
 }
 
 function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {
