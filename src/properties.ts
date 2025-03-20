@@ -398,10 +398,12 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
   }
 }
 
-function isSonarCloud(properties: ScannerProperties, sonarHostUrl: string,) {
-  return properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
+function isSonarCloud(properties: ScannerProperties, sonarHostUrl: string) {
+  return (
+    properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
     SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '') ||
-    SONARCLOUD_US_URL_REGEX.exec(sonarHostUrl ?? '');
+    SONARCLOUD_US_URL_REGEX.exec(sonarHostUrl ?? '')
+  );
 }
 
 function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {
