@@ -366,19 +366,22 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
     const region = (properties[ScannerProperty.SonarRegion] ?? '').toLowerCase();
     let defaultCloudUrl, defaultApiUrl;
     switch (region) {
-      case '':
+      case '': {
         defaultCloudUrl = SONARCLOUD_URL;
         defaultApiUrl = SONARCLOUD_API_BASE_URL;
         break;
-      case REGION_US:
+      }
+      case REGION_US: {
         defaultCloudUrl = 'https://sonarqube.us';
         defaultApiUrl = 'https://api.sonarqube.us';
         break;
-      default:
+      }
+      default: {
         const regionsPrint = REGIONS.map(r => `"${r}"`);
         throw new Error(
           `Unsupported region '${region}'. List of supported regions: ${regionsPrint}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
         );
+      }
     }
 
     return {
