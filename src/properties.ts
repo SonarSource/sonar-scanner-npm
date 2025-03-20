@@ -27,6 +27,8 @@ import {
   ENV_TO_PROPERTY_NAME,
   ENV_VAR_PREFIX,
   NPM_CONFIG_ENV_VAR_PREFIX,
+  REGIONS,
+  REGION_US,
   SCANNER_BOOTSTRAPPER_NAME,
   SCANNER_DEPRECATED_PROPERTIES,
   SONARCLOUD_API_BASE_URL,
@@ -361,11 +363,26 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
     SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '');
 
   if (!sonarHostUrl || sonarCloudSpecified) {
+    const region = (properties[ScannerProperty.SonarRegion] ?? '').toLowerCase();
+    let defaultCloudUrl, defaultApiUrl;
+    switch (region) {
+      case '':
+        defaultCloudUrl = SONARCLOUD_URL;
+        defaultApiUrl = SONARCLOUD_API_BASE_URL;
+        break;
+      case REGION_US:
+        defaultCloudUrl = 'https://sonarqube.us';
+        defaultApiUrl = 'https://api.sonarqube.us';
+        break;
+      default:
+        throw `Unsupported region '${region}'. List of supported regions: ${REGIONS}. Please check the 'sonar.region' property or the 'SONAR_REGION' environment variable.`;
+    }
+
     return {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
       [ScannerProperty.SonarHostUrl]:
-        properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? SONARCLOUD_URL,
-      [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? SONARCLOUD_API_BASE_URL,
+        properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? defaultCloudUrl,
+      [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? defaultApiUrl,
     };
   } else {
     return {
