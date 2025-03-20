@@ -375,7 +375,7 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
         defaultApiUrl = 'https://api.sonarqube.us';
         break;
       default:
-        throw `Unsupported region '${region}'. List of supported regions: ${REGIONS}. Please check the 'sonar.region' property or the 'SONAR_REGION' environment variable.`;
+        throw `Unsupported region '${region}'. List of supported regions: ${REGIONS.map(r => `"${r}"`)}. Please check the 'sonar.region' property or the 'SONAR_REGION' environment variable.`;
     }
 
     return {

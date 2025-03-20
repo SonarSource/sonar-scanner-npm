@@ -20,6 +20,8 @@
 import sinon from 'sinon';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
+  REGION_US,
+  REGIONS,
   SCANNER_BOOTSTRAPPER_NAME,
   SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
@@ -785,7 +787,7 @@ describe('getProperties', () => {
       const properties = getProperties(
         {
           options: {
-            [ScannerProperty.SonarRegion]: 'us',
+            [ScannerProperty.SonarRegion]: REGION_US,
           },
         },
         projectHandler.getStartTime(),
@@ -798,6 +800,25 @@ describe('getProperties', () => {
         'sonar.scanner.internal.isSonarCloud': 'true',
         'sonar.region': 'us',
       });
+    });
+
+    it('should throw an exception if "sonar.region" is set to an unsupported value', () => {
+      projectHandler.reset('whatever');
+      projectHandler.setEnvironmentVariables({});
+      const invalidRegion = "some region that doesn't exist";
+
+      expect(() =>
+        getProperties(
+          {
+            options: {
+              [ScannerProperty.SonarRegion]: invalidRegion,
+            },
+          },
+          projectHandler.getStartTime(),
+        ),
+      ).toThrow(
+        `Unsupported region '${invalidRegion}'. List of supported regions: ${REGIONS.map(r => `"${r}"`)}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
+      );
     });
   });
 });
