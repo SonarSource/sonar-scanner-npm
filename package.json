@@ -21,7 +21,6 @@
     "hpagent": "1.2.0",
     "jest-sonar-reporter": "2.0.0",
     "node-forge": "^1.3.1",
-    "package-manifest-generator": "^1.0.0-beta.1",
     "properties-file": "3.5.4",
     "proxy-from-env": "^1.1.0",
     "replace-in-file": "^8.3.0",
@@ -53,7 +52,7 @@
     "typescript": "5.4.3"
   },
   "scripts": {
-    "build": "tsc && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js && pmg --entries=build/**/*.js --output=build/package.json --version=${VERSION:-SNAPSHOT}",
+    "build": "tsc && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js,build/package.json",
     "test": "jest --coverage",
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",

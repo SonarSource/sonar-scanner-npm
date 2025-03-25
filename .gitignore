@@ -143,4 +143,6 @@ xunit.xml
 .DS_Store
 
 # TS build artifacts
-build/
+build/*
+# clean this up when possible
+!build/package.json

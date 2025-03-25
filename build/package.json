@@ -1,0 +1,45 @@
+{
+  "author": {
+    "name": "Fabrice Bellingard",
+    "email": "fabrice.bellingard@sonarsource.com"
+  },
+  "bin": {
+    "sonar": "bin/sonar-scanner.js",
+    "sonar-scanner": "bin/sonar-scanner.js"
+  },
+  "bugs": {
+    "url": "https://community.sonarsource.com/tag/scanner"
+  },
+  "description": "SonarQube/SonarCloud Scanner for the JavaScript world",
+  "homepage": "https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/npm/introduction/",
+  "keywords": [
+    "sonarqube",
+    "sonarcloud",
+    "sonarqube-scanner",
+    "sonarqube-runner",
+    "sonar-scanner",
+    "sonar-runner"
+  ],
+  "license": "LGPL-3.0-only",
+  "main": "src/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SonarSource/sonar-scanner-npm.git"
+  },
+  "types": "src/index.d.ts",
+  "name": "@sonar/scan",
+  "version": "__VERSION__",
+  "dependencies": {
+    "fs-extra": "11.2.0",
+    "semver": "7.6.0",
+    "commander": "12.0.0",
+    "axios": "1.8.2",
+    "hpagent": "1.2.0",
+    "node-forge": "^1.3.1",
+    "properties-file": "3.5.4",
+    "proxy-from-env": "^1.1.0",
+    "slugify": "1.6.6",
+    "adm-zip": "0.5.12",
+    "tar-stream": "3.1.7"
+  }
+}
