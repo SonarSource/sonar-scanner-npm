@@ -52,8 +52,6 @@ build_task:
     <<: *CONTAINER_DEFINITION
     cpu: 4
     memory: 8G
-  env:
-    SONAR_TOKEN: ENCRYPTED[6aa9305c4d78b8f753d86e26171ff2c6f40600c03d514cf2bff683d14d466078169f17a408af03ad2ee85de8458157b6]
   build_cache:
     folder: build
     fingerprint_script: echo $CIRRUS_BUILD_ID
