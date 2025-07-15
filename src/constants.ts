@@ -39,7 +39,7 @@ export const SONAR_DIR_DEFAULT = '.sonar';
 
 export const SONAR_CACHE_DIR = 'cache';
 
-export const UNARCHIVE_SUFFIX = '_unzip';
+export const UNARCHIVE_SUFFIX = '_extracted';
 
 export const SONAR_SCANNER_ALIAS = 'SonarScanner Engine';
 export const JRE_ALIAS = 'JRE';
