@@ -8,7 +8,7 @@ function run_iris () {
   java \
     -Diris.source.projectKey="SonarSource_sonar-scanner-npm" \
     -Diris.source.organization="sonarsource" \
-    -Diris.source.url="https://next.sonarqube.com/sonarqube" \
+    -Diris.source.url="https://sonarcloud.io" \
     -Diris.source.token="$SONAR_SOURCE_IRIS_TOKEN" \
     -Diris.destination.projectKey="SonarSource_sonar-scanner-npm" \
     -Diris.destination.organization="sonarsource" \
