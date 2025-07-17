@@ -37,10 +37,10 @@ ec2_instance_definition: &INSTANCE_DEFINITION
     platform: windows
 
 build_cache_definition: &BUILD_CACHE_DEFINITION
-  folder: build
-  fingerprint_script: echo $CIRRUS_BUILD_ID
-  populate_script:
-    - npm run build
+  build_cache:
+    folder: ${CIRRUS_WORKING_DIR}/build
+    fingerprint_script: echo $CIRRUS_BUILD_ID
+    reupload_on_changes: 'true'
 
 qa_script_definition: &QA_SCRIPT_DEFINITION
   <<: *BUILD_CACHE_DEFINITION
@@ -81,6 +81,7 @@ build_task:
   <<: *JS_COVERAGE_CACHE
   <<: *CONTAINER_DEFINITION
   test_script:
+    - npm run build
     - npm run test
 
 analyze_SQC_EU_task:
