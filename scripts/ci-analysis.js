@@ -34,7 +34,7 @@ scanner({
     'sonar.projectDescription': 'SonarQube/SonarCloud Scanner for the JavaScript world',
     'sonar.sources': 'src',
     'sonar.tests': 'test',
-    'sonar.host.url': 'https://sonarcloud.io',
+    'sonar.host.url': process.env.SONAR_HOST_URL,
     'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
     'sonar.verbose': 'true',
   },
