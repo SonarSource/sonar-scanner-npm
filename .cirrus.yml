@@ -70,6 +70,7 @@ analyze_definition: &ANALYZE_DEFINITION
   <<: *CONTAINER_DEFINITION
   <<: *JS_COVERAGE_CACHE
   <<: *BUILD_CACHE_DEFINITION
+  <<: *NPM_CACHE
   depends_on:
     - build
   analyze_script:
