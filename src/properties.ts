@@ -37,6 +37,8 @@ import {
   SONARCLOUD_US_URL_REGEX,
   SONAR_DIR_DEFAULT,
   SONAR_PROJECT_FILENAME,
+  SONARCLOUD_URL_US,
+  SONARCLOUD_API_BASE_URL_US,
 } from './constants';
 import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
@@ -363,32 +365,26 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
 
   if (!sonarHostUrl || sonarCloudSpecified) {
     const region = (properties[ScannerProperty.SonarRegion] ?? '').toLowerCase();
-    let defaultCloudUrl, defaultApiUrl;
-    switch (region) {
-      case '': {
-        defaultCloudUrl = SONARCLOUD_URL;
-        defaultApiUrl = SONARCLOUD_API_BASE_URL;
-        break;
-      }
-      case REGION_US: {
-        defaultCloudUrl = 'https://sonarqube.us';
-        defaultApiUrl = 'https://api.sonarqube.us';
-        break;
-      }
-      default: {
-        const regionsPrint = REGIONS.map(r => `"${r}"`);
-        throw new Error(
-          `Unsupported region '${region}'. List of supported regions: ${regionsPrint}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
-        );
-      }
+    if (isSonarCloudUS(sonarHostUrl) || region === REGION_US) {
+      return {
+        [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
+        [ScannerProperty.SonarHostUrl]:
+          properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? SONARCLOUD_URL_US,
+        [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? SONARCLOUD_API_BASE_URL_US,
+      };
+    } else if (isSonarCloudEU(sonarHostUrl) || region === '') {
+      return {
+        [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
+        [ScannerProperty.SonarHostUrl]:
+          properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? SONARCLOUD_URL,
+        [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? SONARCLOUD_API_BASE_URL,
+      };
+    } else {
+      const regionsPrint = REGIONS.map(r => `"${r}"`);
+      throw new Error(
+        `Unsupported region '${region}'. List of supported regions: ${regionsPrint}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
+      );
     }
-
-    return {
-      [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
-      [ScannerProperty.SonarHostUrl]:
-        properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? defaultCloudUrl,
-      [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? defaultApiUrl,
-    };
   } else {
     return {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
@@ -401,9 +397,17 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
 function isSonarCloud(properties: ScannerProperties, sonarHostUrl: string) {
   return (
     properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
-    SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '') ||
-    SONARCLOUD_US_URL_REGEX.exec(sonarHostUrl ?? '')
+    isSonarCloudEU(sonarHostUrl) ||
+    isSonarCloudUS(sonarHostUrl)
   );
+}
+
+function isSonarCloudEU(sonarHostUrl: string) {
+  return SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '');
+}
+
+function isSonarCloudUS(sonarHostUrl: string) {
+  return SONARCLOUD_US_URL_REGEX.exec(sonarHostUrl ?? '');
 }
 
 function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {
