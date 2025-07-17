@@ -26,6 +26,7 @@ const scanner = require('../build').scan;
 // (No need to pass the server URL and the token, we're using the Travis
 //  Addon for SonarCloud which does this for you.)
 // ---------
+console.log(process.env);
 scanner({
   options: {
     'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
