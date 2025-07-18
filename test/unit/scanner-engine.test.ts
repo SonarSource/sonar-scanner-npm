@@ -66,13 +66,11 @@ describe('scanner-engine', () => {
       sha256: 'sha_test',
     } as AnalysisEngineResponseType);
     mock
-      .onGet(
-        API_V2_SCANNER_ENGINE_ENDPOINT,
-        undefined,
-        expect.objectContaining({
+      .onGet(API_V2_SCANNER_ENGINE_ENDPOINT, {
+        params: expect.objectContaining({
           Accept: expect.stringMatching(/application\/octet-stream/),
         }),
-      )
+      })
       .reply(() => {
         const readable = new Readable({
           read() {
