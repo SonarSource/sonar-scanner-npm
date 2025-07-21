@@ -146,8 +146,8 @@ mend_task:
     #    TODO replace secret with vault
     WS_APIKEY: ENCRYPTED[!3929c6148b9dfc751a2d17c590b15d755f82cd9c108f2de5f24a5b32f2a0c26144e921fab7e2c959fc2824d6d6d1550d!]
   run_script:
-    - export VERSION=$(git rev-parse HEAD)
-    - export WS_PROJECTNAME="${CIRRUS_REPO_FULL_NAME}"
+    - export VERSION=DEV
+    - export WS_PROJECTNAME="${CIRRUS_REPO_FULL_NAME} ${VERSION}"
     - export BUILD_NUMBER=${VERSION}
     - source ws_scan.sh
   allow_failures: 'true'
