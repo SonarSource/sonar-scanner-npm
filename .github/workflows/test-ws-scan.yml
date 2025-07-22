@@ -1,5 +1,6 @@
 name: Test ws_scan.sh
 on:
+  push:
   workflow_dispatch:
     inputs:
       version:
