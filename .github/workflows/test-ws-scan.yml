@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-ws-scan:
-    runs-on: custom-runner
+    runs-on: sonar-runner-on-demand
 
     steps:
       - name: Checkout code
