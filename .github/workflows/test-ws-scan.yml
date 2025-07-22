@@ -9,7 +9,7 @@ on:
 
 jobs:
   test-ws-scan:
-    runs-on: sonar-runner-on-demand
+    runs-on: sonar-runner
 
     steps:
       - name: Checkout code
