@@ -1,8 +1,5 @@
 name: Test ws_scan.sh
 on:
-  push:
-    branches:
-      - '**'
   workflow_dispatch:
     inputs:
       version:
@@ -11,7 +8,7 @@ on:
 
 jobs:
   test-ws-scan:
-    runs-on: ubuntu-latest
+    runs-on: custom-runner
 
     steps:
       - name: Checkout code
