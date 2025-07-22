@@ -28,7 +28,7 @@
   },
   "types": "src/index.d.ts",
   "name": "@sonar/scan",
-  "version": "__VERSION__",
+  "version": "SNAPSHOT",
   "dependencies": {
     "fs-extra": "11.2.0",
     "semver": "7.6.0",

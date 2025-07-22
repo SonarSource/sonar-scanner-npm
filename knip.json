@@ -1,0 +1,8 @@
+{
+  "entry": [
+    "bin/sonar-scanner.ts",
+    "test/integration/scanner.test.js",
+    "tools/orchestrator/scripts/*"
+  ],
+  "ignore": ["build/**/*", "**/fixtures/**/*", "**/dist/**/*", "scripts/ci-analysis.js"]
+}
