@@ -1,0 +1,25 @@
+name: Test ws_scan.sh
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to use'
+        required: true
+
+jobs:
+  test-ws-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up environment and run ws_scan.sh
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          echo "VERSION=$VERSION"
+          WS_PROJECTNAME="${GITHUB_REPOSITORY} ${VERSION}"
+          echo "WS_PROJECTNAME=$WS_PROJECTNAME"
+          BUILD_NUMBER=${VERSION}
+          echo "BUILD_NUMBER=$BUILD_NUMBER"
+          source ws_scan.sh
