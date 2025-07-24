@@ -19,7 +19,6 @@
     "mkdirp": "3.0.1"
   },
   "devDependencies": {
-    "@types/mkdirp": "2.0.0",
     "@types/node": "20.11.30",
     "prettier": "3.2.5",
     "typescript": "5.4.3"

@@ -89,6 +89,15 @@ qa_win_task:
   <<: *INSTANCE_DEFINITION
   <<: *QA_SCRIPT_DEFINITION
 
+knip_task:
+  <<: *CONTAINER_DEFINITION
+  depends_on:
+    - build
+  knip_script:
+    - npm install --no-package-lock
+    - npm run bbf
+    - npx knip
+
 analyze_task:
   alias: analyze
   <<: *CONTAINER_DEFINITION

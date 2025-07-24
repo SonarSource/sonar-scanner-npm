@@ -45,7 +45,7 @@
     "eslint-plugin-notice": "1.0.0",
     "husky": "9.1.7",
     "jest": "30.0.4",
-    "knip": "^5.62.0",
+    "knip": "5.62.0",
     "prettier": "3.6.2",
     "pretty-quick": "4.2.2",
     "sinon": "21.0.0",
@@ -61,8 +61,7 @@
     "license": "eslint --ext js,ts src test tools scripts .",
     "license-fix": "eslint --fix --ext js,ts src test tools scripts .",
     "precommit": "pretty-quick --staged",
-    "prepare": "husky install .husky || true",
-    "knip": "knip"
+    "prepare": "husky install .husky || true"
   },
   "prettier": {
     "printWidth": 100,

@@ -1,8 +1,14 @@
 {
-  "entry": [
-    "bin/sonar-scanner.ts",
-    "test/integration/scanner.test.js",
-    "tools/orchestrator/scripts/*"
-  ],
-  "ignore": ["build/**/*", "**/fixtures/**/*", "**/dist/**/*", "scripts/ci-analysis.js"]
+  "workspaces": {
+    ".": {
+      "entry": ["bin/sonar-scanner.ts", "test/integration/scanner.test.js"],
+      "project": "src/*.ts"
+    },
+    "tools/orchestrator": {
+      "entry": ["scripts/*"],
+      "ignore": ["dist/**/*"]
+    }
+  },
+  "ignore": ["build/**/*", "**/fixtures/**/*", "scripts/ci-analysis.js"],
+  "ignoreDependencies": ["@sonar/scan"]
 }
