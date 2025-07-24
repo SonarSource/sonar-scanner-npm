@@ -91,11 +91,10 @@ qa_win_task:
 
 knip_task:
   <<: *CONTAINER_DEFINITION
+  <<: *BUILD_CACHE_DEFINITION
   depends_on:
     - build
   knip_script:
-    - npm install --no-package-lock
-    - npm run bbf
     - npx knip
 
 analyze_task:
