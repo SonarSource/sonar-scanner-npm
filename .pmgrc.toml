@@ -1,0 +1,25 @@
+[data]
+name = "@sonar/scan"
+main = "src/index.js"
+types = "src/index.d.ts"
+description = "SonarQube/SonarCloud Scanner for the JavaScript world"
+keywords = [
+  "sonarqube",
+  "sonarcloud",
+  "sonarqube-scanner",
+  "sonarqube-runner",
+  "sonar-scanner",
+  "sonar-runner"
+]
+homepage = "https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/npm/introduction/"
+version = "__VERSION__"
+
+[data.bugs]
+url = "https://community.sonarsource.com/tag/scanner"
+
+[data.bin]
+sonar = "bin/sonar-scanner.js"
+sonar-scanner = "bin/sonar-scanner.js"
+
+[data.engines]
+node = ">= 18"
