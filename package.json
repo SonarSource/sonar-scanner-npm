@@ -49,11 +49,13 @@
     "prettier": "3.6.2",
     "pretty-quick": "4.2.2",
     "sinon": "21.0.0",
+    "toml": "3.0.0",
     "ts-jest": "29.4.0",
+    "tsx": "4.20.3",
     "typescript": "5.8.3"
   },
   "scripts": {
-    "build": "tsc && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js,build/package.json",
+    "build": "tsc && tsx scripts/generate-package-json.ts && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js,build/package.json",
     "test": "jest --coverage",
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",
