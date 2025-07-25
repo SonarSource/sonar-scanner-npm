@@ -19,7 +19,9 @@
  */
 
 const { scan } = require('@sonar/scan');
-const path = require('path');
+const path = require('node:path');
+const assert = require('node:assert');
+
 const {
   getLatestSonarQube,
   createProject,
