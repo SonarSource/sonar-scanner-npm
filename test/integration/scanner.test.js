@@ -20,7 +20,6 @@
 
 const { scan } = require('@sonar/scan');
 const path = require('path');
-const { assert } = require('chai');
 const {
   getLatestSonarQube,
   createProject,
