@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npm ci && npm run check-format && npm run compile",
+    "build": "npm install && npm run check-format && npm run compile",
     "compile": "tsc -b . && cp src/stop.java dist/stop.java",
     "sonarqube": "npm run compile && node scripts/sonarqube.js",
     "test": "npm run compile && node scripts/full.js",
