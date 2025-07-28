@@ -59,8 +59,8 @@
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",
-    "license": "eslint --ext js,ts src test tools scripts .",
-    "license-fix": "eslint --fix --ext js,ts src test tools scripts .",
+    "license": "eslint",
+    "license-fix": "eslint --fix",
     "precommit": "pretty-quick --staged",
     "prepare": "husky install .husky || true"
   },
@@ -68,6 +68,7 @@
     "printWidth": 100,
     "trailingComma": "all",
     "singleQuote": true,
-    "arrowParens": "avoid"
+    "arrowParens": "avoid",
+    "endOfLine": "lf"
   }
 }

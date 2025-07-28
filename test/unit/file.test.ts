@@ -1,6 +1,6 @@
 /*
  * sonar-scanner-npm
- * Copyright (C) 2022-2024 SonarSource SA
+ * Copyright (C) 2022-2025 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -256,7 +256,9 @@ describe('file', () => {
       expect(fsExtra.mkdirSync).not.toHaveBeenCalled();
 
       expect(archivePath).toEqual(path.join('/', 'sonar', 'cache', 'md5_test', 'file.txt'));
-      expect(unarchivePath).toEqual(path.join('/', 'sonar', 'cache', 'md5_test', 'file.txt_extracted'));
+      expect(unarchivePath).toEqual(
+        path.join('/', 'sonar', 'cache', 'md5_test', 'file.txt_extracted'),
+      );
     });
     it('should create the parent cache directory if it does not exist', async () => {
       jest.spyOn(fsExtra, 'existsSync').mockImplementationOnce(() => false);
