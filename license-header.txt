@@ -1,16 +1,6 @@
-// eslint-disable-next-line notice/notice
-module.exports = {
-  parser: '@typescript-eslint/parser',
-  plugins: ['notice'],
-  ignorePatterns: ['**/dist', '**/build'],
-  rules: {
-    // notice
-    'notice/notice': [
-      'error',
-      {
-        template: `/*
+/*
  * sonar-scanner-npm
- * Copyright (C) 2022-2024 SonarSource SA
+ * Copyright (C) 2022-2025 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,9 +16,4 @@ module.exports = {
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */`,
-        onNonMatchingHeader: 'replace',
-      },
-    ],
-  },
-};
+ */

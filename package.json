@@ -40,7 +40,7 @@
     "@types/tar-stream": "3.1.4",
     "@typescript-eslint/parser": "8.38.0",
     "axios-mock-adapter": "2.1.0",
-    "eslint": "9.31.0",
+    "eslint": "9.32.0",
     "eslint-plugin-notice": "1.0.0",
     "husky": "9.1.7",
     "jest": "30.0.5",
@@ -59,8 +59,8 @@
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",
-    "license": "eslint --ext js,ts src test tools scripts .",
-    "license-fix": "eslint --fix --ext js,ts src test tools scripts .",
+    "license": "eslint",
+    "license-fix": "eslint --fix",
     "precommit": "pretty-quick --staged",
     "prepare": "husky install .husky || true"
   },
@@ -68,6 +68,7 @@
     "printWidth": 100,
     "trailingComma": "all",
     "singleQuote": true,
-    "arrowParens": "avoid"
+    "arrowParens": "avoid",
+    "endOfLine": "lf"
   }
 }
