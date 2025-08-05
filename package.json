@@ -17,7 +17,7 @@
     "adm-zip": "0.5.16",
     "axios": "1.11.0",
     "commander": "14.0.0",
-    "fs-extra": "11.3.0",
+    "fs-extra": "11.3.1",
     "hpagent": "1.2.0",
     "jest-sonar-reporter": "2.0.0",
     "node-forge": "1.3.1",
