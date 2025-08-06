@@ -133,24 +133,3 @@ run_iris_task:
         SONAR_TARGET_IRIS_TOKEN: VAULT[development/kv/data/iris data.sqc-us]
   script:
     - source .cirrus/run-iris.sh
-
-mend_task:
-  depends_on:
-    - build
-  <<: *CONTAINER_DEFINITION
-  eks_container:
-    cpu: 2
-    memory: 2G
-  only_if: $CIRRUS_USER_COLLABORATOR == 'true' && ($CIRRUS_BRANCH == "master" || $CIRRUS_BRANCH =~ "branch-.*")
-  env:
-    #    TODO replace secret with vault
-    WS_APIKEY: ENCRYPTED[!3929c6148b9dfc751a2d17c590b15d755f82cd9c108f2de5f24a5b32f2a0c26144e921fab7e2c959fc2824d6d6d1550d!]
-  run_script:
-    - export VERSION=DEV
-    - export WS_PROJECTNAME="${CIRRUS_REPO_FULL_NAME} ${VERSION}"
-    - export BUILD_NUMBER=${VERSION}
-    - source ws_scan.sh
-  allow_failures: 'true'
-  always:
-    mend_artifacts:
-      path: 'whitesource/**/*'
