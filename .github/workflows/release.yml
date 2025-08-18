@@ -23,7 +23,7 @@ jobs:
             development/artifactory/token/SonarSource-sonar-scanner-npm-promoter access_token  | promoter_access_token;
             development/kv/data/npmjs sonartech_npm_token  | npm_token;
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22
