@@ -49,7 +49,7 @@
     "pretty-quick": "4.2.2",
     "sinon": "21.0.0",
     "toml": "3.0.0",
-    "ts-jest": "29.4.3",
+    "ts-jest": "29.4.4",
     "tsx": "4.20.5",
     "typescript": "5.9.2"
   },
