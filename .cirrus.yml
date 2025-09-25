@@ -47,6 +47,7 @@ qa_script_definition: &QA_SCRIPT_DEFINITION
   setup_script:
     - (cd build && npm pack)
     - cp build/sonar-scan-SNAPSHOT.tgz test/integration
+    - node --version
     - (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
     - (cd tools/orchestrator && npm run build)
   test_script:
