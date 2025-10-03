@@ -38,7 +38,7 @@
     "@types/tar-stream": "3.1.4",
     "@typescript-eslint/parser": "8.45.0",
     "axios-mock-adapter": "2.1.0",
-    "eslint": "9.36.0",
+    "eslint": "9.37.0",
     "eslint-plugin-notice": "1.0.0",
     "husky": "9.1.7",
     "jest": "30.2.0",
