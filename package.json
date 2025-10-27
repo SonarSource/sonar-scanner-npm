@@ -15,7 +15,7 @@
   "license": "LGPL-3.0-only",
   "dependencies": {
     "adm-zip": "0.5.16",
-    "axios": "1.12.2",
+    "axios": "1.13.0",
     "commander": "13.1.0",
     "fs-extra": "11.3.2",
     "hpagent": "1.2.0",
