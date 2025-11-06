@@ -23,7 +23,7 @@ jobs:
         id: secrets
         with:
           secrets: |
-            development/artifactory/token/${{ github.repository }}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+            development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
 
       - name: Configure npm registry
         run: |
