@@ -119,7 +119,7 @@ jobs:
           cd build && npm pack && cd ..
           copy build\sonar-scan-SNAPSHOT.tgz test\integration\
           cd test\integration && npm install && npm install --no-save sonar-scan-SNAPSHOT.tgz && cd ..\..
-          cd tools\orchestrator && npm install && npm run build
+          cd tools\orchestrator && npm install && npm run build && cd ..\..
         shell: cmd
 
       - name: Run integration tests
@@ -127,6 +127,7 @@ jobs:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_DEPLOY_ACCESS_TOKEN }}
         run: |
           ls -al node_modules
+          ls -al test\integration
           npm run test-integration
         shell: cmd
 
