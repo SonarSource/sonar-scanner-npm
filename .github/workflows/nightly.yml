@@ -47,6 +47,7 @@ jobs:
           path: |
             build/
             coverage/
+            node_modules/
           if-no-files-found: error
 
   analyze:
