@@ -126,8 +126,7 @@ jobs:
         env:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_DEPLOY_ACCESS_TOKEN }}
         run: |
-          ls -al
-          ls -al test/integration
+          ls -al node_modules
           npm run test-integration
         shell: cmd
 
