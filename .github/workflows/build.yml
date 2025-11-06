@@ -125,7 +125,11 @@ jobs:
       - name: Run integration tests
         env:
           ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_DEPLOY_ACCESS_TOKEN }}
-        run: npm run test-integration
+        run: |
+          ls -al
+          ls -al test/integration
+          npm run test-integration
+        shell: cmd
 
   knip:
     name: Knip
