@@ -1,0 +1,96 @@
+name: Nightly
+on:
+  schedule:
+    - cron: '0 0 * * *' # nightly
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: github-ubuntu-latest-s
+    outputs:
+      build-number: ${{ steps.build.outputs.build-number }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          version: 2025.7.12
+
+      - uses: SonarSource/ci-github-actions/build-npm@v1
+        id: build
+        with:
+          artifactory-reader-role: private-reader
+          artifactory-deployer-role: qa-deployer
+          sonar-platform: 'none'
+          skip-tests: 'true'
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: build-artifacts
+          path: |
+            build/
+            coverage/
+          if-no-files-found: error
+
+  analyze:
+    name: Analyze in ${{ matrix.platform_name }}
+    needs: build
+    runs-on: github-ubuntu-latest-s
+    strategy:
+      matrix:
+        include:
+          - platform_name: SonarCloud
+            vault_path: development/kv/data/sonarcloud
+            host_url: https://sonarcloud.io
+          - platform_name: SQ NEXT
+            vault_path: development/kv/data/next
+            host_url: https://next.sonarqube.com/sonarqube
+          - platform_name: SonarQube.us
+            vault_path: development/kv/data/sonarqube-us
+            host_url: https://sonarqube.us
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          version: 2025.7.12
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: build-artifacts
+          path: .
+
+      - uses: SonarSource/vault-action-wrapper@v3
+        id: secrets
+        with:
+          secrets: |
+            ${{ matrix.vault_path }} token | SONAR_TOKEN;
+
+      - name: Run SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ matrix.host_url }}
+        run: node ./scripts/ci-analysis.js
+
+  iris:
+    name: IRIS
+    needs: analyze
+    runs-on: github-ubuntu-latest-s
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: SonarSource/unified-dogfooding-actions/run-iris@v1
+        with:
+          primary_project_key: SonarSource_sonar-scanner-npm
+          primary_platform: SQC-EU
+          shadow1_project_key: SonarSource_sonar-scanner-npm
+          shadow1_platform: Next
+          shadow2_project_key: SonarSource_sonar-scanner-npm
+          shadow2_platform: SQC-US

@@ -5,8 +5,6 @@ on:
   pull_request:
   merge_group:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *' # nightly
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -133,29 +131,11 @@ jobs:
           npx knip
 
   analyze:
-    name: Analyze in ${{ matrix.platform_name }}
+    name: Analyze in SonarCloud
     needs: build
     runs-on: github-ubuntu-latest-s
-    if: matrix.is_shadow == false || github.event_name == 'schedule'
-    strategy:
-      matrix:
-        include:
-          - platform_name: SonarCloud
-            vault_path: development/kv/data/sonarcloud
-            host_url: https://sonarcloud.io
-            is_shadow: false
-          - platform_name: SQ NEXT
-            vault_path: development/kv/data/next
-            host_url: https://next.sonarqube.com/sonarqube
-            is_shadow: true
-          - platform_name: SonarQube.us
-            vault_path: development/kv/data/sonarqube-us
-            host_url: https://sonarqube.us
-            is_shadow: true
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
 
       - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
         with:
@@ -170,27 +150,10 @@ jobs:
         id: secrets
         with:
           secrets: |
-            ${{ matrix.vault_path }} token | SONAR_TOKEN;
+            development/kv/data/sonarcloud token | SONAR_TOKEN;
 
       - name: Run SonarQube analysis
         env:
           SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ matrix.host_url }}
+          SONAR_HOST_URL: https://sonarcloud.io
         run: node ./scripts/ci-analysis.js
-
-  iris:
-    name: IRIS
-    needs: analyze
-    runs-on: github-ubuntu-latest-s
-    if: github.event_name == 'schedule'
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - uses: SonarSource/unified-dogfooding-actions/run-iris@v1
-        with:
-          primary_project_key: SonarSource_sonar-scanner-npm
-          primary_platform: SQC-EU
-          shadow1_project_key: SonarSource_sonar-scanner-npm
-          shadow1_platform: Next
-          shadow2_project_key: SonarSource_sonar-scanner-npm
-          shadow2_platform: SQC-US
