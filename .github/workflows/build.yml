@@ -76,7 +76,7 @@ jobs:
         id: secrets
         with:
           secrets: |
-            development/artifactory/token/${{ github.repository }}-qa-deployer access_token | ARTIFACTORY_DEPLOY_ACCESS_TOKEN;
+            development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-qa-deployer access_token | ARTIFACTORY_DEPLOY_ACCESS_TOKEN;
 
       - name: Setup integration test
         run: |
@@ -111,7 +111,7 @@ jobs:
         id: secrets
         with:
           secrets: |
-            development/artifactory/token/${{ github.repository }}-qa-deployer access_token | ARTIFACTORY_DEPLOY_ACCESS_TOKEN;
+            development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-qa-deployer access_token | ARTIFACTORY_DEPLOY_ACCESS_TOKEN;
 
       - name: Setup integration test
         run: |
