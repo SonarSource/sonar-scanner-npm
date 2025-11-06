@@ -7,7 +7,7 @@
   "author": "",
   "license": "ISC",
   "scripts": {
-    "test": "node_modules/.bin/jest scanner.test.js --coverage"
+    "test": "jest scanner.test.js --coverage"
   },
   "devDependencies": {
     "jest": "^30.0.5"
