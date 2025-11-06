@@ -18,8 +18,6 @@ jobs:
   build:
     name: Build and Test
     runs-on: github-ubuntu-latest-s
-    outputs:
-      build-number: ${{ steps.build.outputs.build-number }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -27,12 +25,20 @@ jobs:
         with:
           version: 2025.7.12
 
-      - uses: SonarSource/ci-github-actions/build-npm@v1
-        id: build
+      - uses: SonarSource/ci-github-actions/config-npm@v1
         with:
           artifactory-reader-role: private-reader
-          artifactory-deployer-role: qa-deployer
-          sonar-platform: 'none'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VERSION: SNAPSHOT
+
+      - name: Test
+        run: npm test
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
