@@ -83,8 +83,8 @@ jobs:
         run: |
           (cd build && npm pack)
           cp build/sonar-scan-SNAPSHOT.tgz test/integration
-          (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
-          (cd tools/orchestrator && npm run build)
+          (cd test/integration && npm install && npm install --no-save sonar-scan-SNAPSHOT.tgz)
+          (cd tools/orchestrator && npm install && npm run build)
 
       - name: Run integration tests
         env:
@@ -117,9 +117,9 @@ jobs:
       - name: Setup integration test
         run: |
           cd build && npm pack
-          copy build/sonar-scan-SNAPSHOT.tgz test/integration
-          cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz
-          cd tools/orchestrator && npm run build
+          copy build\sonar-scan-SNAPSHOT.tgz test\integration\
+          cd test\integration && npm install && npm install --no-save sonar-scan-SNAPSHOT.tgz
+          cd tools\orchestrator && npm install && npm run build
         shell: cmd
 
       - name: Run integration tests
