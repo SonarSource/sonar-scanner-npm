@@ -144,3 +144,6 @@ xunit.xml
 
 # TS build artifacts
 build/*
+
+# Claude Code
+.claude

@@ -55,7 +55,7 @@
   },
   "scripts": {
     "build": "tsc && tsx scripts/generate-package-json.ts && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js,build/package.json",
-    "test": "jest --coverage",
+    "test": "node_modules/.bin/jest --coverage",
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",

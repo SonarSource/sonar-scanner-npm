@@ -1,0 +1,146 @@
+name: Build
+on:
+  push:
+    branches: [master, branch-*, dogfood-*]
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: github-ubuntu-latest-s
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          version: 2025.7.12
+
+      - uses: SonarSource/vault-action-wrapper@v3
+        id: secrets
+        with:
+          secrets: |
+            development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-private-reader access_token | ARTIFACTORY_ACCESS_TOKEN;
+
+      - name: Configure npm registry
+        run: |
+          npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
+          npm config set registry https://repox.jfrog.io/artifactory/api/npm/npm/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VERSION: SNAPSHOT
+
+      - name: Test
+        run: npm test
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: build-artifacts
+          path: |
+            build/
+            coverage/
+            node_modules/
+          if-no-files-found: error
+
+  qa-linux:
+    name: QA Linux
+    needs: build
+    runs-on: github-ubuntu-latest-s
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    steps: &qa-steps
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          version: 2025.7.12
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: build-artifacts
+          path: .
+
+      - uses: SonarSource/vault-action-wrapper@v3
+        id: secrets
+        with:
+          secrets: |
+            development/artifactory/token/${{ github.repository_owner }}-${{ github.event.repository.name }}-qa-deployer access_token | ARTIFACTORY_DEPLOY_ACCESS_TOKEN;
+
+      - name: Setup integration test
+        run: |
+          (cd build && npm pack)
+          cp build/sonar-scan-SNAPSHOT.tgz test/integration
+          (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
+          (cd tools/orchestrator && npm install && npm run build)
+        shell: bash
+
+      - name: Run integration tests
+        env:
+          ARTIFACTORY_ACCESS_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_DEPLOY_ACCESS_TOKEN }}
+        run: npm run test-integration
+        shell: bash
+
+  qa-windows:
+    name: QA Windows
+    needs: build
+    runs-on: windows-latest
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    steps: *qa-steps
+
+  knip:
+    name: Knip
+    needs: build
+    runs-on: github-ubuntu-latest-s
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          version: 2025.7.12
+
+      - name: Install dependencies and run knip
+        run: |
+          npm install --no-package-lock
+          npm run build
+          npx knip
+
+  analyze:
+    name: Analyze in SonarCloud
+    needs: build
+    runs-on: github-ubuntu-latest-s
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        with:
+          version: 2025.7.12
+
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: build-artifacts
+          path: .
+
+      - uses: SonarSource/vault-action-wrapper@v3
+        id: secrets
+        with:
+          secrets: |
+            development/kv/data/sonarcloud token | SONAR_TOKEN;
+
+      - name: Run SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        run: node ./scripts/ci-analysis.js
