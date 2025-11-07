@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  * sonar-scanner-npm
  * Copyright (C) 2022-2025 SonarSource Sàrl
