@@ -54,7 +54,7 @@
     "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "tsc && tsx scripts/generate-package-json.ts && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js,build/package.json",
+    "build": "npm run license && tsc && tsx scripts/generate-package-json.ts && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js,build/package.json",
     "test": "node_modules/.bin/jest --coverage",
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",

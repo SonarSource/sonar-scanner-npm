@@ -5,7 +5,7 @@ const notice = require('eslint-plugin-notice');
 
 module.exports = defineConfig([
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.js'],
     languageOptions: {
       parser: tsParser,
     },
@@ -24,5 +24,5 @@ module.exports = defineConfig([
       ],
     },
   },
-  globalIgnores(['**/dist', '**/build', 'eslint.config.js']),
+  globalIgnores(['**/dist', '**/build', 'eslint.config.js', '**/fixtures']),
 ]);
