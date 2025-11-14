@@ -24,8 +24,8 @@ keytool -import -trustcacerts -alias server-ca -keystore truststore.p12 -file ca
 openssl pkcs12 -storepass password -in truststore.p12 | sed -n -e '/BEGIN\ CERTIFICATE/,/END\ CERTIFICATE/ p' > ca.pem
 
 # Create client certificate
-openssl req -newkey rsa:4096 -nodes -keyout ca-client-auth.key -new -x509 -days 3650 -sha256 -extensions ca_extensions -out ca-client-auth.crt -subj '/C=CH/ST=Geneva/L=Geneva/O=SonarSource SA/CN=SonarSource/' -config ./conf/openssl-client-auth.conf
-openssl req -new -keyout client.key -out client.csr -nodes -newkey rsa:4096 -subj '/C=CH/ST=Geneva/L=Geneva/O=SonarSource SA/CN=Julien Henry/' -config ./conf/openssl-client-auth.conf
+openssl req -newkey rsa:4096 -nodes -keyout ca-client-auth.key -new -x509 -days 3650 -sha256 -extensions ca_extensions -out ca-client-auth.crt -subj '/C=CH/ST=Geneva/L=Geneva/O=SonarSource Sàrl/CN=SonarSource/' -config ./conf/openssl-client-auth.conf
+openssl req -new -keyout client.key -out client.csr -nodes -newkey rsa:4096 -subj '/C=CH/ST=Geneva/L=Geneva/O=SonarSource Sàrl/CN=Julien Henry/' -config ./conf/openssl-client-auth.conf
 openssl x509 -req -days 3650 -in client.csr -CA ca-client-auth.crt -CAkey ca-client-auth.key -CAcreateserial -out client.pem -sha256
 
 # Create PKCS12 store containing the client certificate
