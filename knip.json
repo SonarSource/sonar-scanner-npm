@@ -1,7 +1,7 @@
 {
   "workspaces": {
     ".": {
-      "entry": ["bin/sonar-scanner.ts", "test/integration/scanner.test.js", "src/index.ts"],
+      "entry": ["bin/sonar-scanner.js", "test/integration/scanner.test.js", "src/index.ts"],
       "project": "src/*.ts"
     },
     "tools/orchestrator": {

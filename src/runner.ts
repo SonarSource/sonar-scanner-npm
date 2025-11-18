@@ -26,7 +26,7 @@ program
   .version('__VERSION__', '-v, --version', 'Display version information')
   .option('-X, --debug', 'Produce execution debug output');
 
-export function parseArgs() {
+function parseArgs() {
   return program.parse().opts();
 }
 
