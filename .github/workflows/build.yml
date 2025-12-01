@@ -84,7 +84,7 @@ jobs:
           (cd build && npm pack)
           cp build/sonar-scan-SNAPSHOT.tgz test/integration
           (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
-          (cd tools/orchestrator && npm install && npm run build)
+          (cd tools/orchestrator && npm run build)
         shell: bash
 
       - name: Run integration tests
@@ -113,7 +113,7 @@ jobs:
 
       - name: Install dependencies and run knip
         run: |
-          npm install --no-package-lock
+          npm install --no-package-lock --ignore-scripts
           npm run build
           npx knip
 
