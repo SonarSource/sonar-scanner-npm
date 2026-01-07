@@ -70,9 +70,6 @@ export async function startAndReady(
  */
 function start(sqPath: string = DEFAULT_FOLDER) {
   const pathToBin = getPathForPlatform(sqPath);
-  console.log(`JAVA_HOME: ${process.env.JAVA_HOME}`);
-  console.log(`PATH: ${process.env.PATH}`);
-  console.log('Running SonarQube...');
   return spawn(`${pathToBin}`, ['console'], {
     stdio: ['inherit', 'pipe', 'inherit'],
     shell: process.platform === 'win32',
