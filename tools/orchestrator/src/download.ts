@@ -18,14 +18,17 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import * as https from 'https';
 import * as fs from 'fs';
+import * as https from 'https';
 import { execSync } from 'child_process';
 import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 import * as os from 'os';
 
 const DEFAULT_VERSION = '9.7.1.62043';
+// Pin SonarQube version to avoid breaking changes from new releases
+// Can be overridden via SONARQUBE_VERSION env var
+const PINNED_SONARQUBE_VERSION = process.env.SONARQUBE_VERSION || '25.12.0.117093';
 const ARTIFACTORY_URL = process.env.ARTIFACTORY_URL || 'https://repox.jfrog.io';
 const ARTIFACTORY_ACCESS_TOKEN = process.env.ARTIFACTORY_ACCESS_TOKEN;
 const CACHE_PATH = path.join(os.homedir(), '.sonar');
@@ -51,36 +54,10 @@ export async function getLatestSonarQube(cacheFolder: string = DEFAULT_SONARQUBE
 }
 
 /**
- * Returns the last available SonarQube Community edition version
- *
- * @param url the URL where to get the existing community SQ versions
+ * Returns the pinned SonarQube version (or from SONARQUBE_VERSION env var)
  */
 function getLatestVersion(): Promise<string> {
-  const options = buildHttpOptions(
-    `/repox/api/search/versions?g=org.sonarsource.sonarqube&a=sonar-application&remote=0&repos=sonarsource-releases&v=*`,
-  );
-  return new Promise((resolve, reject) => {
-    https.get(options, response => {
-      let responseData = '';
-      response.on('data', data => {
-        responseData += data;
-      });
-      response.on('close', () => {
-        try {
-          const {
-            results: [{ version }],
-          } = JSON.parse(responseData);
-          resolve(version);
-        } catch (error) {
-          console.error('Error while parsing response', responseData);
-          reject(error);
-        }
-      });
-      response.on('error', error => {
-        reject(error);
-      });
-    });
-  });
+  return Promise.resolve(PINNED_SONARQUBE_VERSION);
 }
 
 /**
