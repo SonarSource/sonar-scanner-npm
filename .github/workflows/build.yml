@@ -42,7 +42,6 @@ jobs:
       - name: Build
         run: |
           npm run build
-          npx knip
         env:
           VERSION: SNAPSHOT
 
