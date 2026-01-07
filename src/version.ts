@@ -18,19 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { scan } from './scan';
-import { program } from 'commander';
-import { version } from './version';
+// Import version from package.json (located at build/package.json, one level up from build/src/)
+// When running tests, it falls back to 'SNAPSHOT' since the root package.json has no version
+import packageJson from '../package.json';
 
-program
-  .option('-D, --define <property=value...>', 'Define property')
-  .version(version, '-v, --version', 'Display version information')
-  .option('-X, --debug', 'Produce execution debug output');
-
-function parseArgs() {
-  return program.parse().opts();
-}
-
-scan({}, parseArgs()).catch(() => {
-  process.exitCode = 1;
-});
+export const version: string = (packageJson as { version?: string }).version ?? 'SNAPSHOT';

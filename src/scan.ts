@@ -26,6 +26,7 @@ import { initializeAxios } from './request';
 import { downloadScannerCli, runScannerCli } from './scanner-cli';
 import { fetchScannerEngine, runScannerEngine } from './scanner-engine';
 import { CliArgs, ScanOptions, ScannerProperty } from './types';
+import { version } from './version';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   try {
@@ -61,7 +62,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   await initializeAxios(properties);
 
   log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
-  log(LogLevel.INFO, `Version: __VERSION__`);
+  log(LogLevel.INFO, `Version: ${version}`);
 
   log(LogLevel.DEBUG, 'Check if Server supports JRE provisioning');
   const supportsJREProvisioning = await serverSupportsJREProvisioning(properties);

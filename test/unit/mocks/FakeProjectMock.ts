@@ -60,7 +60,7 @@ export class FakeProjectMock {
       'sonar.projectBaseDir': this.projectPath,
       'sonar.scanner.bootstrapStartTime': this.startTimeMs.toString(),
       'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
-      'sonar.scanner.appVersion': '__VERSION__',
+      'sonar.scanner.appVersion': 'SNAPSHOT',
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': CacheStatus.Disabled,
       'sonar.userHome': expect.stringMatching(/\.sonar$/),
