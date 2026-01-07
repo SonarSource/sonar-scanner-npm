@@ -70,10 +70,19 @@ export async function startAndReady(
  */
 function start(sqPath: string = DEFAULT_FOLDER) {
   const pathToBin = getPathForPlatform(sqPath);
+  // Prepend JAVA_HOME/bin to PATH so SonarQube's `which java` finds the correct Java
+  const env = { ...process.env };
+  if (env.JAVA_HOME) {
+    const javaHomeBin = path.join(env.JAVA_HOME, 'bin');
+    env.PATH = `${javaHomeBin}${path.delimiter}${env.PATH || ''}`;
+    console.log(`JAVA_HOME: ${env.JAVA_HOME}`);
+    console.log(`Java binary: ${path.join(javaHomeBin, 'java')}`);
+  }
+  console.log('Running SonarQube...');
   return spawn(`${pathToBin}`, ['console'], {
     stdio: ['inherit', 'pipe', 'inherit'],
     shell: process.platform === 'win32',
-    env: process.env,
+    env,
   });
 }
 
