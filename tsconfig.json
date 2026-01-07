@@ -24,6 +24,7 @@
     // "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
     // "moduleDetection": "auto",                        /* Control what method is used to detect module-format JS files. */
 
+    "allowJs": true,
     /* Modules */
     "module": "commonjs" /* Specify what module code is generated. */,
     // "rootDir": "./",                                  /* Specify the root folder within your source files. */
@@ -106,6 +107,6 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["bin/sonar-scanner.ts", "src/**/*.ts"],
+  "include": ["bin/sonar-scanner.js", "src/**/*.ts"],
   "exclude": ["node_modules"]
 }
