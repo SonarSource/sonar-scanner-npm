@@ -76,7 +76,6 @@ function start(sqPath: string = DEFAULT_FOLDER) {
   return spawn(`${pathToBin}`, ['console'], {
     stdio: ['inherit', 'pipe', 'inherit'],
     shell: process.platform === 'win32',
-    env: process.env,
   });
 }
 
