@@ -40,6 +40,16 @@ jobs:
           cp LICENSE build
           cp README.md build
 
+      - name: Validate build output
+        run: |
+          if [ ! -d "build/bin" ] || [ ! -d "build/src" ]; then
+            echo "ERROR: build/bin or build/src folder is missing!"
+            echo "Build output contents:"
+            ls -la build/
+            exit 1
+          fi
+          echo "Build validation passed: bin and src folders present"
+
       - name: Install JFrog CLI
         uses: SonarSource/jfrog-setup-wrapper@v3
 
