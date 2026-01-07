@@ -69,6 +69,9 @@ jobs:
       - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # v3.5.1
         with:
           version: 2025.7.12
+          mise_toml: |
+            [tools]
+            java = "21.0"
 
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
