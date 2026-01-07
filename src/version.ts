@@ -19,7 +19,12 @@
  */
 
 // Import version from package.json (located at build/package.json, one level up from build/src/)
-// When running tests, it falls back to 'SNAPSHOT' since the root package.json has no version
 import packageJson from '../package.json';
 
-export const version: string = (packageJson as { version?: string }).version ?? 'SNAPSHOT';
+const packageVersion = (packageJson as { version?: string }).version;
+
+if (!packageVersion) {
+  throw new Error('Version not found in package.json. This indicates a build error.');
+}
+
+export const version: string = packageVersion;

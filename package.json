@@ -1,5 +1,6 @@
 {
   "name": "sonar-scanner-npm",
+  "version": "SNAPSHOT",
   "homepage": "https://github.com/SonarSource/sonar-scanner-npm",
   "author": {
     "name": "Fabrice Bellingard",
