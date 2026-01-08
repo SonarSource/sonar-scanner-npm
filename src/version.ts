@@ -18,19 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { scan } from './scan';
-import { program } from 'commander';
-import { version } from './version';
+// Import version from package.json (located at build/package.json, one level up from build/src/)
+import packageJson from '../package.json';
 
-program
-  .option('-D, --define <property=value...>', 'Define property')
-  .version(version, '-v, --version', 'Display version information')
-  .option('-X, --debug', 'Produce execution debug output');
+const packageVersion = (packageJson as { version?: string }).version;
 
-function parseArgs() {
-  return program.parse().opts();
+if (!packageVersion) {
+  throw new Error('Version not found in package.json. This indicates a build error.');
 }
 
-scan({}, parseArgs()).catch(() => {
-  process.exitCode = 1;
-});
+export const version: string = packageVersion;

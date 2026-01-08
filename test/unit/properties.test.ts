@@ -190,7 +190,7 @@ describe('getProperties', () => {
         'sonar.projectVersion': '1.0.0',
         'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS + ',coverage/**',
         'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
-        'sonar.scanner.appVersion': '__VERSION__',
+        'sonar.scanner.appVersion': 'SNAPSHOT',
       });
     });
 

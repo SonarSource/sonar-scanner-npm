@@ -59,6 +59,11 @@ async function main() {
   // Merge TOML [data] into package.json
   Object.assign(filteredPackageJson, tomlData.data);
 
+  // Override version from VERSION env var if set
+  if (process.env.VERSION) {
+    filteredPackageJson.version = process.env.VERSION;
+  }
+
   await ensureDir(buildDir);
   await writeJson(buildPackageJsonPath, filteredPackageJson, { spaces: 2 });
 

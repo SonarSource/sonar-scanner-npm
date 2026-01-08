@@ -1,5 +1,6 @@
 {
   "name": "sonar-scanner-npm",
+  "version": "SNAPSHOT",
   "homepage": "https://github.com/SonarSource/sonar-scanner-npm",
   "author": {
     "name": "Fabrice Bellingard",
@@ -46,7 +47,6 @@
     "knip": "5.80.0",
     "prettier": "3.7.4",
     "pretty-quick": "4.2.2",
-    "replace-in-file": "8.3.0",
     "sinon": "21.0.1",
     "toml": "3.0.0",
     "ts-jest": "29.4.6",
@@ -54,7 +54,7 @@
     "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "npm run license && tsc && tsx scripts/generate-package-json.ts && replace-in-file __VERSION__ ${VERSION:-SNAPSHOT} build/**/*.js,build/package.json",
+    "build": "npm run license && tsc && tsx scripts/generate-package-json.ts",
     "test": "node_modules/.bin/jest --coverage",
     "test-integration": "cd test/integration && npm test",
     "format": "prettier --write .",
