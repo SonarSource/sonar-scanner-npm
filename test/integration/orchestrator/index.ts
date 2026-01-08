@@ -18,5 +18,5 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-export * from './download';
-export * from './sonarqube';
+export * from './download.js';
+export * from './sonarqube.js';

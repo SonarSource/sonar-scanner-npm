@@ -56,7 +56,7 @@
   "scripts": {
     "build": "npm run license && tsc && tsx scripts/generate-package-json.ts",
     "test": "node_modules/.bin/jest --coverage",
-    "test-integration": "cd test/integration && npm test",
+    "test-integration": "cd test/integration && npm install && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",
     "license": "eslint",

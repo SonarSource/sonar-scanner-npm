@@ -29,5 +29,5 @@ module.exports = {
   testResultsProcessor: 'jest-sonar-reporter',
   testMatch: ['<rootDir>/test/unit/**/*.test.ts'],
   testTimeout: 20000,
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/unit/setup.ts'],
 };

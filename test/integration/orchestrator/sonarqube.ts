@@ -18,9 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import * as path from 'path';
-import { ChildProcess, spawn, exec } from 'child_process';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { ChildProcess, spawn, exec } from 'node:child_process';
 import axios from 'axios';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DEFAULT_FOLDER = path.join(
   __dirname,
@@ -165,7 +169,8 @@ async function isSonarQubeReady(logs: string[], startIndex: number): Promise<any
  * @returns
  */
 export function stop(sqPath: string = DEFAULT_FOLDER) {
-  const cp = exec(`java ${__dirname}/stop.java ${sqPath}`, undefined, (error, stdout, stderr) => {
+  const stopJavaPath = path.join(__dirname, 'stop.java');
+  const cp = exec(`java ${stopJavaPath} ${sqPath}`, undefined, (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
       return;

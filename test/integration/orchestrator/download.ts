@@ -18,12 +18,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import * as https from 'https';
-import * as fs from 'fs';
-import { execSync } from 'child_process';
-import * as path from 'path';
+import * as https from 'node:https';
+import * as fs from 'node:fs';
+import { execSync } from 'node:child_process';
+import * as path from 'node:path';
 import * as mkdirp from 'mkdirp';
-import * as os from 'os';
+import * as os from 'node:os';
 
 const DEFAULT_VERSION = '9.7.1.62043';
 const ARTIFACTORY_URL = process.env.ARTIFACTORY_URL || 'https://repox.jfrog.io';

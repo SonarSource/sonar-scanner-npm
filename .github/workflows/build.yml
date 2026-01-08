@@ -43,6 +43,7 @@ jobs:
         run: |
           npm run build
           npx knip
+          (cd build && npm pack)
         env:
           VERSION: SNAPSHOT
 
@@ -89,14 +90,6 @@ jobs:
         run: |
           npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).ARTIFACTORY_ACCESS_TOKEN }}
           npm config set registry https://repox.jfrog.io/artifactory/api/npm/npm/
-
-      - name: Setup integration test
-        run: |
-          (cd build && npm pack)
-          cp build/sonar-scan-SNAPSHOT.tgz test/integration
-          (cd test/integration && npm install --no-save sonar-scan-SNAPSHOT.tgz)
-          (cd tools/orchestrator && npm run build)
-        shell: bash
 
       - name: Run integration tests
         env:
