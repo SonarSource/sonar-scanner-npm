@@ -23,8 +23,12 @@ import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { LogLevel } from '../../src/logging';
 import { API_V2_JRE_ENDPOINT, SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
-import { FsDeps } from '../../src/deps';
-import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
+import {
+  fetchJRE,
+  fetchServerVersion,
+  serverSupportsJREProvisioning,
+  JavaFsDeps,
+} from '../../src/java';
 import * as request from '../../src/request';
 import {
   AnalysisJresResponseType,
@@ -204,13 +208,13 @@ describe('java', () => {
         const mockDownload = mock.fn(() => Promise.resolve());
         const mockValidateChecksum = mock.fn(() => Promise.reject(new Error('Checksum mismatch')));
         const mockRemove = mock.fn(() => Promise.resolve());
-        const mockFsDeps: Partial<FsDeps> = {
+        const mockFsDeps: Partial<JavaFsDeps> = {
           remove: mockRemove,
         };
 
         await assert.rejects(async () => {
           await fetchJRE(MOCKED_PROPERTIES, {
-            fsDeps: mockFsDeps as FsDeps,
+            fsDeps: mockFsDeps as JavaFsDeps,
             getCacheFileLocationFn: mockGetCacheFileLocation,
             getCacheDirectoriesFn: mockGetCacheDirectories,
             downloadFn: mockDownload,
