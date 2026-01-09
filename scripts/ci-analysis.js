@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-const path = require('path');
+const path = require('node:path');
 
 // Regular users will call 'require('@sonar/scan')' - but not here: eat your own dog food! :-)
 const scanner = require('../build').scan;

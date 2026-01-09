@@ -19,8 +19,8 @@
  */
 
 // this is to avoid log outputs throughout the tests
-jest.mock('../src/logging', () => ({
-  ...jest.requireActual('../src/logging'),
+jest.mock('../../src/logging', () => ({
+  ...jest.requireActual('../../src/logging'),
   log: jest.fn(),
   logWithPrefix: jest.fn(),
   getLogLevel: jest.fn(),
