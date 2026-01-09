@@ -330,5 +330,35 @@ describe('scanner-engine', () => {
         assert.ok(commandHistory.includes('/some/path/to/java'));
       });
     }
+
+    it('should dump to file when SonarScannerInternalDumpToFile is set', async () => {
+      const mockWriteFile = mock.fn(() => Promise.resolve());
+      const mockFsDeps = {
+        promises: {
+          writeFile: mockWriteFile,
+        },
+      } as unknown as FsDeps;
+
+      const mockSpawn = createMockSpawn();
+      const dumpFilePath = '/tmp/dump.json';
+
+      await runScannerEngine(
+        '/some/path/to/java',
+        '/some/path/to/scanner-engine',
+        {},
+        {
+          ...MOCKED_PROPERTIES,
+          [ScannerProperty.SonarScannerInternalDumpToFile]: dumpFilePath,
+        },
+        { spawnFn: mockSpawn, fsDeps: mockFsDeps },
+      );
+
+      // Verify writeFile was called with correct path
+      assert.strictEqual(mockWriteFile.mock.callCount(), 1);
+      assert.strictEqual(mockWriteFile.mock.calls[0].arguments[0], dumpFilePath);
+
+      // Verify spawn was NOT called (should exit early)
+      assert.strictEqual(commandHistory.length, 0);
+    });
   });
 });
