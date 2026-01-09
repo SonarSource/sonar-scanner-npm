@@ -119,15 +119,13 @@ function getScannerCliUrl(
 
 export async function downloadScannerCli(
   properties: ScannerProperties,
-  deps: ScannerCliDeps = {},
-): Promise<string> {
-  const {
+  {
     fsDeps = defaultFsDeps,
     processDeps = defaultProcessDeps,
     downloadFn = download,
     extractArchiveFn = extractArchive,
-  } = deps;
-
+  }: ScannerCliDeps = {},
+): Promise<string> {
   const versionStr = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
   const version = semver.coerce(versionStr);
   if (!version) {
@@ -181,10 +179,8 @@ export async function runScannerCli(
   scanOptions: ScanOptions,
   properties: ScannerProperties,
   binPath: string,
-  deps: ScannerCliDeps = {},
+  { processDeps = defaultProcessDeps, spawnFn = defaultSpawn }: ScannerCliDeps = {},
 ) {
-  const { processDeps = defaultProcessDeps, spawnFn = defaultSpawn } = deps;
-
   log(LogLevel.INFO, 'Starting analysis');
   // We filter out env properties that are passed to the scanner
   // otherwise, they would supersede the properties passed to the scanner through SONARQUBE_SCANNER_PARAMS

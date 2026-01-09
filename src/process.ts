@@ -55,9 +55,8 @@ export interface ProcessModuleDeps {
  */
 export async function locateExecutableFromPath(
   executable: string,
-  deps: ProcessModuleDeps = {},
+  { processDeps = defaultProcessDeps, execAsyncFn = execAsync }: ProcessModuleDeps = {},
 ): Promise<string | null> {
-  const { processDeps = defaultProcessDeps, execAsyncFn = execAsync } = deps;
   try {
     log(LogLevel.INFO, `Trying to find ${executable}`);
     const child = await execAsyncFn(

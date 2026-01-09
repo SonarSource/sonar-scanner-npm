@@ -56,8 +56,10 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs, deps: Sc
   }
 }
 
-async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs, deps: ScanDeps = {}) {
-  const {
+async function runScan(
+  scanOptions: ScanOptions,
+  cliArgs?: CliArgs,
+  {
     serverSupportsJREProvisioningFn = defaultServerSupportsJREProvisioning,
     fetchJREFn = defaultFetchJRE,
     downloadScannerCliFn = defaultDownloadScannerCli,
@@ -65,8 +67,8 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs, deps: ScanDe
     fetchScannerEngineFn = defaultFetchScannerEngine,
     runScannerEngineFn = defaultRunScannerEngine,
     locateExecutableFromPathFn = defaultLocateExecutableFromPath,
-  } = deps;
-
+  }: ScanDeps = {},
+) {
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
 

@@ -524,10 +524,8 @@ export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
   cliArgs?: CliArgs,
-  deps: PropertiesDeps = {},
+  { fsDeps = defaultFsDeps, processDeps = defaultProcessDeps }: PropertiesDeps = {},
 ): ScannerProperties {
-  const { fsDeps = defaultFsDeps, processDeps = defaultProcessDeps } = deps;
-
   const envProperties = getEnvironmentProperties(processDeps);
   const scanOptionsProperties = getScanOptionsProperties(scanOptions);
   const cliProperties = getCommandLineProperties(cliArgs);

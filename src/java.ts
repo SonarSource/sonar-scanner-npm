@@ -64,10 +64,8 @@ export interface JavaDeps {
 
 export async function fetchServerVersion(
   properties: ScannerProperties,
-  deps: JavaDeps = {},
+  { fetchFn = fetch }: JavaDeps = {},
 ): Promise<SemVer> {
-  const { fetchFn = fetch } = deps;
-
   let version: SemVer | null = null;
   try {
     // Try and fetch the new version endpoint first
@@ -110,7 +108,7 @@ export async function fetchServerVersion(
 
 export async function serverSupportsJREProvisioning(
   properties: ScannerProperties,
-  deps: JavaDeps = {},
+  { fetchFn = fetch }: JavaDeps = {},
 ): Promise<boolean> {
   if (properties[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
     return true;
@@ -120,7 +118,7 @@ export async function serverSupportsJREProvisioning(
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
   const SQServerInfo =
     semver.coerce(properties[ScannerProperty.SonarScannerInternalSqVersion]) ??
-    (await fetchServerVersion(properties, deps));
+    (await fetchServerVersion(properties, { fetchFn }));
   log(LogLevel.INFO, 'SonarQube server version:', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
@@ -130,9 +128,7 @@ export async function serverSupportsJREProvisioning(
 
 export async function fetchJRE(
   properties: ScannerProperties,
-  deps: JavaDeps = {},
-): Promise<string> {
-  const {
+  {
     fsDeps = defaultFsDeps,
     fetchFn = fetch,
     downloadFn = download,
@@ -140,8 +136,8 @@ export async function fetchJRE(
     getCacheDirectoriesFn = getCacheDirectories,
     validateChecksumFn = validateChecksum,
     extractArchiveFn = extractArchive,
-  } = deps;
-
+  }: JavaDeps = {},
+): Promise<string> {
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
   const jreMetaData = await fetchLatestSupportedJRE(properties, fetchFn);
   log(LogLevel.DEBUG, 'Latest Supported JRE: ', jreMetaData);
