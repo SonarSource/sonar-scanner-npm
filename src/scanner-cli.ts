@@ -18,7 +18,6 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { AxiosRequestConfig } from 'axios';
-import { spawn } from 'node:child_process';
 import path from 'node:path';
 import semver from 'semver';
 import {
@@ -63,7 +62,7 @@ export function normalizePlatformName(
   if (isMac(processDeps)) {
     return 'macosx';
   }
-  throw Error(`Your platform '${processDeps.platform}' is currently not supported.`);
+  throw new Error(`Your platform '${processDeps.platform}' is currently not supported.`);
 }
 
 /**
