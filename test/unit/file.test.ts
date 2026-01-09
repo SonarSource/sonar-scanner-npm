@@ -17,11 +17,11 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { describe, it, mock } from 'node:test';
+import { describe, it, mock, Mock } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { SONAR_CACHE_DIR } from '../../src/constants';
-import { FileDeps } from '../../src/file';
+import type { FileDeps } from '../../src/file';
 import {
   extractArchive,
   getCacheDirectories,
@@ -113,7 +113,8 @@ describe('file', () => {
 
       assert.strictEqual(mockRemove.mock.callCount(), 1);
       // The path will be OS-specific
-      assert.ok((mockRemove.mock.calls[0].arguments[0] as string).includes('server-checksum'));
+      const removeFn = mockRemove as Mock<(path: string) => Promise<void>>;
+      assert.ok(removeFn.mock.calls[0].arguments[0].includes('server-checksum'));
     });
 
     it('should return null if the file does not exist', async () => {

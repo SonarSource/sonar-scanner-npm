@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import { spawn as nodeSpawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -34,7 +34,7 @@ import { LogLevel, log } from './logging';
 import { isLinux, isMac, isWindows } from './platform';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
-import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { type ScanOptions, type ScannerProperties, ScannerProperty } from './types';
 
 export interface ScannerCliFsDeps {
   exists: (path: string) => Promise<boolean>;
@@ -47,7 +47,7 @@ export interface ScannerCliProcessDeps {
   env: NodeJS.ProcessEnv;
 }
 
-export type SpawnFn = typeof nodeSpawn;
+type SpawnFn = typeof nodeSpawn;
 
 const defaultFsDeps: ScannerCliFsDeps = {
   exists: async (filePath: string) => {

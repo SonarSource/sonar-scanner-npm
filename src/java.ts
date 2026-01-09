@@ -19,7 +19,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import semver, { SemVer } from 'semver';
+import semver, { type SemVer } from 'semver';
 import {
   API_OLD_VERSION_ENDPOINT,
   API_V2_JRE_ENDPOINT,
@@ -37,10 +37,10 @@ import {
 import { LogLevel, log } from './logging';
 import { download, fetch } from './request';
 import {
-  AnalysisJreMetaData,
-  AnalysisJresResponseType,
+  type AnalysisJreMetaData,
+  type AnalysisJresResponseType,
   CacheStatus,
-  ScannerProperties,
+  type ScannerProperties,
   ScannerProperty,
 } from './types';
 

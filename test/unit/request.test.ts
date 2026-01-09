@@ -19,9 +19,14 @@
  */
 import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import fs from 'node:fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+
+// hpagent exposes proxy at runtime but not in types
+interface ProxyAgentWithProxy {
+  proxy: URL;
+}
 import path from 'node:path';
 import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants';
 import { LogLevel } from '../../src/logging';
@@ -51,9 +56,15 @@ describe('request', () => {
           [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
         });
         assert.ok(agents.httpAgent instanceof HttpProxyAgent);
-        assert.strictEqual(agents.httpAgent?.proxy.toString(), 'http://proxy.com/');
+        assert.strictEqual(
+          (agents.httpAgent as unknown as ProxyAgentWithProxy).proxy.toString(),
+          'http://proxy.com/',
+        );
         assert.ok(agents.httpsAgent instanceof HttpsProxyAgent);
-        assert.strictEqual(agents.httpsAgent?.proxy.toString(), 'http://proxy.com/');
+        assert.strictEqual(
+          (agents.httpsAgent as unknown as ProxyAgentWithProxy).proxy.toString(),
+          'http://proxy.com/',
+        );
         assert.strictEqual(agents.proxy, false);
       });
 
@@ -164,7 +175,10 @@ describe('request', () => {
       assert.ok(ca.includes(certificatePem));
       assert.deepStrictEqual(httpsAgent?.options.pfx, fs.readFileSync(keystorePath));
       assert.strictEqual(httpsAgent?.options.passphrase, keystorePass);
-      assert.strictEqual(httpsAgent?.proxy.toString(), 'http://proxy.com/');
+      assert.strictEqual(
+        (httpsAgent as unknown as ProxyAgentWithProxy).proxy.toString(),
+        'http://proxy.com/',
+      );
     });
   });
 
@@ -179,11 +193,16 @@ describe('request', () => {
       assert.strictEqual(axiosCreateMock.mock.callCount(), 2);
       const calls = axiosCreateMock.mock.calls;
       assert.ok(
-        calls.some(
-          call =>
-            call.arguments[0]?.baseURL === SONARCLOUD_API_BASE_URL &&
-            call.arguments[0]?.headers?.Authorization === 'Bearer testToken',
-        ),
+        calls.some(call => {
+          const options = call.arguments[0] as {
+            baseURL?: string;
+            headers?: Record<string, string>;
+          };
+          return (
+            options?.baseURL === SONARCLOUD_API_BASE_URL &&
+            options?.headers?.Authorization === 'Bearer testToken'
+          );
+        }),
       );
     });
 

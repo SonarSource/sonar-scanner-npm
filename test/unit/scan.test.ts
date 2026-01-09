@@ -18,10 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { describe, it, beforeEach, mock } from 'node:test';
+import { describe, it, beforeEach, mock, Mock } from 'node:test';
 import assert from 'node:assert';
 import sinon from 'sinon';
-import { scan, ScanDeps } from '../../src/scan';
+import { scan, type ScanDeps } from '../../src/scan';
 import { ScannerProperty } from '../../src/types';
 import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging';
 
@@ -29,14 +29,20 @@ import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging';
 const mockLog = mock.fn();
 mock.method(console, 'log', mockLog);
 
+// Type definitions for mock functions
+type RunScannerCliFn = (opts: unknown, props: unknown, binPath: string) => Promise<void>;
+type RunScannerEngineFn = (jrePath: string, ...rest: unknown[]) => Promise<void>;
+
 // Create mock functions for all dependencies
 const mockServerSupportsJREProvisioning = mock.fn(() => Promise.resolve(false));
 const mockFetchJRE = mock.fn(() => Promise.resolve('/some-provisioned-jre'));
 const mockDownloadScannerCli = mock.fn(() => Promise.resolve('/path/to/scanner-cli'));
-const mockRunScannerCli = mock.fn(() => Promise.resolve());
+const mockRunScannerCli = mock.fn<RunScannerCliFn>(() => Promise.resolve());
 const mockFetchScannerEngine = mock.fn(() => Promise.resolve('/path/to/scanner-engine'));
-const mockRunScannerEngine = mock.fn(() => Promise.resolve());
-const mockLocateExecutableFromPath = mock.fn(() => Promise.resolve('/usr/bin/java'));
+const mockRunScannerEngine = mock.fn<RunScannerEngineFn>(() => Promise.resolve());
+const mockLocateExecutableFromPath = mock.fn<() => Promise<string | null>>(() =>
+  Promise.resolve('/usr/bin/java'),
+);
 
 function createScanDeps(): ScanDeps {
   return {
@@ -168,8 +174,7 @@ describe('scan', () => {
       assert.strictEqual(mockFetchJRE.mock.callCount(), 0);
       assert.strictEqual(mockRunScannerEngine.mock.callCount(), 0);
       assert.strictEqual(mockRunScannerCli.mock.callCount(), 1);
-      const lastCall = mockRunScannerCli.mock.calls[mockRunScannerCli.mock.calls.length - 1];
-      assert.strictEqual(lastCall.arguments[2], '/path/to/scanner-cli');
+      assert.strictEqual(mockRunScannerCli.mock.calls[0].arguments[2], '/path/to/scanner-cli');
     });
 
     it('should use local scanner if requested', async () => {
@@ -187,14 +192,15 @@ describe('scan', () => {
 
       assert.strictEqual(mockDownloadScannerCli.mock.callCount(), 0);
       assert.strictEqual(mockRunScannerCli.mock.callCount(), 1);
-      const lastCall = mockRunScannerCli.mock.calls[mockRunScannerCli.mock.calls.length - 1];
-      assert.strictEqual(lastCall.arguments[2], '/bin/sonar-scanner');
+      assert.strictEqual(mockRunScannerCli.mock.calls[0].arguments[2], '/bin/sonar-scanner');
     });
 
     it('should fail if local scanner is requested but not found', async () => {
       sinon.stub(process, 'cwd').returns(__dirname);
       mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
-      mockLocateExecutableFromPath.mock.mockImplementation(() => Promise.resolve(null));
+      mockLocateExecutableFromPath.mock.mockImplementation(() =>
+        Promise.resolve(null as string | null),
+      );
 
       await assert.rejects(
         scan(
@@ -220,8 +226,7 @@ describe('scan', () => {
       await scan({ serverUrl: 'http://localhost:9000' }, undefined, createScanDeps());
 
       assert.strictEqual(mockFetchJRE.mock.callCount(), 1);
-      const lastCall = mockRunScannerEngine.mock.calls[mockRunScannerEngine.mock.calls.length - 1];
-      assert.strictEqual(lastCall.arguments[0], '/some-provisioned-jre');
+      assert.strictEqual(mockRunScannerEngine.mock.calls[0].arguments[0], '/some-provisioned-jre');
     });
 
     it('should not fetch the JRE if the JRE path is explicitly specified', async () => {
@@ -238,8 +243,7 @@ describe('scan', () => {
       );
 
       assert.strictEqual(mockFetchJRE.mock.callCount(), 0);
-      const lastCall = mockRunScannerEngine.mock.calls[mockRunScannerEngine.mock.calls.length - 1];
-      assert.strictEqual(lastCall.arguments[0], 'path/to/java');
+      assert.strictEqual(mockRunScannerEngine.mock.calls[0].arguments[0], 'path/to/java');
     });
 
     it('should not fetch the JRE if skipping JRE provisioning explicitly', async () => {
@@ -260,14 +264,15 @@ describe('scan', () => {
 
       assert.strictEqual(mockFetchJRE.mock.callCount(), 0);
       assert.strictEqual(mockLocateExecutableFromPath.mock.callCount(), 1);
-      const lastCall = mockRunScannerEngine.mock.calls[mockRunScannerEngine.mock.calls.length - 1];
-      assert.strictEqual(lastCall.arguments[0], '/usr/bin/java');
+      assert.strictEqual(mockRunScannerEngine.mock.calls[0].arguments[0], '/usr/bin/java');
     });
 
     it('should fail when skipping JRE provisioning without java in PATH', async () => {
       sinon.stub(process, 'cwd').returns(__dirname);
       mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(true));
-      mockLocateExecutableFromPath.mock.mockImplementation(() => Promise.resolve(null));
+      mockLocateExecutableFromPath.mock.mockImplementation(() =>
+        Promise.resolve(null as string | null),
+      );
 
       await assert.rejects(
         scan(

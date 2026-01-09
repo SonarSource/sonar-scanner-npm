@@ -27,13 +27,13 @@ import {
   fetchJRE,
   fetchServerVersion,
   serverSupportsJREProvisioning,
-  JavaFsDeps,
+  type JavaFsDeps,
 } from '../../src/java';
 import * as request from '../../src/request';
 import {
-  AnalysisJresResponseType,
+  type AnalysisJresResponseType,
   CacheStatus,
-  ScannerProperties,
+  type ScannerProperties,
   ScannerProperty,
 } from '../../src/types';
 

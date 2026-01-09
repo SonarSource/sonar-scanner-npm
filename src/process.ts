@@ -40,9 +40,11 @@ const defaultProcessDeps: ProcessProcessDeps = {
   },
 };
 
+type ExecAsyncFn = (command: string) => Promise<{ stdout: string; stderr: string }>;
+
 export interface ProcessModuleDeps {
   processDeps?: ProcessProcessDeps;
-  execAsyncFn?: typeof execAsync;
+  execAsyncFn?: ExecAsyncFn;
 }
 
 /**

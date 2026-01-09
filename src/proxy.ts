@@ -19,7 +19,7 @@
  */
 import { URL } from 'node:url';
 import { LogLevel, log } from './logging';
-import { ScannerProperties, ScannerProperty } from './types';
+import { type ScannerProperties, ScannerProperty } from './types';
 
 export function getProxyUrl(properties: ScannerProperties): URL | undefined {
   const proxyHost = properties[ScannerProperty.SonarScannerProxyHost];
