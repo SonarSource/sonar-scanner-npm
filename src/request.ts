@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import fs from 'node:fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import https from 'node:https';
@@ -26,7 +26,7 @@ import * as stream from 'node:stream';
 import { promisify } from 'node:util';
 import { LogLevel, log } from './logging';
 import { getProxyUrl } from './proxy';
-import { ScannerProperties, ScannerProperty } from './types';
+import { type ScannerProperties, ScannerProperty } from './types';
 
 const finished = promisify(stream.finished);
 

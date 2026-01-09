@@ -17,14 +17,14 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { describe, it, mock } from 'node:test';
+import { describe, it, mock, Mock } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_VERSION } from '../../src/constants';
 import {
-  ScannerCliFsDeps,
-  ScannerCliProcessDeps,
+  type ScannerCliFsDeps,
+  type ScannerCliProcessDeps,
   downloadScannerCli,
   normalizePlatformName,
   runScannerCli,
@@ -279,7 +279,11 @@ describe('scanner-cli', () => {
       await promise;
 
       assert.strictEqual(mockSpawn.mock.callCount(), 1);
-      assert.strictEqual(mockSpawn.mock.calls[0].arguments[0], 'sonar-scanner');
+      type SpawnFnType = (cmd: string, ...rest: unknown[]) => unknown;
+      assert.strictEqual(
+        (mockSpawn as Mock<SpawnFnType>).mock.calls[0].arguments[0],
+        'sonar-scanner',
+      );
     });
 
     it('should reject if SonarScanner CLI fails', async () => {

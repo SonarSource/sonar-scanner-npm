@@ -34,7 +34,7 @@ import {
   fetchScannerEngine as defaultFetchScannerEngine,
   runScannerEngine as defaultRunScannerEngine,
 } from './scanner-engine';
-import { CliArgs, ScanOptions, ScannerProperty } from './types';
+import { type CliArgs, type ScanOptions, ScannerProperty } from './types';
 import { version } from './version';
 
 export interface ScanDeps {

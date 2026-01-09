@@ -17,10 +17,10 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { describe, it, mock } from 'node:test';
+import { describe, it, mock, Mock } from 'node:test';
 import assert from 'node:assert';
 import { SCANNER_CLI_DEFAULT_BIN_NAME, WINDOWS_WHERE_EXE_PATH } from '../../src/constants';
-import { locateExecutableFromPath, ProcessProcessDeps } from '../../src/process';
+import { locateExecutableFromPath, type ProcessProcessDeps } from '../../src/process';
 
 // Mock console.log to suppress output
 mock.method(console, 'log', () => {});
@@ -48,8 +48,10 @@ describe('process', () => {
 
       assert.strictEqual(result, '/bin/path/to/stuff');
       assert.strictEqual(mockExecAsync.mock.callCount(), 1);
+      type ExecFn = (cmd: string) => Promise<{ stdout: string; stderr: string }>;
+      const execFn = mockExecAsync as Mock<ExecFn>;
       assert.ok(
-        mockExecAsync.mock.calls[0].arguments[0].includes(
+        execFn.mock.calls[0].arguments[0].includes(
           `${WINDOWS_WHERE_EXE_PATH} ${SCANNER_CLI_DEFAULT_BIN_NAME}`,
         ),
       );

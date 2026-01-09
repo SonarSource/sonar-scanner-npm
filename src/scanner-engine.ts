@@ -30,10 +30,10 @@ import { LogLevel, log, logWithPrefix } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download, fetch } from './request';
 import {
-  AnalysisEngineResponseType,
-  ScanOptions,
-  ScannerLogEntry,
-  ScannerProperties,
+  type AnalysisEngineResponseType,
+  type ScanOptions,
+  type ScannerLogEntry,
+  type ScannerProperties,
   ScannerProperty,
 } from './types';
 

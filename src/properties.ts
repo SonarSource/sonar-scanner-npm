@@ -45,10 +45,10 @@ import { getArch, getSupportedOS } from './platform';
 import { version } from './version';
 import {
   CacheStatus,
-  CliArgs,
-  PackageJson,
-  ScanOptions,
-  ScannerProperties,
+  type CliArgs,
+  type PackageJson,
+  type ScanOptions,
+  type ScannerProperties,
   ScannerProperty,
 } from './types';
 

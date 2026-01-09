@@ -25,7 +25,7 @@ import tarStream from 'tar-stream';
 import zlib from 'node:zlib';
 import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
 import { LogLevel, log } from './logging';
-import { CacheFileData, ScannerProperties, ScannerProperty } from './types';
+import { type CacheFileData, type ScannerProperties, ScannerProperty } from './types';
 
 export interface FileDeps {
   existsSync: typeof fs.existsSync;

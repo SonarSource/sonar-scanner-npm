@@ -18,23 +18,33 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { describe, it, beforeEach, mock } from 'node:test';
+import { describe, it, beforeEach, mock, Mock } from 'node:test';
 import assert from 'node:assert';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { ChildProcess, SpawnOptions } from 'node:child_process';
+import type { ChildProcess, SpawnOptions } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import sinon from 'sinon';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from '../../src/constants';
-import { SpawnFn } from '../../src/scanner-cli';
+// Use a simplified SpawnFn type for testing
+type TestSpawnFn = (
+  command: string,
+  args?: readonly string[],
+  options?: SpawnOptions,
+) => ChildProcess;
 import * as request from '../../src/request';
 import {
   fetchScannerEngine,
   runScannerEngine,
-  ScannerEngineDeps,
-  ScannerEngineFsDeps,
+  type ScannerEngineDeps,
+  type ScannerEngineFsDeps,
+  type SpawnFn,
 } from '../../src/scanner-engine';
-import { AnalysisEngineResponseType, ScannerProperties, ScannerProperty } from '../../src/types';
+import {
+  type AnalysisEngineResponseType,
+  type ScannerProperties,
+  ScannerProperty,
+} from '../../src/types';
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();
@@ -53,7 +63,7 @@ const MOCK_CACHE_DIRECTORIES = {
 };
 
 // Mock functions for dependency injection
-const mockGetCacheFileLocation = mock.fn(() => Promise.resolve(null));
+const mockGetCacheFileLocation = mock.fn<() => Promise<string | null>>(() => Promise.resolve(null));
 const mockExtractArchive = mock.fn(() => Promise.resolve());
 const mockValidateChecksum = mock.fn(() => Promise.resolve());
 const mockGetCacheDirectories = mock.fn(() => Promise.resolve(MOCK_CACHE_DIRECTORIES));
@@ -115,7 +125,7 @@ let commandHistory: string[] = [];
 
 function createMockSpawn(
   options: { exitCode?: number; stdout?: string; stderr?: string } = {},
-): SpawnFn {
+): TestSpawnFn {
   return (command: string, args?: readonly string[], spawnOptions?: SpawnOptions) => {
     commandHistory.push(command);
     return createMockChildProcess(options);
@@ -219,15 +229,16 @@ describe('scanner-engine', () => {
   describe('runScannerEngine', () => {
     it('should launch scanner engine and write properties to stdin', async () => {
       let writtenData: string | undefined;
-      const mockSpawn: SpawnFn = (command, args, options) => {
+      const mockSpawn: TestSpawnFn = (command, args, options) => {
         commandHistory.push(command);
         const cp = createMockChildProcess();
         // Capture the data written to stdin
-        const originalWrite = cp.stdin.write;
-        cp.stdin.write = mock.fn((data: string) => {
-          writtenData = data;
-          return true;
-        }) as any;
+        if (cp.stdin) {
+          cp.stdin.write = mock.fn((data: string) => {
+            writtenData = data;
+            return true;
+          }) as typeof cp.stdin.write;
+        }
         return cp;
       };
 
@@ -243,7 +254,7 @@ describe('scanner-engine', () => {
           jvmOptions: ['-Dsome.custom.opt=123'],
         },
         properties,
-        { spawnFn: mockSpawn },
+        { spawnFn: mockSpawn as SpawnFn },
       );
 
       assert.ok(writtenData, 'Expected data to be written to stdin');
@@ -265,7 +276,7 @@ describe('scanner-engine', () => {
           '/some/path/to/scanner-engine',
           {},
           MOCKED_PROPERTIES,
-          { spawnFn: mockSpawn },
+          { spawnFn: mockSpawn as SpawnFn },
         ),
         Error,
       );
@@ -292,7 +303,7 @@ describe('scanner-engine', () => {
         '/some/path/to/scanner-engine',
         {},
         MOCKED_PROPERTIES,
-        { spawnFn: mockSpawn },
+        { spawnFn: mockSpawn as SpawnFn },
       );
 
       // Check that log messages were recorded
@@ -327,7 +338,7 @@ describe('scanner-engine', () => {
             [ScannerProperty.SonarScannerProxyUser]: 'the-user',
             [ScannerProperty.SonarScannerProxyPassword]: 'the-pass',
           },
-          { spawnFn: mockSpawn },
+          { spawnFn: mockSpawn as SpawnFn },
         );
 
         assert.ok(commandHistory.includes('/some/path/to/java'));
@@ -352,12 +363,16 @@ describe('scanner-engine', () => {
           ...MOCKED_PROPERTIES,
           [ScannerProperty.SonarScannerInternalDumpToFile]: dumpFilePath,
         },
-        { spawnFn: mockSpawn, fsDeps: mockFsDeps },
+        { spawnFn: mockSpawn as SpawnFn, fsDeps: mockFsDeps },
       );
 
       // Verify writeFile was called with correct path
       assert.strictEqual(mockWriteFile.mock.callCount(), 1);
-      assert.strictEqual(mockWriteFile.mock.calls[0].arguments[0], dumpFilePath);
+      type WriteFileFn = (path: string, data: string) => Promise<void>;
+      assert.strictEqual(
+        (mockWriteFile as Mock<WriteFileFn>).mock.calls[0].arguments[0],
+        dumpFilePath,
+      );
 
       // Verify spawn was NOT called (should exit early)
       assert.strictEqual(commandHistory.length, 0);

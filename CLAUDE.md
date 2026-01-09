@@ -81,6 +81,18 @@ logWithPrefix(LogLevel.INFO, 'ComponentName', 'message');
 
 Prettier config: 100 char width, trailing commas, single quotes, LF line endings. Pre-commit hook auto-formats staged files.
 
+### Pre-commit Checks
+
+Before committing, verify there are no TypeScript errors and no unused exports:
+
+```bash
+npx tsc --noEmit -p tsconfig.json
+npx tsc --noEmit -p test/unit/tsconfig.json
+npx knip
+```
+
+Note: `test/integration/tsconfig.json` requires running `npm install` in `test/integration/` first, as it depends on the build artifact.
+
 ### External Tools
 
 - Use `gh` CLI to interact with GitHub (issues, PRs, etc.)
@@ -99,6 +111,23 @@ import { EventEmitter } from 'node:events';
 // Incorrect
 import path from 'path';
 import { spawn } from 'child_process';
+```
+
+### Type Imports
+
+Use `import type` when importing types only. This helps with tree-shaking and makes it clear which imports are only used for type checking:
+
+```typescript
+// When all imports are types, use import type
+import type { ScannerProperties, ScanOptions } from './types';
+import type { ChildProcess, SpawnOptions } from 'node:child_process';
+
+// When mixing types and values, use inline type modifier
+import { type ChildProcess, spawn } from 'node:child_process';
+import { type ScannerProperties, ScannerProperty } from './types';
+
+// Incorrect: importing types as regular imports
+import { ScannerProperties, ScanOptions } from './types';
 ```
 
 ## Testing

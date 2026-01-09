@@ -29,7 +29,7 @@ import {
   SONARCLOUD_URL,
 } from '../../src/constants';
 import { getHostProperties, getProperties } from '../../src/properties';
-import { CacheStatus, ScannerProperties, ScannerProperty } from '../../src/types';
+import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types';
 import { FakeProjectMock } from './mocks/FakeProjectMock';
 
 // Mock console.log to suppress output and capture log calls
