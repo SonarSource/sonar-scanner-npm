@@ -81,22 +81,19 @@ export async function extractArchive(
 
     const extractionPromise = new Promise((resolve, reject) => {
       extract.on('entry', async (header, stream, next) => {
-        // Create the full path for the file
-        const filePath = path.join(toPath, header.name);
+        const canonicalPath = path.normalize(toPath + path.sep + header.name);
 
-        // Prevent Zip Slip vulnerability by ensuring the resolved path is within the target directory
-        const resolvedPath = path.resolve(filePath);
-        const resolvedToPath = path.resolve(toPath);
-        if (!resolvedPath.startsWith(resolvedToPath + path.sep)) {
+        // Prevent Zip Slip vulnerability by ensuring the path is within the target directory
+        if (!canonicalPath.startsWith(toPath)) {
           stream.resume();
           reject(new Error(`Entry "${header.name}" would extract outside target directory`));
           return;
         }
 
         // Ensure the parent directory exists
-        fsDeps.mkdirSync(path.dirname(filePath), { recursive: true });
+        fsDeps.mkdirSync(path.dirname(canonicalPath), { recursive: true });
 
-        stream.pipe(fsDeps.createWriteStream(filePath, { mode: header.mode }));
+        stream.pipe(fsDeps.createWriteStream(canonicalPath, { mode: header.mode }));
         stream.on('end', next); // End of file, move onto next file
         stream.resume(); // Auto drain the stream
       });
