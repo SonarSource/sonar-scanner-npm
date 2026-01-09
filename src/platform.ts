@@ -18,22 +18,46 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { defaultFsDeps, defaultProcessDeps, FsDeps, ProcessDeps } from './deps';
+import fs from 'node:fs';
 import { LogLevel, log } from './logging';
 
-export function getArch(processDeps: ProcessDeps = defaultProcessDeps): NodeJS.Architecture {
+export interface PlatformProcessDeps {
+  platform: NodeJS.Platform;
+  arch: NodeJS.Architecture;
+}
+
+export interface PlatformFsDeps {
+  readFileSync: typeof fs.readFileSync;
+}
+
+const defaultProcessDeps: PlatformProcessDeps = {
+  get platform() {
+    return process.platform;
+  },
+  get arch() {
+    return process.arch;
+  },
+};
+
+const defaultFsDeps: PlatformFsDeps = {
+  readFileSync: fs.readFileSync,
+};
+
+export function getArch(
+  processDeps: PlatformProcessDeps = defaultProcessDeps,
+): NodeJS.Architecture {
   return processDeps.arch;
 }
 
-export function isLinux(processDeps: ProcessDeps = defaultProcessDeps): boolean {
+export function isLinux(processDeps: PlatformProcessDeps = defaultProcessDeps): boolean {
   return processDeps.platform === 'linux';
 }
 
-export function isWindows(processDeps: ProcessDeps = defaultProcessDeps) {
+export function isWindows(processDeps: PlatformProcessDeps = defaultProcessDeps) {
   return processDeps.platform === 'win32';
 }
 
-export function isMac(processDeps: ProcessDeps = defaultProcessDeps) {
+export function isMac(processDeps: PlatformProcessDeps = defaultProcessDeps) {
   return processDeps.platform === 'darwin';
 }
 
@@ -42,8 +66,8 @@ export function isMac(processDeps: ProcessDeps = defaultProcessDeps) {
  */
 
 function isAlpineLinux(
-  processDeps: ProcessDeps = defaultProcessDeps,
-  fsDeps: FsDeps = defaultFsDeps,
+  processDeps: PlatformProcessDeps = defaultProcessDeps,
+  fsDeps: PlatformFsDeps = defaultFsDeps,
 ): boolean {
   if (!isLinux(processDeps)) {
     return false;
@@ -65,8 +89,8 @@ function isAlpineLinux(
 }
 
 export function getSupportedOS(
-  processDeps: ProcessDeps = defaultProcessDeps,
-  fsDeps: FsDeps = defaultFsDeps,
+  processDeps: PlatformProcessDeps = defaultProcessDeps,
+  fsDeps: PlatformFsDeps = defaultFsDeps,
 ): NodeJS.Platform | 'alpine' {
   return isAlpineLinux(processDeps, fsDeps) ? 'alpine' : processDeps.platform;
 }

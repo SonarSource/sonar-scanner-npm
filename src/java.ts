@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import fs from 'node:fs';
 import path from 'node:path';
 import semver, { SemVer } from 'semver';
 import {
@@ -27,7 +28,6 @@ import {
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
-import { defaultFsDeps, FsDeps } from './deps';
 import {
   extractArchive,
   getCacheDirectories,
@@ -44,8 +44,16 @@ import {
   ScannerProperty,
 } from './types';
 
+export interface JavaFsDeps {
+  remove: (path: string) => Promise<void>;
+}
+
+const defaultFsDeps: JavaFsDeps = {
+  remove: (filePath: string) => fs.promises.rm(filePath, { recursive: true, force: true }),
+};
+
 export interface JavaDeps {
-  fsDeps?: FsDeps;
+  fsDeps?: JavaFsDeps;
   fetchFn?: typeof fetch;
   downloadFn?: typeof download;
   getCacheFileLocationFn?: typeof getCacheFileLocation;

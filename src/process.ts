@@ -21,14 +21,27 @@
 import { exec } from 'node:child_process';
 import util from 'node:util';
 import { WINDOWS_WHERE_EXE_PATH } from './constants';
-import { defaultProcessDeps, ProcessDeps } from './deps';
 import { log, LogLevel } from './logging';
 import { isWindows } from './platform';
 
 const execAsync = util.promisify(exec);
 
+export interface ProcessProcessDeps {
+  platform: NodeJS.Platform;
+  arch: NodeJS.Architecture;
+}
+
+const defaultProcessDeps: ProcessProcessDeps = {
+  get platform() {
+    return process.platform;
+  },
+  get arch() {
+    return process.arch;
+  },
+};
+
 export interface ProcessModuleDeps {
-  processDeps?: ProcessDeps;
+  processDeps?: ProcessProcessDeps;
   execAsyncFn?: typeof execAsync;
 }
 

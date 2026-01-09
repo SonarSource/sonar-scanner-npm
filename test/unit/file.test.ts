@@ -21,7 +21,7 @@ import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { SONAR_CACHE_DIR } from '../../src/constants';
-import { FsDeps } from '../../src/deps';
+import { FileDeps } from '../../src/file';
 import {
   extractArchive,
   getCacheDirectories,
@@ -37,33 +37,28 @@ const MOCKED_PROPERTIES = {
   [ScannerProperty.SonarUserHome]: '/sonar',
 };
 
-function createMockFsDeps(overrides: Partial<FsDeps> = {}): FsDeps {
+function createMockFileDeps(overrides: Partial<FileDeps> = {}): FileDeps {
   return {
     existsSync: mock.fn(() => false),
-    readFileSync: mock.fn(() => Buffer.from('')),
     readFile: mock.fn((path: string, cb: (err: Error | null, data: Buffer) => void) =>
       cb(null, Buffer.from('')),
-    ) as unknown as FsDeps['readFile'],
+    ) as unknown as FileDeps['readFile'],
     remove: mock.fn(() => Promise.resolve()),
-    ensureDir: mock.fn(() => Promise.resolve()),
     mkdirSync: mock.fn(),
     createReadStream: mock.fn(() => ({
-      pipe: mock.fn().mockReturnThis(),
-    })) as unknown as FsDeps['createReadStream'],
+      pipe: function () {
+        return this;
+      },
+    })) as unknown as FileDeps['createReadStream'],
     createWriteStream: mock.fn(() => ({
       on: mock.fn(),
       once: mock.fn(),
       emit: mock.fn(),
       end: mock.fn(),
       write: mock.fn(),
-    })) as unknown as FsDeps['createWriteStream'],
-    exists: mock.fn(() => Promise.resolve(false)),
-    promises: {
-      readFile: mock.fn(() => Promise.resolve(Buffer.from(''))),
-      writeFile: mock.fn(() => Promise.resolve()),
-    } as unknown as FsDeps['promises'],
+    })) as unknown as FileDeps['createWriteStream'],
     ...overrides,
-  } as FsDeps;
+  } as FileDeps;
 }
 
 describe('file', () => {
@@ -78,17 +73,17 @@ describe('file', () => {
         filename,
       );
 
-      const fsDeps = createMockFsDeps({
+      const deps = createMockFileDeps({
         existsSync: mock.fn(() => true),
         readFile: mock.fn((path: string, cb: (err: Error | null, data: Buffer) => void) =>
           cb(null, Buffer.from('file content')),
-        ) as unknown as FsDeps['readFile'],
+        ) as unknown as FileDeps['readFile'],
       });
 
       const result = await getCacheFileLocation(
         MOCKED_PROPERTIES,
         { checksum, filename, alias: 'test' },
-        fsDeps,
+        deps,
       );
 
       assert.strictEqual(result, filePath);
@@ -99,16 +94,16 @@ describe('file', () => {
       const filename = 'file.txt';
       const mockRemove = mock.fn(() => Promise.resolve());
 
-      const fsDeps = createMockFsDeps({
+      const deps = createMockFileDeps({
         existsSync: mock.fn(() => true),
         readFile: mock.fn((path: string, cb: (err: Error | null, data: Buffer) => void) =>
           cb(null, Buffer.from('file content')),
-        ) as unknown as FsDeps['readFile'],
+        ) as unknown as FileDeps['readFile'],
         remove: mockRemove,
       });
 
       await assert.rejects(
-        getCacheFileLocation(MOCKED_PROPERTIES, { checksum, filename, alias: 'test' }, fsDeps),
+        getCacheFileLocation(MOCKED_PROPERTIES, { checksum, filename, alias: 'test' }, deps),
         (err: Error) => {
           assert.ok(err.message.includes('Checksum verification failed'));
           assert.ok(err.message.includes('server-checksum'));
@@ -125,14 +120,14 @@ describe('file', () => {
       const checksum = 'shahash';
       const filename = 'file.txt';
 
-      const fsDeps = createMockFsDeps({
+      const deps = createMockFileDeps({
         existsSync: mock.fn(() => false),
       });
 
       const result = await getCacheFileLocation(
         MOCKED_PROPERTIES,
         { checksum, filename, alias: 'test' },
-        fsDeps,
+        deps,
       );
 
       assert.strictEqual(result, null);
@@ -145,14 +140,14 @@ describe('file', () => {
         cb(null, Buffer.from('file content')),
       );
 
-      const fsDeps = createMockFsDeps({
-        readFile: mockReadFile as unknown as FsDeps['readFile'],
+      const deps = createMockFileDeps({
+        readFile: mockReadFile as unknown as FileDeps['readFile'],
       });
 
       await validateChecksum(
         'path/to/file',
         'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c',
-        fsDeps,
+        deps,
       );
 
       assert.strictEqual(mockReadFile.mock.callCount(), 1);
@@ -160,34 +155,34 @@ describe('file', () => {
     });
 
     it('should throw an error if the checksum does not match', async () => {
-      const fsDeps = createMockFsDeps({
+      const deps = createMockFileDeps({
         readFile: mock.fn((path: string, cb: (err: Error | null, data: Buffer) => void) =>
           cb(null, Buffer.from('file content')),
-        ) as unknown as FsDeps['readFile'],
+        ) as unknown as FileDeps['readFile'],
       });
 
-      await assert.rejects(validateChecksum('path/to/file', 'invalidchecksum', fsDeps), {
+      await assert.rejects(validateChecksum('path/to/file', 'invalidchecksum', deps), {
         message:
           'Checksum verification failed for path/to/file. Expected checksum invalidchecksum but got e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c',
       });
     });
 
     it('should throw an error if the checksum is not provided', async () => {
-      const fsDeps = createMockFsDeps();
+      const deps = createMockFileDeps();
 
-      await assert.rejects(validateChecksum('path/to/file', '', fsDeps), {
+      await assert.rejects(validateChecksum('path/to/file', '', deps), {
         message: 'Checksum not provided',
       });
     });
 
     it('should throw an error if the file cannot be read', async () => {
-      const fsDeps = createMockFsDeps({
+      const deps = createMockFileDeps({
         readFile: mock.fn((path: string, cb: (err: Error | null, data: Buffer) => void) =>
           cb(new Error('File not found'), Buffer.from('')),
-        ) as unknown as FsDeps['readFile'],
+        ) as unknown as FileDeps['readFile'],
       });
 
-      await assert.rejects(validateChecksum('path/to/file', 'checksum', fsDeps), {
+      await assert.rejects(validateChecksum('path/to/file', 'checksum', deps), {
         message: 'File not found',
       });
     });
@@ -195,7 +190,7 @@ describe('file', () => {
 
   describe('extractArchive', () => {
     it('should extract a zip archive', async () => {
-      // Since extractArchive uses AdmZip directly (not through FsDeps), we can't easily mock it
+      // Since extractArchive uses AdmZip directly (not through FileDeps), we can't easily mock it
       // But we can test that the function handles different file extensions correctly
       // by checking that it throws for a non-existent zip file
       try {
@@ -223,9 +218,9 @@ describe('file', () => {
         write: mock.fn(),
       }));
 
-      const fsDeps = createMockFsDeps({
-        createReadStream: mockCreateReadStream as unknown as FsDeps['createReadStream'],
-        createWriteStream: mockCreateWriteStream as unknown as FsDeps['createWriteStream'],
+      const deps = createMockFileDeps({
+        createReadStream: mockCreateReadStream as unknown as FileDeps['createReadStream'],
+        createWriteStream: mockCreateWriteStream as unknown as FileDeps['createWriteStream'],
       });
 
       // Test that .tar.gz files use the tar-stream extraction path
@@ -237,7 +232,7 @@ describe('file', () => {
           setTimeout(() => reject(new Error('timeout')), 100),
         );
         await Promise.race([
-          extractArchive('/path/to/archive.tar.gz', '/dest/path', fsDeps),
+          extractArchive('/path/to/archive.tar.gz', '/dest/path', deps),
           timeoutPromise,
         ]);
       } catch (e) {
@@ -255,7 +250,7 @@ describe('file', () => {
       const mockExistsSync = mock.fn(() => true);
       const mockMkdirSync = mock.fn();
 
-      const fsDeps = createMockFsDeps({
+      const deps = createMockFileDeps({
         existsSync: mockExistsSync,
         mkdirSync: mockMkdirSync,
       });
@@ -263,7 +258,7 @@ describe('file', () => {
       const { archivePath, unarchivePath } = await getCacheDirectories(
         MOCKED_PROPERTIES,
         { checksum: 'md5_test', filename: 'file.txt', alias: 'test' },
-        fsDeps,
+        deps,
       );
 
       assert.strictEqual(mockExistsSync.mock.callCount(), 1);
@@ -283,7 +278,7 @@ describe('file', () => {
       const mockExistsSync = mock.fn(() => false);
       const mockMkdirSync = mock.fn();
 
-      const fsDeps = createMockFsDeps({
+      const deps = createMockFileDeps({
         existsSync: mockExistsSync,
         mkdirSync: mockMkdirSync,
       });
@@ -291,7 +286,7 @@ describe('file', () => {
       await getCacheDirectories(
         MOCKED_PROPERTIES,
         { checksum: 'md5_test', filename: 'file.txt', alias: 'test' },
-        fsDeps,
+        deps,
       );
 
       assert.strictEqual(mockExistsSync.mock.callCount(), 1);

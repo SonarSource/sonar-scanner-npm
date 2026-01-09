@@ -26,9 +26,14 @@ import { ChildProcess, SpawnOptions } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import sinon from 'sinon';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from '../../src/constants';
-import { FsDeps, SpawnFn } from '../../src/deps';
+import { SpawnFn } from '../../src/scanner-cli';
 import * as request from '../../src/request';
-import { fetchScannerEngine, runScannerEngine, ScannerEngineDeps } from '../../src/scanner-engine';
+import {
+  fetchScannerEngine,
+  runScannerEngine,
+  ScannerEngineDeps,
+  ScannerEngineFsDeps,
+} from '../../src/scanner-engine';
 import { AnalysisEngineResponseType, ScannerProperties, ScannerProperty } from '../../src/types';
 
 // Mock console.log to suppress output and capture log calls
@@ -55,18 +60,16 @@ const mockGetCacheDirectories = mock.fn(() => Promise.resolve(MOCK_CACHE_DIRECTO
 const mockDownload = mock.fn(() => Promise.resolve());
 const mockRemove = mock.fn(() => Promise.resolve());
 
-function createMockFsDeps(): Partial<FsDeps> {
+function createMockFsDeps(): ScannerEngineFsDeps {
   return {
     remove: mockRemove,
-    promises: {
-      writeFile: mock.fn(() => Promise.resolve()),
-    } as unknown as FsDeps['promises'],
+    writeFile: mock.fn(() => Promise.resolve()),
   };
 }
 
 function createScannerEngineDeps(): ScannerEngineDeps {
   return {
-    fsDeps: createMockFsDeps() as FsDeps,
+    fsDeps: createMockFsDeps(),
     getCacheFileLocationFn: mockGetCacheFileLocation,
     getCacheDirectoriesFn: mockGetCacheDirectories,
     validateChecksumFn: mockValidateChecksum,
@@ -333,11 +336,10 @@ describe('scanner-engine', () => {
 
     it('should dump to file when SonarScannerInternalDumpToFile is set', async () => {
       const mockWriteFile = mock.fn(() => Promise.resolve());
-      const mockFsDeps = {
-        promises: {
-          writeFile: mockWriteFile,
-        },
-      } as unknown as FsDeps;
+      const mockFsDeps: ScannerEngineFsDeps = {
+        remove: mock.fn(() => Promise.resolve()),
+        writeFile: mockWriteFile,
+      };
 
       const mockSpawn = createMockSpawn();
       const dumpFilePath = '/tmp/dump.json';

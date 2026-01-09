@@ -18,6 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { AxiosRequestConfig } from 'axios';
+import { spawn as nodeSpawn } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import semver from 'semver';
 import {
@@ -27,14 +29,6 @@ import {
   SCANNER_CLI_MIRROR,
   SCANNER_CLI_VERSION,
 } from './constants';
-import {
-  defaultFsDeps,
-  defaultProcessDeps,
-  defaultSpawn,
-  FsDeps,
-  ProcessDeps,
-  SpawnFn,
-} from './deps';
 import { extractArchive } from './file';
 import { LogLevel, log } from './logging';
 import { isLinux, isMac, isWindows } from './platform';
@@ -42,16 +36,55 @@ import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
 import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
 
+export interface ScannerCliFsDeps {
+  exists: (path: string) => Promise<boolean>;
+  ensureDir: (path: string) => Promise<void>;
+}
+
+export interface ScannerCliProcessDeps {
+  platform: NodeJS.Platform;
+  arch: NodeJS.Architecture;
+  env: NodeJS.ProcessEnv;
+}
+
+export type SpawnFn = typeof nodeSpawn;
+
+const defaultFsDeps: ScannerCliFsDeps = {
+  exists: async (filePath: string) => {
+    try {
+      await fs.promises.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  ensureDir: (dirPath: string) => fs.promises.mkdir(dirPath, { recursive: true }).then(() => {}),
+};
+
+const defaultProcessDeps: ScannerCliProcessDeps = {
+  get platform() {
+    return process.platform;
+  },
+  get arch() {
+    return process.arch;
+  },
+  get env() {
+    return process.env;
+  },
+};
+
+const defaultSpawn: SpawnFn = nodeSpawn;
+
 export interface ScannerCliDeps {
-  fsDeps?: FsDeps;
-  processDeps?: ProcessDeps;
+  fsDeps?: ScannerCliFsDeps;
+  processDeps?: ScannerCliProcessDeps;
   spawnFn?: SpawnFn;
   downloadFn?: typeof download;
   extractArchiveFn?: typeof extractArchive;
 }
 
 export function normalizePlatformName(
-  processDeps: ProcessDeps = defaultProcessDeps,
+  processDeps: ScannerCliProcessDeps = defaultProcessDeps,
 ): 'windows' | 'linux' | 'macosx' {
   if (isWindows(processDeps)) {
     return 'windows';
@@ -72,7 +105,7 @@ function getScannerCliUrl(
   properties: ScannerProperties,
   versionStr: string,
   archStr?: string,
-  processDeps: ProcessDeps = defaultProcessDeps,
+  processDeps: ScannerCliProcessDeps = defaultProcessDeps,
 ): URL {
   // Get location to download scanner-cli from
 

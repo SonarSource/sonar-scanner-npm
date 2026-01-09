@@ -17,13 +17,18 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { describe, it, beforeEach, mock } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_VERSION } from '../../src/constants';
-import { FsDeps, ProcessDeps } from '../../src/deps';
-import { downloadScannerCli, normalizePlatformName, runScannerCli } from '../../src/scanner-cli';
+import {
+  ScannerCliFsDeps,
+  ScannerCliProcessDeps,
+  downloadScannerCli,
+  normalizePlatformName,
+  runScannerCli,
+} from '../../src/scanner-cli';
 import { ScannerProperty } from '../../src/types';
 
 // Mock console.log to suppress output
@@ -44,33 +49,23 @@ const MOCK_PROPERTIES_NO_ARCH = {
   [ScannerProperty.SonarScannerCliVersion]: SCANNER_CLI_VERSION_NO_ARCH,
 };
 
-function createMockProcessDeps(overrides: Partial<ProcessDeps> = {}): ProcessDeps {
+function createMockProcessDeps(
+  overrides: Partial<ScannerCliProcessDeps> = {},
+): ScannerCliProcessDeps {
   return {
     platform: 'linux',
     arch: 'x64',
     env: {},
-    cwd: () => '/test',
     ...overrides,
   };
 }
 
-function createMockFsDeps(overrides: Partial<FsDeps> = {}): FsDeps {
+function createMockFsDeps(overrides: Partial<ScannerCliFsDeps> = {}): ScannerCliFsDeps {
   return {
-    existsSync: mock.fn(() => false),
-    readFileSync: mock.fn(() => Buffer.from('')),
-    readFile: mock.fn() as unknown as FsDeps['readFile'],
-    remove: mock.fn(() => Promise.resolve()),
-    ensureDir: mock.fn(() => Promise.resolve()),
-    mkdirSync: mock.fn(),
-    createReadStream: mock.fn() as unknown as FsDeps['createReadStream'],
-    createWriteStream: mock.fn() as unknown as FsDeps['createWriteStream'],
     exists: mock.fn(() => Promise.resolve(false)),
-    promises: {
-      readFile: mock.fn(() => Promise.resolve(Buffer.from(''))),
-      writeFile: mock.fn(() => Promise.resolve()),
-    } as unknown as FsDeps['promises'],
+    ensureDir: mock.fn(() => Promise.resolve()),
     ...overrides,
-  } as FsDeps;
+  };
 }
 
 function createMockChildProcess() {
