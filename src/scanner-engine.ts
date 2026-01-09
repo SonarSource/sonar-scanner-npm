@@ -17,8 +17,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import { spawn as nodeSpawn } from 'node:child_process';
+import fs from 'node:fs';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants';
-import { defaultFsDeps, defaultSpawn, FsDeps, SpawnFn } from './deps';
 import {
   extractArchive,
   getCacheDirectories,
@@ -36,8 +37,22 @@ import {
   ScannerProperty,
 } from './types';
 
+export interface ScannerEngineFsDeps {
+  remove: (path: string) => Promise<void>;
+  writeFile: (path: string, data: string) => Promise<void>;
+}
+
+export type SpawnFn = typeof nodeSpawn;
+
+const defaultFsDeps: ScannerEngineFsDeps = {
+  remove: (filePath: string) => fs.promises.rm(filePath, { recursive: true, force: true }),
+  writeFile: (filePath: string, data: string) => fs.promises.writeFile(filePath, data),
+};
+
+const defaultSpawn: SpawnFn = nodeSpawn;
+
 export interface ScannerEngineDeps {
-  fsDeps?: FsDeps;
+  fsDeps?: ScannerEngineFsDeps;
   spawnFn?: SpawnFn;
   fetchFn?: typeof fetch;
   downloadFn?: typeof download;
@@ -156,7 +171,7 @@ export function runScannerEngine(
       args,
     };
     log(LogLevel.INFO, 'Dumping data to file and exiting');
-    return fsDeps.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
+    return fsDeps.writeFile(dumpToFile, JSON.stringify(data, null, 2));
   }
 
   log(LogLevel.DEBUG, `Running ${SONAR_SCANNER_ALIAS}`, javaBinPath, ...args);

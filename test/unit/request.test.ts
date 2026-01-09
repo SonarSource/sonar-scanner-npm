@@ -20,7 +20,7 @@
 import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
 import axios, { AxiosInstance } from 'axios';
-import fsExtra from 'fs-extra';
+import fs from 'node:fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import path from 'node:path';
 import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants';
@@ -73,10 +73,7 @@ describe('request', () => {
         const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
         const truststorePass = 'password';
         const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
-        const certificatePem = fsExtra
-          .readFileSync(certificatePath)
-          .toString()
-          .replace(/\n/g, '\r\n');
+        const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
 
         const { httpsAgent } = await getHttpAgents({
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
@@ -138,7 +135,7 @@ describe('request', () => {
         });
 
         assert.strictEqual(proxy, undefined);
-        assert.deepStrictEqual(httpsAgent?.options.pfx, fsExtra.readFileSync(keystorePath));
+        assert.deepStrictEqual(httpsAgent?.options.pfx, fs.readFileSync(keystorePath));
         assert.strictEqual(httpsAgent?.options.passphrase, keystorePass);
       });
     });
@@ -147,10 +144,7 @@ describe('request', () => {
       const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
       const truststorePass = 'password';
       const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
-      const certificatePem = fsExtra
-        .readFileSync(certificatePath)
-        .toString()
-        .replace(/\n/g, '\r\n');
+      const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
       const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
       const keystorePass = 'password';
 
@@ -168,7 +162,7 @@ describe('request', () => {
       const ca = httpsAgent?.options.ca as string[];
       assert.strictEqual(ca.length, 1);
       assert.ok(ca.includes(certificatePem));
-      assert.deepStrictEqual(httpsAgent?.options.pfx, fsExtra.readFileSync(keystorePath));
+      assert.deepStrictEqual(httpsAgent?.options.pfx, fs.readFileSync(keystorePath));
       assert.strictEqual(httpsAgent?.options.passphrase, keystorePass);
       assert.strictEqual(httpsAgent?.proxy.toString(), 'http://proxy.com/');
     });

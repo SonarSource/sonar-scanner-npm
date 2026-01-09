@@ -17,6 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import fs from 'node:fs';
 import path from 'node:path';
 import { getProperties as getPropertiesFile } from 'properties-file';
 import { getProxyForUrl } from 'proxy-from-env';
@@ -39,7 +40,6 @@ import {
   SONARCLOUD_URL_US,
   SONARCLOUD_API_BASE_URL_US,
 } from './constants';
-import { defaultFsDeps, defaultProcessDeps, FsDeps, ProcessDeps } from './deps';
 import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
 import { version } from './version';
@@ -52,12 +52,44 @@ import {
   ScannerProperty,
 } from './types';
 
-export interface PropertiesDeps {
-  fsDeps?: FsDeps;
-  processDeps?: ProcessDeps;
+export interface PropertiesFsDeps {
+  readFileSync: typeof fs.readFileSync;
+  existsSync: typeof fs.existsSync;
 }
 
-function getDefaultProperties(processDeps: ProcessDeps = defaultProcessDeps): ScannerProperties {
+export interface PropertiesProcessDeps {
+  platform: NodeJS.Platform;
+  arch: NodeJS.Architecture;
+  env: NodeJS.ProcessEnv;
+  cwd: () => string;
+}
+
+const defaultFsDeps: PropertiesFsDeps = {
+  readFileSync: fs.readFileSync,
+  existsSync: fs.existsSync,
+};
+
+const defaultProcessDeps: PropertiesProcessDeps = {
+  get platform() {
+    return process.platform;
+  },
+  get arch() {
+    return process.arch;
+  },
+  get env() {
+    return process.env;
+  },
+  cwd: () => process.cwd(),
+};
+
+export interface PropertiesDeps {
+  fsDeps?: PropertiesFsDeps;
+  processDeps?: PropertiesProcessDeps;
+}
+
+function getDefaultProperties(
+  processDeps: PropertiesProcessDeps = defaultProcessDeps,
+): ScannerProperties {
   return {
     [ScannerProperty.SonarUserHome]: path.join(
       processDeps.env.HOME ?? processDeps.env.USERPROFILE ?? '',
@@ -101,7 +133,7 @@ function npmConfigEnvNameToSonarPropertyNameMapper(envName: string) {
 function getPackageJsonProperties(
   projectBaseDir: string,
   sonarBaseExclusions: string,
-  fsDeps: FsDeps = defaultFsDeps,
+  fsDeps: PropertiesFsDeps = defaultFsDeps,
 ): ScannerProperties {
   const pkg = readPackageJson(projectBaseDir, fsDeps);
   if (!pkg) {
@@ -123,7 +155,7 @@ function getPackageJsonProperties(
 
 function readPackageJson(
   projectBaseDir: string,
-  fsDeps: FsDeps = defaultFsDeps,
+  fsDeps: PropertiesFsDeps = defaultFsDeps,
 ): PackageJson | null {
   const packageFile = path.join(projectBaseDir, 'package.json');
   try {
@@ -138,7 +170,7 @@ function readPackageJson(
 function fileExistsInProjectSync(
   projectBaseDir: string,
   file: string,
-  fsDeps: FsDeps = defaultFsDeps,
+  fsDeps: PropertiesFsDeps = defaultFsDeps,
 ): boolean {
   return fsDeps.existsSync(path.join(projectBaseDir, file));
 }
@@ -182,7 +214,7 @@ function populateCoverageParams(
   pkg: PackageJson,
   projectBaseDir: string,
   sonarBaseExclusions: string,
-  fsDeps: FsDeps = defaultFsDeps,
+  fsDeps: PropertiesFsDeps = defaultFsDeps,
 ) {
   const potentialCoverageDirs = [
     // nyc coverage output directory
@@ -217,7 +249,7 @@ function populateTestExecutionParams(
   params: { [key: string]: string },
   pkg: PackageJson,
   projectBaseDir: string,
-  fsDeps: FsDeps = defaultFsDeps,
+  fsDeps: PropertiesFsDeps = defaultFsDeps,
 ) {
   if (
     dependenceExists(pkg, 'mocha-sonarqube-reporter') &&
@@ -259,7 +291,7 @@ function getCommandLineProperties(cliArgs?: CliArgs): ScannerProperties {
  */
 function getSonarFileProperties(
   projectBaseDir: string,
-  fsDeps: FsDeps = defaultFsDeps,
+  fsDeps: PropertiesFsDeps = defaultFsDeps,
 ): ScannerProperties {
   // Read sonar project properties file in project base dir
   try {
@@ -302,7 +334,7 @@ function getScanOptionsProperties(scanOptions: ScanOptions): ScannerProperties {
 /**
  * Automatically parse properties from environment variables.
  */
-function getEnvironmentProperties(processDeps: ProcessDeps = defaultProcessDeps) {
+function getEnvironmentProperties(processDeps: PropertiesProcessDeps = defaultProcessDeps) {
   const { env } = processDeps;
 
   const jsonEnvVariables = ['SONAR_SCANNER_JSON_PARAMS', 'SONARQUBE_SCANNER_PARAMS'];
