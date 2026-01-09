@@ -52,12 +52,12 @@ import {
   ScannerProperty,
 } from './types';
 
-export interface PropertiesFsDeps {
+interface PropertiesFsDeps {
   readFileSync: typeof fs.readFileSync;
   existsSync: typeof fs.existsSync;
 }
 
-export interface PropertiesProcessDeps {
+interface PropertiesProcessDeps {
   platform: NodeJS.Platform;
   arch: NodeJS.Architecture;
   env: NodeJS.ProcessEnv;

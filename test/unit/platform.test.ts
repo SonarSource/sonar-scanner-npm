@@ -21,13 +21,13 @@
 import { describe, it, mock, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import * as platform from '../../src/platform';
-import { FsDeps, ProcessDeps } from '../../src/deps';
+import { PlatformFsDeps, PlatformProcessDeps } from '../../src/platform';
 
 // Mock logging to suppress output
 const mockLog = mock.fn();
 mock.method(console, 'log', mockLog);
 
-function createMockProcessDeps(overrides: Partial<ProcessDeps> = {}): ProcessDeps {
+function createMockProcessDeps(overrides: Partial<PlatformProcessDeps> = {}): PlatformProcessDeps {
   return {
     platform: 'linux',
     arch: 'x64',
@@ -37,14 +37,14 @@ function createMockProcessDeps(overrides: Partial<ProcessDeps> = {}): ProcessDep
   };
 }
 
-function createMockFsDeps(readFileSyncResult?: string | Error): Partial<FsDeps> {
+function createMockFsDeps(readFileSyncResult?: string | Error): Partial<PlatformFsDeps> {
   return {
     readFileSync: mock.fn(() => {
       if (readFileSyncResult instanceof Error) {
         throw readFileSyncResult;
       }
       return Buffer.from(readFileSyncResult ?? '');
-    }) as unknown as FsDeps['readFileSync'],
+    }) as unknown as PlatformPlatformFsDeps['readFileSync'],
   };
 }
 
@@ -78,7 +78,7 @@ describe('getPlatformInfo', () => {
     const processDeps = createMockProcessDeps({ platform: 'linux', arch: 'x64' });
     const fsDeps = createMockFsDeps('NAME="Alpine Linux"\nID=alpine');
 
-    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as FsDeps), 'alpine');
+    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as PlatformFsDeps), 'alpine');
     assert.strictEqual(platform.getArch(processDeps), 'x64');
   });
 
@@ -87,29 +87,29 @@ describe('getPlatformInfo', () => {
 
     // First call throws, second returns alpine
     let callCount = 0;
-    const fsDeps: Partial<FsDeps> = {
+    const fsDeps: Partial<PlatformFsDeps> = {
       readFileSync: mock.fn((filePath: string) => {
         callCount++;
         if (callCount === 1) {
           throw new Error('File not found');
         }
         return Buffer.from('NAME="Alpine Linux"\nID=alpine');
-      }) as unknown as FsDeps['readFileSync'],
+      }) as unknown as PlatformPlatformFsDeps['readFileSync'],
     };
 
-    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as FsDeps), 'alpine');
+    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as PlatformFsDeps), 'alpine');
     assert.strictEqual(platform.getArch(processDeps), 'x64');
   });
 
   it('failed to detect alpine', () => {
     const processDeps = createMockProcessDeps({ platform: 'linux', arch: 'x64' });
-    const fsDeps: Partial<FsDeps> = {
+    const fsDeps: Partial<PlatformFsDeps> = {
       readFileSync: mock.fn(() => {
         throw new Error('File not found');
-      }) as unknown as FsDeps['readFileSync'],
+      }) as unknown as PlatformPlatformFsDeps['readFileSync'],
     };
 
-    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as FsDeps), 'linux');
+    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as PlatformFsDeps), 'linux');
     assert.strictEqual(platform.getArch(processDeps), 'x64');
 
     // Check that warning was logged - the message could be in arguments[0] or arguments[1]

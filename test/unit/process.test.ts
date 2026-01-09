@@ -20,18 +20,15 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { SCANNER_CLI_DEFAULT_BIN_NAME, WINDOWS_WHERE_EXE_PATH } from '../../src/constants';
-import { ProcessDeps } from '../../src/deps';
-import { locateExecutableFromPath } from '../../src/process';
+import { locateExecutableFromPath, ProcessProcessDeps } from '../../src/process';
 
 // Mock console.log to suppress output
 mock.method(console, 'log', () => {});
 
-function createMockProcessDeps(overrides: Partial<ProcessDeps> = {}): ProcessDeps {
+function createMockProcessDeps(overrides: Partial<ProcessProcessDeps> = {}): ProcessProcessDeps {
   return {
     platform: 'linux',
     arch: 'x64',
-    env: {},
-    cwd: () => '/test',
     ...overrides,
   };
 }
