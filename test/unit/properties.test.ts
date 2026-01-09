@@ -139,6 +139,23 @@ describe('getProperties', () => {
     });
   });
 
+  it('should set verbose mode when CLI debug flag is set', () => {
+    projectHandler.reset('fake_project_with_no_package_file');
+    projectHandler.setEnvironmentVariables({});
+
+    const properties = getProperties({}, projectHandler.getStartTime(), {
+      debug: true,
+    });
+
+    assertProperties(properties, {
+      ...projectHandler.getExpectedProperties(),
+      'sonar.host.url': SONARCLOUD_URL,
+      'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
+      'sonar.scanner.internal.isSonarCloud': 'true',
+      'sonar.verbose': 'true',
+    });
+  });
+
   describe('should handle JS API scan options params correctly', () => {
     it('should detect custom SonarCloud endpoint', () => {
       projectHandler.reset('fake_project_with_no_package_file');
@@ -438,6 +455,27 @@ describe('getProperties', () => {
         'sonar.projectVersion': '1.0-SNAPSHOT',
         'sonar.sources': 'the-sources',
         'sonar.scanner.someVar': 'some-value',
+      });
+    });
+
+    it('should detect npm_config_sonar_scanner_ environment variables and convert to camelCase', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        npm_config_sonar_scanner_some_option: 'npm-value',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      assertProperties(properties, {
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
+        'sonar.scanner.internal.isSonarCloud': 'true',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.scanner.someOption': 'npm-value',
       });
     });
 
