@@ -51,7 +51,7 @@
   },
   "scripts": {
     "build": "npm run license && tsc && tsx scripts/generate-package-json.ts",
-    "test": "tsx --test test/unit/**/*.test.ts",
+    "test": "tsx --test test/unit/*.test.ts test/unit/**/*.test.ts",
     "test-integration": "cd test/integration && npm install && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",
