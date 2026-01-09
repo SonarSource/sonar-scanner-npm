@@ -27,6 +27,7 @@
     "tar-stream": "3.1.7"
   },
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "1.0.2",
     "@types/adm-zip": "0.5.7",
     "@types/node": "24.10.8",
     "@types/node-forge": "1.3.14",
@@ -41,18 +42,18 @@
     "husky": "9.1.7",
     "knip": "5.81.0",
     "prettier": "3.8.0",
+    "node-reporter-sonarqube": "1.0.3",
+    "nyc": "17.1.0",
     "pretty-quick": "4.2.2",
     "sinon": "21.0.1",
     "toml": "3.0.0",
     "tsx": "4.21.0",
-    "typescript": "5.9.3",
-    "nyc": "17.1.0",
-    "@istanbuljs/nyc-config-typescript": "1.0.2"
+    "typescript": "5.9.3"
   },
   "scripts": {
     "build": "npm run license && tsc && tsx scripts/generate-package-json.ts",
     "test": "nyc npm run test:run",
-    "test:run": "tsx --test test/unit/*.test.ts",
+    "test:run": "tsx --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=node-reporter-sonarqube --test-reporter-destination=test-report.xml test/unit/*.test.ts",
     "test-integration": "cd test/integration && npm install && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",
