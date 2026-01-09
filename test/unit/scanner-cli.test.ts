@@ -186,6 +186,43 @@ describe('scanner-cli', () => {
       ]);
     });
 
+    it('should download SonarScanner CLI if it does not exist on Unix without arch', async () => {
+      const processDeps = createMockProcessDeps({ platform: 'linux' });
+      const mockDownload = mock.fn(() => Promise.resolve());
+      const mockExtractArchive = mock.fn(() => Promise.resolve());
+
+      const fsDeps = createMockFsDeps({
+        exists: mock.fn(() => Promise.resolve(false)),
+      });
+
+      const binPath = await downloadScannerCli(MOCK_PROPERTIES_NO_ARCH, {
+        processDeps,
+        fsDeps,
+        downloadFn: mockDownload,
+        extractArchiveFn: mockExtractArchive,
+      });
+
+      assert.strictEqual(
+        binPath,
+        path.join(
+          MOCK_PROPERTIES_NO_ARCH[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          `sonar-scanner-${SCANNER_CLI_VERSION_NO_ARCH}-linux/bin/sonar-scanner`,
+        ),
+      );
+      assert.strictEqual(mockDownload.mock.callCount(), 1);
+      assert.deepStrictEqual(mockDownload.mock.calls[0].arguments, [
+        `https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_CLI_VERSION_NO_ARCH}-linux.zip`,
+        path.join(
+          MOCK_PROPERTIES_NO_ARCH[ScannerProperty.SonarUserHome],
+          SCANNER_CLI_INSTALL_PATH,
+          `sonar-scanner-${SCANNER_CLI_VERSION_NO_ARCH}-linux.zip`,
+        ),
+        undefined,
+      ]);
+      assert.strictEqual(mockExtractArchive.mock.callCount(), 1);
+    });
+
     it('should download SonarScanner CLI if it does not exist on Windows', async () => {
       const processDeps = createMockProcessDeps({ platform: 'win32' });
       const mockDownload = mock.fn(() => Promise.resolve());
@@ -302,6 +339,137 @@ describe('scanner-cli', () => {
       await assert.rejects(promise, {
         message: 'SonarScanner CLI failed with code 1',
       });
+    });
+
+    it('should display SonarScanner CLI output', async () => {
+      const mockChildProcess = createMockChildProcess();
+      const mockSpawn = mock.fn(() => mockChildProcess);
+      const processDeps = createMockProcessDeps({ platform: 'linux' });
+      const stdoutWritten: string[] = [];
+      const originalWrite = process.stdout.write.bind(process.stdout);
+      process.stdout.write = ((chunk: string | Buffer) => {
+        stdoutWritten.push(chunk.toString());
+        return true;
+      }) as typeof process.stdout.write;
+
+      const promise = runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner', {
+        processDeps,
+        spawnFn: mockSpawn as any,
+      });
+
+      // Simulate output and exit
+      setTimeout(() => {
+        mockChildProcess.stdout.emit('data', Buffer.from('scanner output'));
+        mockChildProcess.stderr.emit('data', Buffer.from('scanner error'));
+        mockChildProcess.emit('exit', 0);
+      }, 10);
+
+      await promise;
+      process.stdout.write = originalWrite;
+
+      assert.ok(stdoutWritten.some(s => s.includes('scanner output')));
+    });
+
+    it('should only forward non-scanner env vars to Scanner CLI', async () => {
+      const mockChildProcess = createMockChildProcess();
+      type SpawnFn = (
+        cmd: string,
+        args: string[],
+        options: { env: Record<string, string>; shell: boolean },
+      ) => typeof mockChildProcess;
+      const mockSpawn = mock.fn<SpawnFn>(() => mockChildProcess);
+      const processDeps = createMockProcessDeps({
+        platform: 'linux',
+        env: {
+          SONAR_TOKEN: 'sqa_sometoken',
+          SONAR_SCANNER_SOME_VAR: 'some_value',
+          CIRRUS_CI_SOME_VAR: 'some_value',
+        },
+      });
+
+      const promise = runScannerCli({}, MOCK_PROPERTIES, 'sonar-scanner', {
+        processDeps,
+        spawnFn: mockSpawn as any,
+      });
+
+      // Simulate process exit
+      setTimeout(() => mockChildProcess.emit('exit', 0), 10);
+      await promise;
+
+      assert.strictEqual(mockSpawn.mock.callCount(), 1);
+      const options = mockSpawn.mock.calls[0].arguments[2];
+      // SONAR_TOKEN and SONAR_SCANNER_SOME_VAR should be filtered out
+      assert.strictEqual(options.env.SONAR_TOKEN, undefined);
+      assert.strictEqual(options.env.SONAR_SCANNER_SOME_VAR, undefined);
+      // CIRRUS_CI_SOME_VAR should be passed through
+      assert.strictEqual(options.env.CIRRUS_CI_SOME_VAR, 'some_value');
+      // SONARQUBE_SCANNER_PARAMS should be set
+      assert.strictEqual(options.env.SONARQUBE_SCANNER_PARAMS, JSON.stringify(MOCK_PROPERTIES));
+    });
+
+    it('should pass proxy options to scanner', async () => {
+      const mockChildProcess = createMockChildProcess();
+      type SpawnFn = (cmd: string, args: string[], options: unknown) => typeof mockChildProcess;
+      const mockSpawn = mock.fn<SpawnFn>(() => mockChildProcess);
+      const processDeps = createMockProcessDeps({ platform: 'linux' });
+      const propertiesWithProxy = {
+        ...MOCK_PROPERTIES,
+        [ScannerProperty.SonarScannerProxyHost]: 'proxy',
+        [ScannerProperty.SonarScannerProxyPort]: '9000',
+        [ScannerProperty.SonarScannerProxyUser]: 'some-user',
+        [ScannerProperty.SonarScannerProxyPassword]: 'password',
+      };
+
+      const promise = runScannerCli({}, propertiesWithProxy, 'sonar-scanner', {
+        processDeps,
+        spawnFn: mockSpawn as any,
+      });
+
+      // Simulate process exit
+      setTimeout(() => mockChildProcess.emit('exit', 0), 10);
+      await promise;
+
+      assert.strictEqual(mockSpawn.mock.callCount(), 1);
+      assert.strictEqual(mockSpawn.mock.calls[0].arguments[0], 'sonar-scanner');
+      assert.deepStrictEqual(mockSpawn.mock.calls[0].arguments[1], [
+        '-Dhttp.proxyHost=proxy',
+        '-Dhttp.proxyPort=9000',
+        '-Dhttp.proxyUser=some-user',
+        '-Dhttp.proxyPassword=password',
+      ]);
+    });
+
+    it('should pass https proxy options to scanner', async () => {
+      const mockChildProcess = createMockChildProcess();
+      type SpawnFn = (cmd: string, args: string[], options: unknown) => typeof mockChildProcess;
+      const mockSpawn = mock.fn<SpawnFn>(() => mockChildProcess);
+      const processDeps = createMockProcessDeps({ platform: 'linux' });
+      const propertiesWithHttpsProxy = {
+        [ScannerProperty.SonarToken]: 'token',
+        [ScannerProperty.SonarHostUrl]: 'https://localhost:9000',
+        [ScannerProperty.SonarScannerProxyHost]: 'proxy',
+        [ScannerProperty.SonarScannerProxyPort]: '9000',
+        [ScannerProperty.SonarScannerProxyUser]: 'some-user',
+        [ScannerProperty.SonarScannerProxyPassword]: 'password',
+      };
+
+      const promise = runScannerCli({}, propertiesWithHttpsProxy, 'sonar-scanner', {
+        processDeps,
+        spawnFn: mockSpawn as any,
+      });
+
+      // Simulate process exit
+      setTimeout(() => mockChildProcess.emit('exit', 0), 10);
+      await promise;
+
+      assert.strictEqual(mockSpawn.mock.callCount(), 1);
+      assert.strictEqual(mockSpawn.mock.calls[0].arguments[0], 'sonar-scanner');
+      assert.deepStrictEqual(mockSpawn.mock.calls[0].arguments[1], [
+        '-Dhttps.proxyHost=proxy',
+        '-Dhttps.proxyPort=9000',
+        '-Dhttps.proxyUser=some-user',
+        '-Dhttps.proxyPassword=password',
+      ]);
     });
   });
 
