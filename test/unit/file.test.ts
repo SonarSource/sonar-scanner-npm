@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { describe, it, beforeEach, mock } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { SONAR_CACHE_DIR } from '../../src/constants';
