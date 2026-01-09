@@ -64,17 +64,15 @@ export interface ScannerEngineDeps {
 
 export async function fetchScannerEngine(
   properties: ScannerProperties,
-  deps: ScannerEngineDeps = {},
-) {
-  const {
+  {
     fsDeps = defaultFsDeps,
     fetchFn = fetch,
     downloadFn = download,
     getCacheFileLocationFn = getCacheFileLocation,
     getCacheDirectoriesFn = getCacheDirectories,
     validateChecksumFn = validateChecksum,
-  } = deps;
-
+  }: ScannerEngineDeps = {},
+) {
   log(LogLevel.DEBUG, `Detecting latest version of ${SONAR_SCANNER_ALIAS}`);
   const { data } = await fetchFn<AnalysisEngineResponseType>({
     url: API_V2_SCANNER_ENGINE_ENDPOINT,
@@ -136,10 +134,8 @@ export function runScannerEngine(
   scannerEnginePath: string,
   scanOptions: ScanOptions,
   properties: ScannerProperties,
-  deps: ScannerEngineDeps = {},
+  { fsDeps = defaultFsDeps, spawnFn = defaultSpawn }: ScannerEngineDeps = {},
 ) {
-  const { fsDeps = defaultFsDeps, spawnFn = defaultSpawn } = deps;
-
   log(LogLevel.DEBUG, `Running the ${SONAR_SCANNER_ALIAS}`);
 
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"

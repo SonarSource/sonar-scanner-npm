@@ -48,16 +48,15 @@ const defaultFileDeps: FileDeps = {
 export async function getCacheFileLocation(
   properties: ScannerProperties,
   { checksum, filename, alias }: CacheFileData,
-  deps: Partial<FileDeps> = {},
+  fsDeps: FileDeps = defaultFileDeps,
 ) {
-  const fsDeps = { ...defaultFileDeps, ...deps };
   const filePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   if (fsDeps.existsSync(filePath)) {
     log(LogLevel.DEBUG, alias, 'version found in cache:', filename);
 
     // validate cache
     try {
-      await validateChecksum(filePath, checksum, deps);
+      await validateChecksum(filePath, checksum, fsDeps);
     } catch (error) {
       await fsDeps.remove(filePath);
       throw error;
@@ -73,9 +72,8 @@ export async function getCacheFileLocation(
 export async function extractArchive(
   fromPath: string,
   toPath: string,
-  deps: Partial<FileDeps> = {},
+  fsDeps: FileDeps = defaultFileDeps,
 ) {
-  const fsDeps = { ...defaultFileDeps, ...deps };
   log(LogLevel.DEBUG, `Extracting ${fromPath} to ${toPath}`);
   if (fromPath.endsWith('.tar.gz')) {
     const tarFilePath = fromPath;
@@ -116,8 +114,7 @@ export async function extractArchive(
   }
 }
 
-async function generateChecksum(filepath: string, deps: Partial<FileDeps> = {}) {
-  const fsDeps = { ...defaultFileDeps, ...deps };
+async function generateChecksum(filepath: string, fsDeps: FileDeps = defaultFileDeps) {
   return new Promise((resolve, reject) => {
     fsDeps.readFile(filepath, (err, data) => {
       if (err) {
@@ -132,11 +129,11 @@ async function generateChecksum(filepath: string, deps: Partial<FileDeps> = {}) 
 export async function validateChecksum(
   filePath: string,
   expectedChecksum: string,
-  deps: Partial<FileDeps> = {},
+  fsDeps: FileDeps = defaultFileDeps,
 ) {
   if (expectedChecksum) {
     log(LogLevel.DEBUG, `Verifying checksum ${expectedChecksum}`);
-    const checksum = await generateChecksum(filePath, deps);
+    const checksum = await generateChecksum(filePath, fsDeps);
 
     log(LogLevel.DEBUG, `Checksum Value: ${checksum}`);
     if (checksum !== expectedChecksum) {
@@ -152,9 +149,8 @@ export async function validateChecksum(
 export async function getCacheDirectories(
   properties: ScannerProperties,
   { checksum, filename }: CacheFileData,
-  deps: Partial<FileDeps> = {},
+  fsDeps: FileDeps = defaultFileDeps,
 ) {
-  const fsDeps = { ...defaultFileDeps, ...deps };
   const archivePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   const unarchivePath = path.join(
     getParentCacheDirectory(properties),
