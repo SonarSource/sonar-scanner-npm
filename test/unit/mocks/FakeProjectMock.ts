@@ -17,10 +17,10 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import path from 'path';
+import path from 'node:path';
 import sinon from 'sinon';
 import { DEFAULT_SONAR_EXCLUSIONS, SCANNER_BOOTSTRAPPER_NAME } from '../../../src/constants';
-import { CacheStatus } from '../../../src/types';
+import { CacheStatus, ScannerProperties } from '../../../src/types';
 
 const baseEnvVariables = process.env;
 
@@ -53,7 +53,7 @@ export class FakeProjectMock {
     return this.startTimeMs;
   }
 
-  getExpectedProperties() {
+  getExpectedProperties(): ScannerProperties {
     return {
       'sonar.working.directory': '.scannerwork',
       'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
@@ -63,7 +63,6 @@ export class FakeProjectMock {
       'sonar.scanner.appVersion': 'SNAPSHOT',
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': CacheStatus.Disabled,
-      'sonar.userHome': expect.stringMatching(/\.sonar$/),
       'sonar.scanner.os': 'windows',
       'sonar.scanner.arch': 'aarch64',
     };

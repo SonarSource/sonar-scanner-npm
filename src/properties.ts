@@ -17,8 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import fsExtra from 'fs-extra';
-import path from 'path';
+import path from 'node:path';
 import { getProperties as getPropertiesFile } from 'properties-file';
 import { getProxyForUrl } from 'proxy-from-env';
 import slugify from 'slugify';
@@ -40,6 +39,7 @@ import {
   SONARCLOUD_URL_US,
   SONARCLOUD_API_BASE_URL_US,
 } from './constants';
+import { defaultFsDeps, defaultProcessDeps, FsDeps, ProcessDeps } from './deps';
 import { LogLevel, log } from './logging';
 import { getArch, getSupportedOS } from './platform';
 import { version } from './version';
@@ -52,15 +52,20 @@ import {
   ScannerProperty,
 } from './types';
 
-function getDefaultProperties(): ScannerProperties {
+export interface PropertiesDeps {
+  fsDeps?: FsDeps;
+  processDeps?: ProcessDeps;
+}
+
+function getDefaultProperties(processDeps: ProcessDeps = defaultProcessDeps): ScannerProperties {
   return {
     [ScannerProperty.SonarUserHome]: path.join(
-      process.env.HOME ?? process.env.USERPROFILE ?? '',
+      processDeps.env.HOME ?? processDeps.env.USERPROFILE ?? '',
       SONAR_DIR_DEFAULT,
     ),
     [ScannerProperty.SonarWorkingDirectory]: '.scannerwork',
-    [ScannerProperty.SonarScannerOs]: getSupportedOS(),
-    [ScannerProperty.SonarScannerArch]: getArch(),
+    [ScannerProperty.SonarScannerOs]: getSupportedOS(processDeps),
+    [ScannerProperty.SonarScannerArch]: getArch(processDeps),
   };
 }
 
@@ -96,8 +101,9 @@ function npmConfigEnvNameToSonarPropertyNameMapper(envName: string) {
 function getPackageJsonProperties(
   projectBaseDir: string,
   sonarBaseExclusions: string,
+  fsDeps: FsDeps = defaultFsDeps,
 ): ScannerProperties {
-  const pkg = readPackageJson(projectBaseDir);
+  const pkg = readPackageJson(projectBaseDir, fsDeps);
   if (!pkg) {
     return {
       [ScannerProperty.SonarExclusions]: sonarBaseExclusions,
@@ -109,16 +115,19 @@ function getPackageJsonProperties(
     [ScannerProperty.SonarExclusions]: sonarBaseExclusions,
   };
   populatePackageParams(packageJsonParams, pkg);
-  populateCoverageParams(packageJsonParams, pkg, projectBaseDir, sonarBaseExclusions);
-  populateTestExecutionParams(packageJsonParams, pkg, projectBaseDir);
+  populateCoverageParams(packageJsonParams, pkg, projectBaseDir, sonarBaseExclusions, fsDeps);
+  populateTestExecutionParams(packageJsonParams, pkg, projectBaseDir, fsDeps);
 
   return packageJsonParams;
 }
 
-function readPackageJson(projectBaseDir: string): PackageJson | null {
+function readPackageJson(
+  projectBaseDir: string,
+  fsDeps: FsDeps = defaultFsDeps,
+): PackageJson | null {
   const packageFile = path.join(projectBaseDir, 'package.json');
   try {
-    const packageData = fsExtra.readFileSync(packageFile).toString();
+    const packageData = fsDeps.readFileSync(packageFile).toString();
     return JSON.parse(packageData);
   } catch (error) {
     log(LogLevel.INFO, `Unable to read "package.json" file`);
@@ -126,8 +135,12 @@ function readPackageJson(projectBaseDir: string): PackageJson | null {
   }
 }
 
-function fileExistsInProjectSync(projectBaseDir: string, file: string): boolean {
-  return fsExtra.existsSync(path.join(projectBaseDir, file));
+function fileExistsInProjectSync(
+  projectBaseDir: string,
+  file: string,
+  fsDeps: FsDeps = defaultFsDeps,
+): boolean {
+  return fsDeps.existsSync(path.join(projectBaseDir, file));
 }
 
 function dependenceExists(pkg: PackageJson, pkgName: string): boolean {
@@ -169,6 +182,7 @@ function populateCoverageParams(
   pkg: PackageJson,
   projectBaseDir: string,
   sonarBaseExclusions: string,
+  fsDeps: FsDeps = defaultFsDeps,
 ) {
   const potentialCoverageDirs = [
     // nyc coverage output directory
@@ -188,7 +202,7 @@ function populateCoverageParams(
   params[ScannerProperty.SonarExclusions] = sonarBaseExclusions;
   for (const lcovReportDir of uniqueCoverageDirs) {
     const lcovReportPath = lcovReportDir && path.posix.join(lcovReportDir, 'lcov.info');
-    if (lcovReportPath && fileExistsInProjectSync(projectBaseDir, lcovReportPath)) {
+    if (lcovReportPath && fileExistsInProjectSync(projectBaseDir, lcovReportPath, fsDeps)) {
       params[ScannerProperty.SonarExclusions] +=
         (params[ScannerProperty.SonarExclusions].length > 0 ? ',' : '') +
         path.posix.join(lcovReportDir, '**');
@@ -203,10 +217,11 @@ function populateTestExecutionParams(
   params: { [key: string]: string },
   pkg: PackageJson,
   projectBaseDir: string,
+  fsDeps: FsDeps = defaultFsDeps,
 ) {
   if (
     dependenceExists(pkg, 'mocha-sonarqube-reporter') &&
-    fileExistsInProjectSync(projectBaseDir, 'xunit.xml')
+    fileExistsInProjectSync(projectBaseDir, 'xunit.xml', fsDeps)
   ) {
     // https://docs.sonarqube.org/display/SONAR/Generic+Test+Data
     params['sonar.testExecutionReportPaths'] = 'xunit.xml';
@@ -242,11 +257,14 @@ function getCommandLineProperties(cliArgs?: CliArgs): ScannerProperties {
  * Parse properties stored in sonar project properties file, if it exists.
  * Return an empty object if the file does not exist.
  */
-function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
+function getSonarFileProperties(
+  projectBaseDir: string,
+  fsDeps: FsDeps = defaultFsDeps,
+): ScannerProperties {
   // Read sonar project properties file in project base dir
   try {
     const sonarPropertiesFile = path.join(projectBaseDir, SONAR_PROJECT_FILENAME);
-    const data = fsExtra.readFileSync(sonarPropertiesFile);
+    const data = fsDeps.readFileSync(sonarPropertiesFile);
     return getPropertiesFile(data) as ScannerProperties;
   } catch (error) {
     log(LogLevel.DEBUG, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error}`);
@@ -284,8 +302,8 @@ function getScanOptionsProperties(scanOptions: ScanOptions): ScannerProperties {
 /**
  * Automatically parse properties from environment variables.
  */
-function getEnvironmentProperties() {
-  const { env } = process;
+function getEnvironmentProperties(processDeps: ProcessDeps = defaultProcessDeps) {
+  const { env } = processDeps;
 
   const jsonEnvVariables = ['SONAR_SCANNER_JSON_PARAMS', 'SONARQUBE_SCANNER_PARAMS'];
 
@@ -474,8 +492,11 @@ export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
   cliArgs?: CliArgs,
+  deps: PropertiesDeps = {},
 ): ScannerProperties {
-  const envProperties = getEnvironmentProperties();
+  const { fsDeps = defaultFsDeps, processDeps = defaultProcessDeps } = deps;
+
+  const envProperties = getEnvironmentProperties(processDeps);
   const scanOptionsProperties = getScanOptionsProperties(scanOptions);
   const cliProperties = getCommandLineProperties(cliArgs);
 
@@ -486,14 +507,14 @@ export function getProperties(
   };
 
   // Compute default base dir and exclusions respecting order of precedence we use for the final merge
-  const projectBaseDir = userProperties[ScannerProperty.SonarProjectBaseDir] ?? process.cwd();
+  const projectBaseDir = userProperties[ScannerProperty.SonarProjectBaseDir] ?? processDeps.cwd();
   const baseSonarExclusions =
     userProperties[ScannerProperty.SonarExclusions] ?? DEFAULT_SONAR_EXCLUSIONS;
 
   // Infer specific properties from project files
   const inferredProperties = {
-    ...getPackageJsonProperties(projectBaseDir, baseSonarExclusions),
-    ...getSonarFileProperties(projectBaseDir),
+    ...getPackageJsonProperties(projectBaseDir, baseSonarExclusions, fsDeps),
+    ...getSonarFileProperties(projectBaseDir, fsDeps),
   };
 
   // Generate proxy properties from HTTP[S]_PROXY env variables, if not already set
@@ -503,7 +524,7 @@ export function getProperties(
 
   // Merge properties respecting order of precedence
   let properties = {
-    ...getDefaultProperties(), // fallback to default if nothing was provided for these properties
+    ...getDefaultProperties(processDeps), // fallback to default if nothing was provided for these properties
     ...inferredProperties,
     ...httpProxyProperties,
     ...userProperties, // Highest precedence

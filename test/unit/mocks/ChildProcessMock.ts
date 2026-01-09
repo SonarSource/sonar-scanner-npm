@@ -17,7 +17,8 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { ChildProcess, exec, spawn } from 'child_process';
+import { ChildProcess, exec, spawn } from 'node:child_process';
+import { mock, Mock } from 'node:test';
 
 export class ChildProcessMock {
   private exitCode: number = 0;
@@ -25,13 +26,18 @@ export class ChildProcessMock {
   private stdout: string = '';
   private stderr: string = '';
 
-  private mock: Partial<ChildProcess> | null = null;
+  private childProcessMock: Partial<ChildProcess> | null = null;
 
   private commandHistory: string[] = [];
 
+  private spawnMock: Mock<typeof spawn>;
+  private execMock: Mock<typeof exec>;
+
   constructor() {
-    jest.mocked(spawn).mockImplementation((this.handleSpawn as any).bind(this));
-    jest.mocked(exec).mockImplementation((this.handleExec as any).bind(this));
+    this.spawnMock = mock.fn(this.handleSpawn.bind(this) as typeof spawn);
+    this.execMock = mock.fn(this.handleExec.bind(this) as typeof exec);
+    mock.method(require('child_process'), 'spawn', this.spawnMock);
+    mock.method(require('child_process'), 'exec', this.execMock);
   }
 
   setExitCode(exitCode: number) {
@@ -43,47 +49,57 @@ export class ChildProcessMock {
     this.stderr = stderr ?? '';
   }
 
-  setChildProcessMock(mock: Partial<ChildProcess> | null) {
-    this.mock = mock;
+  setChildProcessMock(childProcessMock: Partial<ChildProcess> | null) {
+    this.childProcessMock = childProcessMock;
   }
 
   getCommandHistory() {
     return this.commandHistory;
   }
 
-  handleSpawn(command: string) {
+  handleSpawn(command: string): ChildProcess {
     this.commandHistory.push(command);
+    const mockFn = mock.fn;
+    const exitCode = this.exitCode;
+    const stdout = this.stdout;
+    const stderr = this.stderr;
     return {
-      on: jest.fn().mockImplementation((event, callback) => {
-        if (event === 'exit') {
-          callback(this.exitCode);
+      on: mockFn((_event: string, callback: (code: number) => void) => {
+        if (_event === 'exit') {
+          callback(exitCode);
         }
       }),
-      stdin: { write: jest.fn(), end: jest.fn() },
-      stdout: { on: jest.fn().mockImplementation((_event, callback) => callback(this.stdout)) },
-      stderr: { on: jest.fn().mockImplementation((_event, callback) => callback(this.stderr)) },
-      ...this.mock,
-    };
+      stdin: { write: mockFn(), end: mockFn() },
+      stdout: {
+        on: mockFn((_event: string, callback: (data: string) => void) => callback(stdout)),
+      },
+      stderr: {
+        on: mockFn((_event: string, callback: (data: string) => void) => callback(stderr)),
+      },
+      ...this.childProcessMock,
+    } as unknown as ChildProcess;
   }
 
   handleExec(
     command: string,
-    callback: (error?: Error, { stdout, stderr }?: { stdout: string; stderr: string }) => void,
-  ) {
+    callback: (error?: Error | null, result?: { stdout: string; stderr: string }) => void,
+  ): ChildProcess {
     this.commandHistory.push(command);
-    const error = this.exitCode === 0 ? undefined : new Error('Command failed by mock');
+    const error = this.exitCode === 0 ? null : new Error('Command failed by mock');
     callback(error, {
       stdout: this.stdout,
       stderr: this.stderr,
     });
+    return {} as ChildProcess;
   }
 
   reset() {
     this.exitCode = 0;
     this.stdout = '';
     this.stderr = '';
-    this.mock = null;
+    this.childProcessMock = null;
     this.commandHistory = [];
-    jest.clearAllMocks();
+    this.spawnMock.mock.resetCalls();
+    this.execMock.mock.resetCalls();
   }
 }

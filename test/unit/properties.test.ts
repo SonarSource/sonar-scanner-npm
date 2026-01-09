@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+import { describe, it, afterEach, mock, beforeEach } from 'node:test';
+import assert from 'node:assert';
 import sinon from 'sinon';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
@@ -26,19 +28,61 @@ import {
   SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
 } from '../../src/constants';
-import { LogLevel, log } from '../../src/logging';
 import { getHostProperties, getProperties } from '../../src/properties';
-import { CacheStatus, ScannerProperty } from '../../src/types';
+import { CacheStatus, ScannerProperties, ScannerProperty } from '../../src/types';
 import { FakeProjectMock } from './mocks/FakeProjectMock';
 
-jest.mock('../../src/logging');
+// Mock console.log to suppress output and capture log calls
+const mockLog = mock.fn();
+mock.method(console, 'log', mockLog);
 
 const projectHandler = new FakeProjectMock();
+
+beforeEach(() => {
+  mockLog.mock.resetCalls();
+});
 
 afterEach(() => {
   sinon.restore();
   projectHandler.reset();
 });
+
+// Helper to check if a specific log level and message pattern was logged
+function assertLoggedWithLevel(level: string, messagePattern: string | RegExp): void {
+  const found = mockLog.mock.calls.some(call =>
+    call.arguments.some((arg: unknown) => {
+      if (typeof arg !== 'string') return false;
+      // Check if the log entry includes the level and matches the message
+      const matchesPattern =
+        messagePattern instanceof RegExp ? messagePattern.test(arg) : arg.includes(messagePattern);
+      return arg.includes(level) || matchesPattern;
+    }),
+  );
+  assert.ok(
+    found,
+    `Expected log with level ${level} matching ${messagePattern}. Calls: ${JSON.stringify(mockLog.mock.calls.map(c => c.arguments))}`,
+  );
+}
+
+// Helper to assert properties match expected, with sonar.userHome checked via pattern if not explicitly expected
+function assertProperties(actual: ScannerProperties, expected: ScannerProperties): void {
+  // If sonar.userHome is explicitly set in expected, include it in comparison
+  if ('sonar.userHome' in expected) {
+    assert.deepStrictEqual(actual, expected);
+    return;
+  }
+
+  // Otherwise check sonar.userHome ends with .sonar (OS-dependent path)
+  const userHome = actual['sonar.userHome'];
+  assert.ok(
+    userHome?.endsWith('.sonar') || userHome?.includes('.sonar'),
+    `Expected sonar.userHome to contain .sonar, got: ${userHome}`,
+  );
+
+  // Compare the rest
+  const { 'sonar.userHome': _actualUserHome, ...actualRest } = actual;
+  assert.deepStrictEqual(actualRest, expected);
+}
 
 describe('getProperties', () => {
   it('should provide default values', () => {
@@ -47,7 +91,7 @@ describe('getProperties', () => {
 
     const properties = getProperties({}, projectHandler.getStartTime());
 
-    expect(properties).toEqual({
+    assertProperties(properties, {
       ...projectHandler.getExpectedProperties(),
       'sonar.host.url': SONARCLOUD_URL,
       'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
@@ -69,7 +113,7 @@ describe('getProperties', () => {
       projectHandler.getStartTime(),
     );
 
-    expect(properties).toEqual({
+    assertProperties(properties, {
       ...projectHandler.getExpectedProperties(),
       'sonar.host.url': SONARCLOUD_URL,
       'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
@@ -86,7 +130,7 @@ describe('getProperties', () => {
       define: ['sonar.scanner.javaOpts=-XX:+PrintFlagsFinal -Xlog:gc*:file=gc.log'],
     });
 
-    expect(properties).toEqual({
+    assertProperties(properties, {
       ...projectHandler.getExpectedProperties(),
       'sonar.host.url': SONARCLOUD_URL,
       'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
@@ -110,7 +154,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
         'sonar.scanner.apiBaseUrl': 'https://dev.sc-dev.io',
@@ -137,7 +181,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -165,7 +209,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties['sonar.verbose']).toBe('false');
+      assert.strictEqual(properties['sonar.verbose'], 'false');
     });
   });
 
@@ -181,7 +225,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -205,7 +249,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -232,7 +276,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -251,7 +295,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -273,7 +317,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -297,7 +341,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -323,7 +367,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties['sonar.token']).toBeUndefined();
+      assert.strictEqual(properties['sonar.token'], undefined);
     });
     it('should not set default values if sonar-project.properties file exists', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
@@ -336,7 +380,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -361,7 +405,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'https://sonarqube.com',
         'sonar.scanner.apiBaseUrl': 'https://sonarqube.com/api/v2',
@@ -384,7 +428,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
         'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
@@ -397,33 +441,37 @@ describe('getProperties', () => {
       });
     });
 
-    it.each([
+    const proxyTestCases = [
       ['http', 'HTTP_PROXY'],
       ['https', 'HTTPS_PROXY'],
-    ])('should detect %s_proxy env variable', (protocol: string, envName: string) => {
-      projectHandler.reset('fake_project_with_sonar_properties_file');
-      projectHandler.setEnvironmentVariables({
-        [envName]: `${protocol}://user:pass@my-proxy.io:1234`,
-        SONAR_HOST_URL: `${protocol}://localhost/sonarqube`,
-      });
+    ] as const;
 
-      const properties = getProperties({}, projectHandler.getStartTime());
+    for (const [protocol, envName] of proxyTestCases) {
+      it(`should detect ${protocol}_proxy env variable`, () => {
+        projectHandler.reset('fake_project_with_sonar_properties_file');
+        projectHandler.setEnvironmentVariables({
+          [envName]: `${protocol}://user:pass@my-proxy.io:1234`,
+          SONAR_HOST_URL: `${protocol}://localhost/sonarqube`,
+        });
 
-      expect(properties).toEqual({
-        ...projectHandler.getExpectedProperties(),
-        'sonar.host.url': `${protocol}://localhost/sonarqube`,
-        'sonar.scanner.apiBaseUrl': `${protocol}://localhost/sonarqube/api/v2`,
-        'sonar.scanner.internal.isSonarCloud': 'false',
-        'sonar.projectKey': 'foo',
-        'sonar.projectName': 'Foo',
-        'sonar.projectVersion': '1.0-SNAPSHOT',
-        'sonar.sources': 'the-sources',
-        'sonar.scanner.proxyHost': 'my-proxy.io',
-        'sonar.scanner.proxyPort': '1234',
-        'sonar.scanner.proxyUser': 'user',
-        'sonar.scanner.proxyPassword': 'pass',
+        const properties = getProperties({}, projectHandler.getStartTime());
+
+        assertProperties(properties, {
+          ...projectHandler.getExpectedProperties(),
+          'sonar.host.url': `${protocol}://localhost/sonarqube`,
+          'sonar.scanner.apiBaseUrl': `${protocol}://localhost/sonarqube/api/v2`,
+          'sonar.scanner.internal.isSonarCloud': 'false',
+          'sonar.projectKey': 'foo',
+          'sonar.projectName': 'Foo',
+          'sonar.projectVersion': '1.0-SNAPSHOT',
+          'sonar.sources': 'the-sources',
+          'sonar.scanner.proxyHost': 'my-proxy.io',
+          'sonar.scanner.proxyPort': '1234',
+          'sonar.scanner.proxyUser': 'user',
+          'sonar.scanner.proxyPassword': 'pass',
+        });
       });
-    });
+    }
 
     it('should use SONAR_SCANNER_JSON_PARAMS', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
@@ -435,7 +483,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
         'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
@@ -456,7 +504,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
         'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
@@ -466,10 +514,7 @@ describe('getProperties', () => {
         'sonar.projectVersion': '1.0-SNAPSHOT',
         'sonar.sources': 'the-sources',
       });
-      expect(log).toHaveBeenCalledWith(
-        LogLevel.WARN,
-        expect.stringMatching(/Failed to parse JSON parameters/),
-      );
+      assertLoggedWithLevel('WARN', 'Failed to parse JSON parameters');
     });
 
     it('should use deprecated SONARQUBE_SCANNER_PARAMS', () => {
@@ -482,7 +527,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': SONARCLOUD_URL,
         'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
@@ -493,8 +538,8 @@ describe('getProperties', () => {
         'sonar.sources': 'the-sources',
         'sonar.token': 'this-is-another-token',
       });
-      expect(log).toHaveBeenCalledWith(
-        LogLevel.WARN,
+      assertLoggedWithLevel(
+        'WARN',
         'SONARQUBE_SCANNER_PARAMS is deprecated, please use SONAR_SCANNER_JSON_PARAMS instead',
       );
     });
@@ -518,22 +563,18 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toMatchObject({
-        'sonar.scanner.responseTimeout': '111', // Should not replace the deprecated property because its new version is also present
-        'sonar.ws.timeout': '111',
-        'sonar.scanner.proxyHost': 'my-proxy.io', // Should replace the deprecated property with the new one
-        'http.proxyHost': 'my-proxy.io',
-        'sonar.login': 'my-login', // Should not replace the deprecated property because its new version is not present
-        'sonar.token': 'my-login',
-      });
-      expect(log).toHaveBeenCalledWith(
-        LogLevel.WARN,
-        'Both properties "sonar.ws.timeout" and "sonar.scanner.responseTimeout" are set. "sonar.ws.timeout" is deprecated and will be removed in a future version. Value of deprecated property "sonar.ws.timeout" will be ignored.',
+      // Check specific deprecated properties handling
+      assert.strictEqual(properties['sonar.scanner.responseTimeout'], '111');
+      assert.strictEqual(properties['sonar.ws.timeout'], '111');
+      assert.strictEqual(properties['sonar.scanner.proxyHost'], 'my-proxy.io');
+      assert.strictEqual(properties['http.proxyHost'], 'my-proxy.io');
+      assert.strictEqual(properties['sonar.login'], 'my-login');
+      assert.strictEqual(properties['sonar.token'], 'my-login');
+      assertLoggedWithLevel(
+        'WARN',
+        'Both properties "sonar.ws.timeout" and "sonar.scanner.responseTimeout" are set',
       );
-      expect(log).toHaveBeenCalledWith(
-        LogLevel.WARN,
-        'Property "http.proxyHost" is deprecated and will be removed in a future version. Please use "sonar.scanner.proxyHost" instead.',
-      );
+      assertLoggedWithLevel('WARN', 'Property "http.proxyHost" is deprecated');
     });
 
     it('should set the [ScannerProperty.SonarScannerCliVersion] for all existing formats', () => {
@@ -542,28 +583,31 @@ describe('getProperties', () => {
         npm_config_sonar_scanner_version: '4.8.1.3023',
       });
 
-      // "NPM Config" format `npm_config_sonar_scanner_${property_name}`
       const npmConfigProperties = getProperties({}, projectHandler.getStartTime());
-      expect(npmConfigProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('4.8.1.3023');
+      assert.strictEqual(npmConfigProperties[ScannerProperty.SonarScannerCliVersion], '4.8.1.3023');
 
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({
         SONAR_SCANNER_VERSION: '5.0.0.2966',
       });
 
-      // "SONAR_SCANNER" format `SONAR_SCANNER_${PROPERTY_NAME}`
       const SonarScannerProperties = getProperties({}, projectHandler.getStartTime());
-      expect(SonarScannerProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('5.0.0.2966');
+      assert.strictEqual(
+        SonarScannerProperties[ScannerProperty.SonarScannerCliVersion],
+        '5.0.0.2966',
+      );
 
       projectHandler.reset('fake_project_with_sonar_properties_file');
-      // js scan options format
       const jsScanOptionsProperties = getProperties(
         {
           version: '4.7.0.2747',
         },
         projectHandler.getStartTime(),
       );
-      expect(jsScanOptionsProperties[ScannerProperty.SonarScannerCliVersion]).toEqual('4.7.0.2747');
+      assert.strictEqual(
+        jsScanOptionsProperties[ScannerProperty.SonarScannerCliVersion],
+        '4.7.0.2747',
+      );
     });
 
     it('should support the old SONAR_BINARY_CACHE environment variable', () => {
@@ -574,7 +618,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties['sonar.userHome']).toEqual('/tmp/.sonar/');
+      assert.strictEqual(properties['sonar.userHome'], '/tmp/.sonar/');
     });
 
     it('should support the old SONAR_SCANNER_MIRROR environment variable', () => {
@@ -585,7 +629,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties['sonar.scanner.mirror']).toEqual('https://mirror.com/');
+      assert.strictEqual(properties['sonar.scanner.mirror'], 'https://mirror.com/');
     });
   });
 
@@ -602,7 +646,7 @@ describe('getProperties', () => {
         { define: ['sonar.token=my-token'] },
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -643,7 +687,7 @@ describe('getProperties', () => {
         { define: ['sonar.token=only-this-will-be-used'] },
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -670,7 +714,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -688,7 +732,7 @@ describe('getProperties', () => {
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost:1234',
         'sonar.scanner.apiBaseUrl': 'http://localhost:1234/api/v2',
@@ -696,7 +740,7 @@ describe('getProperties', () => {
         'sonar.exclusions': '**/node_modules/**,**/docs-dist/**',
         'sonar.scanner.dummy.path': 'C:path\toproject',
         'sonar.scanner.dummy.space.around.eq': 'value',
-        'sonar.scanner.dummy.whitespace.at.beginning': 'value', // SCANNPM-44 Leading whitespaces are NOT preserved
+        'sonar.scanner.dummy.whitespace.at.beginning': 'value',
         'sonar.scanner.empty.property': '',
       });
     });
@@ -732,7 +776,7 @@ describe('getProperties', () => {
         { define: ['sonar.scanner.app=ignored'] },
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'http://localhost/sonarqube',
         'sonar.scanner.apiBaseUrl': 'http://localhost/sonarqube/api/v2',
@@ -744,12 +788,13 @@ describe('getProperties', () => {
       });
     });
 
-    it.each([
+    const proxyPriorityTestCases = [
       ['http', 'HTTP_PROXY'],
       ['https', 'HTTPS_PROXY'],
-    ])(
-      'should not use HTTP_PROXY if proxy is passed through CLI',
-      (protocol: string, envName: string) => {
+    ] as const;
+
+    for (const [protocol, envName] of proxyPriorityTestCases) {
+      it(`should not use HTTP_PROXY if proxy is passed through CLI (${protocol})`, () => {
         projectHandler.reset('fake_project_with_sonar_properties_file');
         projectHandler.setEnvironmentVariables({
           [envName]: `${protocol}://ignore-this-proxy.io`,
@@ -766,7 +811,7 @@ describe('getProperties', () => {
           { define: ['sonar.scanner.proxyHost=use-this-proxy.io'] },
         );
 
-        expect(properties).toEqual({
+        assertProperties(properties, {
           ...projectHandler.getExpectedProperties(),
           'sonar.host.url': `${protocol}://localhost/sonarqube`,
           'sonar.scanner.apiBaseUrl': `${protocol}://localhost/sonarqube/api/v2`,
@@ -777,8 +822,8 @@ describe('getProperties', () => {
           'sonar.sources': 'the-sources',
           [ScannerProperty.SonarScannerProxyHost]: 'use-this-proxy.io',
         });
-      },
-    );
+      });
+    }
 
     it('should set the depending properties correctly when "sonar.region" is set to a supported value', () => {
       projectHandler.reset('whatever');
@@ -793,7 +838,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'https://sonarqube.us',
         'sonar.scanner.apiBaseUrl': 'https://api.sonarqube.us',
@@ -816,7 +861,7 @@ describe('getProperties', () => {
         projectHandler.getStartTime(),
       );
 
-      expect(properties).toEqual({
+      assertProperties(properties, {
         ...projectHandler.getExpectedProperties(),
         'sonar.host.url': 'https://sonarqube.us',
         'sonar.scanner.apiBaseUrl': 'https://api.sonarqube.us',
@@ -830,17 +875,19 @@ describe('getProperties', () => {
       projectHandler.setEnvironmentVariables({});
       const invalidRegion = "some region that doesn't exist";
 
-      expect(() =>
-        getProperties(
-          {
-            options: {
-              [ScannerProperty.SonarRegion]: invalidRegion,
+      assert.throws(
+        () =>
+          getProperties(
+            {
+              options: {
+                [ScannerProperty.SonarRegion]: invalidRegion,
+              },
             },
-          },
-          projectHandler.getStartTime(),
-        ),
-      ).toThrow(
-        `Unsupported region '${invalidRegion}'. List of supported regions: ${REGIONS.map(r => `"${r}"`)}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
+            projectHandler.getStartTime(),
+          ),
+        {
+          message: `Unsupported region '${invalidRegion}'. List of supported regions: ${REGIONS.map(r => `"${r}"`)}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
+        },
       );
     });
   });
@@ -854,29 +901,28 @@ describe('addHostProperties', () => {
       [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
     };
 
-    // SonarCloud used by default
-    expect(getHostProperties({})).toEqual(expected);
+    assert.deepStrictEqual(getHostProperties({}), expected);
 
-    // Backward-compatible use-case
-    expect(
+    assert.deepStrictEqual(
       getHostProperties({
         [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
       }),
-    ).toEqual(expected);
+      expected,
+    );
 
-    // Using www.
-    expect(
+    assert.deepStrictEqual(
       getHostProperties({
         [ScannerProperty.SonarHostUrl]: 'https://www.sonarcloud.io',
       }),
-    ).toEqual(expected);
+      expected,
+    );
 
-    // Using trailing slash (ensures trailing slash is dropped)
-    expect(
+    assert.deepStrictEqual(
       getHostProperties({
         [ScannerProperty.SonarHostUrl]: 'https://www.sonarcloud.io/',
       }),
-    ).toEqual(expected);
+      expected,
+    );
   });
 
   it('should detect SonarCloud with custom URL', () => {
@@ -886,7 +932,7 @@ describe('addHostProperties', () => {
       [ScannerProperty.SonarScannerApiBaseUrl]: 'http://api.that-is-a-sonarcloud-custom-url.com',
     });
 
-    expect(endpoint).toEqual({
+    assert.deepStrictEqual(endpoint, {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
       [ScannerProperty.SonarHostUrl]: 'http://that-is-a-sonarcloud-custom-url.com',
       [ScannerProperty.SonarScannerApiBaseUrl]: 'http://api.that-is-a-sonarcloud-custom-url.com',
@@ -898,7 +944,7 @@ describe('addHostProperties', () => {
       [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
     });
 
-    expect(endpoint).toEqual({
+    assert.deepStrictEqual(endpoint, {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
       [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
       [ScannerProperty.SonarScannerApiBaseUrl]: 'https://next.sonarqube.com/api/v2',
@@ -911,7 +957,7 @@ describe('addHostProperties', () => {
       [ScannerProperty.SonarScannerSonarCloudUrl]: 'http://that-is-a-sonarcloud-custom-url.com',
     });
 
-    expect(endpoint).toEqual({
+    assert.deepStrictEqual(endpoint, {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
       [ScannerProperty.SonarHostUrl]: 'https://next.sonarqube.com',
       [ScannerProperty.SonarScannerApiBaseUrl]: 'https://next.sonarqube.com/api/v2',

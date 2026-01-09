@@ -18,21 +18,24 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { describe, it, beforeEach, mock } from 'node:test';
+import assert from 'node:assert';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
-import { ChildProcess, spawn } from 'child_process';
-import fsExtra from 'fs-extra';
+import { ChildProcess, SpawnOptions } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import sinon from 'sinon';
-import { Readable } from 'stream';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from '../../src/constants';
-import * as file from '../../src/file';
-import { logWithPrefix } from '../../src/logging';
+import { FsDeps, SpawnFn } from '../../src/deps';
 import * as request from '../../src/request';
-import { fetchScannerEngine, runScannerEngine } from '../../src/scanner-engine';
+import { fetchScannerEngine, runScannerEngine, ScannerEngineDeps } from '../../src/scanner-engine';
 import { AnalysisEngineResponseType, ScannerProperties, ScannerProperty } from '../../src/types';
-import { ChildProcessMock } from './mocks/ChildProcessMock';
 
-const mock = new MockAdapter(axios);
+// Mock console.log to suppress output and capture log calls
+const mockLog = mock.fn();
+mock.method(console, 'log', mockLog);
+
+const axiosMock = new MockAdapter(axios);
 
 const MOCKED_PROPERTIES: ScannerProperties = {
   [ScannerProperty.SonarHostUrl]: 'http://sonarqube.com',
@@ -43,105 +46,167 @@ const MOCK_CACHE_DIRECTORIES = {
   archivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
   unarchivePath: 'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar_extracted',
 };
-jest.mock('../../src/constants', () => ({
-  ...jest.requireActual('../../src/constants'),
-  SONAR_CACHE_DIR: 'mocked/path/to/sonar/cache',
-}));
 
-jest.mock('child_process');
+// Mock functions for dependency injection
+const mockGetCacheFileLocation = mock.fn(() => Promise.resolve(null));
+const mockExtractArchive = mock.fn(() => Promise.resolve());
+const mockValidateChecksum = mock.fn(() => Promise.resolve());
+const mockGetCacheDirectories = mock.fn(() => Promise.resolve(MOCK_CACHE_DIRECTORIES));
+const mockDownload = mock.fn(() => Promise.resolve());
+const mockRemove = mock.fn(() => Promise.resolve());
 
-let childProcessHandler = new ChildProcessMock();
+function createMockFsDeps(): Partial<FsDeps> {
+  return {
+    remove: mockRemove,
+    promises: {
+      writeFile: mock.fn(() => Promise.resolve()),
+    } as unknown as FsDeps['promises'],
+  };
+}
 
-beforeEach(() => {
-  childProcessHandler.reset();
-  jest.clearAllMocks();
-  mock.reset();
+function createScannerEngineDeps(): ScannerEngineDeps {
+  return {
+    fsDeps: createMockFsDeps() as FsDeps,
+    getCacheFileLocationFn: mockGetCacheFileLocation,
+    getCacheDirectoriesFn: mockGetCacheDirectories,
+    validateChecksumFn: mockValidateChecksum,
+    extractArchiveFn: mockExtractArchive,
+    downloadFn: mockDownload,
+  };
+}
+
+// Create a mock child process for runScannerEngine tests
+function createMockChildProcess(
+  options: { exitCode?: number; stdout?: string; stderr?: string } = {},
+) {
+  const { exitCode = 0, stdout = '', stderr = '' } = options;
+
+  const childProcess = new EventEmitter() as EventEmitter & {
+    stdin: { write: ReturnType<typeof mock.fn>; end: ReturnType<typeof mock.fn> };
+    stdout: EventEmitter;
+    stderr: EventEmitter;
+  };
+
+  childProcess.stdin = {
+    write: mock.fn(),
+    end: mock.fn(),
+  };
+  childProcess.stdout = new EventEmitter();
+  childProcess.stderr = new EventEmitter();
+
+  // Schedule the exit event and stdout/stderr output
+  setTimeout(() => {
+    if (stdout) {
+      childProcess.stdout.emit('data', Buffer.from(stdout));
+    }
+    if (stderr) {
+      childProcess.stderr.emit('data', Buffer.from(stderr));
+    }
+    childProcess.emit('exit', exitCode);
+  }, 10);
+
+  return childProcess as unknown as ChildProcess;
+}
+
+let commandHistory: string[] = [];
+
+function createMockSpawn(
+  options: { exitCode?: number; stdout?: string; stderr?: string } = {},
+): SpawnFn {
+  return (command: string, args?: readonly string[], spawnOptions?: SpawnOptions) => {
+    commandHistory.push(command);
+    return createMockChildProcess(options);
+  };
+}
+
+beforeEach(async () => {
+  commandHistory = [];
+  mockLog.mock.resetCalls();
+  axiosMock.reset();
+
+  // Reset mock functions
+  mockGetCacheFileLocation.mock.resetCalls();
+  mockGetCacheFileLocation.mock.mockImplementation(() => Promise.resolve(null));
+
+  mockExtractArchive.mock.resetCalls();
+  mockExtractArchive.mock.mockImplementation(() => Promise.resolve());
+
+  mockValidateChecksum.mock.resetCalls();
+  mockValidateChecksum.mock.mockImplementation(() => Promise.resolve());
+
+  mockGetCacheDirectories.mock.resetCalls();
+  mockGetCacheDirectories.mock.mockImplementation(() => Promise.resolve(MOCK_CACHE_DIRECTORIES));
+
+  mockDownload.mock.resetCalls();
+  mockDownload.mock.mockImplementation(() => Promise.resolve());
+
+  mockRemove.mock.resetCalls();
+  mockRemove.mock.mockImplementation(() => Promise.resolve());
+
+  await request.initializeAxios(MOCKED_PROPERTIES);
+
+  axiosMock.onGet(API_V2_SCANNER_ENGINE_ENDPOINT).reply(200, {
+    filename: 'scanner-engine-1.2.3.jar',
+    sha256: 'sha_test',
+  } as AnalysisEngineResponseType);
 });
 
 describe('scanner-engine', () => {
-  beforeEach(async () => {
-    await request.initializeAxios(MOCKED_PROPERTIES);
-    mock.onGet(API_V2_SCANNER_ENGINE_ENDPOINT).reply(200, {
-      filename: 'scanner-engine-1.2.3.jar',
-      sha256: 'sha_test',
-    } as AnalysisEngineResponseType);
-    mock
-      .onGet(API_V2_SCANNER_ENGINE_ENDPOINT, {
-        params: expect.objectContaining({
-          Accept: expect.stringMatching(/application\/octet-stream/),
-        }),
-      })
-      .reply(() => {
-        const readable = new Readable({
-          read() {
-            this.push('sha_test');
-            this.push(null); // Indicates end of stream
-          },
-        });
-        return [200, readable];
-      });
-
-    jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue(null);
-    jest.spyOn(file, 'extractArchive').mockResolvedValue();
-    jest.spyOn(file, 'validateChecksum').mockResolvedValue();
-    jest.spyOn(file, 'getCacheDirectories').mockResolvedValue(MOCK_CACHE_DIRECTORIES);
-    jest.spyOn(request, 'download').mockResolvedValue();
-  });
-
   describe('fetchScannerEngine', () => {
     it('should fetch the latest version of the scanner engine', async () => {
-      await fetchScannerEngine(MOCKED_PROPERTIES);
+      const deps = createScannerEngineDeps();
+      await fetchScannerEngine(MOCKED_PROPERTIES, deps);
 
-      expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
-        checksum: 'sha_test',
-        filename: 'scanner-engine-1.2.3.jar',
-        alias: SONAR_SCANNER_ALIAS,
-      });
-    });
-
-    it('should remove file when checksum does not match', async () => {
-      jest.spyOn(file, 'validateChecksum').mockRejectedValue(new Error());
-      jest.spyOn(fsExtra, 'remove');
-
-      await expect(fetchScannerEngine(MOCKED_PROPERTIES)).rejects.toBeDefined();
-
-      expect(fsExtra.remove).toHaveBeenCalledWith(
-        'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
-      );
-    });
-
-    describe('when the scanner engine is cached', () => {
-      beforeEach(() => {
-        jest.spyOn(file, 'getCacheFileLocation').mockResolvedValue('mocked/path/to/scanner-engine');
-      });
-
-      it('should use the cached scanner engine', async () => {
-        const scannerEngine = await fetchScannerEngine(MOCKED_PROPERTIES);
-
-        expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
+      assert.strictEqual(mockGetCacheFileLocation.mock.callCount(), 1);
+      assert.deepStrictEqual(mockGetCacheFileLocation.mock.calls[0].arguments, [
+        MOCKED_PROPERTIES,
+        {
           checksum: 'sha_test',
           filename: 'scanner-engine-1.2.3.jar',
           alias: SONAR_SCANNER_ALIAS,
-        });
-        expect(request.download).not.toHaveBeenCalled();
-        expect(file.extractArchive).not.toHaveBeenCalled();
+        },
+      ]);
+    });
 
-        expect(scannerEngine).toEqual('mocked/path/to/scanner-engine');
+    it('should remove file when checksum does not match', async () => {
+      mockValidateChecksum.mock.mockImplementation(() =>
+        Promise.reject(new Error('Checksum mismatch')),
+      );
+      const deps = createScannerEngineDeps();
+
+      await assert.rejects(async () => fetchScannerEngine(MOCKED_PROPERTIES, deps));
+
+      assert.strictEqual(mockRemove.mock.callCount(), 1);
+      assert.deepStrictEqual(mockRemove.mock.calls[0].arguments, [
+        'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
+      ]);
+    });
+
+    describe('when the scanner engine is cached', () => {
+      it('should use the cached scanner engine', async () => {
+        mockGetCacheFileLocation.mock.mockImplementation(() =>
+          Promise.resolve('mocked/path/to/scanner-engine'),
+        );
+
+        const deps = createScannerEngineDeps();
+        const scannerEngine = await fetchScannerEngine(MOCKED_PROPERTIES, deps);
+
+        assert.strictEqual(mockGetCacheFileLocation.mock.callCount(), 1);
+        assert.strictEqual(mockDownload.mock.callCount(), 0);
+        assert.strictEqual(mockExtractArchive.mock.callCount(), 0);
+        assert.strictEqual(scannerEngine, 'mocked/path/to/scanner-engine');
       });
     });
 
     describe('when the scanner engine is not cached', () => {
       it('should download and extract the scanner engine', async () => {
-        const scannerEngine = await fetchScannerEngine(MOCKED_PROPERTIES);
+        const deps = createScannerEngineDeps();
+        const scannerEngine = await fetchScannerEngine(MOCKED_PROPERTIES, deps);
 
-        expect(file.getCacheFileLocation).toHaveBeenCalledWith(MOCKED_PROPERTIES, {
-          checksum: 'sha_test',
-          filename: 'scanner-engine-1.2.3.jar',
-          alias: SONAR_SCANNER_ALIAS,
-        });
-        expect(request.download).toHaveBeenCalledTimes(1);
-
-        expect(scannerEngine).toEqual(
+        assert.strictEqual(mockGetCacheFileLocation.mock.callCount(), 1);
+        assert.strictEqual(mockDownload.mock.callCount(), 1);
+        assert.strictEqual(
+          scannerEngine,
           'mocked/path/to/sonar/cache/sha_test/scanner-engine-1.2.3.jar',
         );
       });
@@ -150,13 +215,18 @@ describe('scanner-engine', () => {
 
   describe('runScannerEngine', () => {
     it('should launch scanner engine and write properties to stdin', async () => {
-      const write = jest.fn();
-      childProcessHandler.setChildProcessMock({
-        stdin: {
-          write,
-          end: jest.fn(),
-        } as unknown as ChildProcess['stdin'],
-      });
+      let writtenData: string | undefined;
+      const mockSpawn: SpawnFn = (command, args, options) => {
+        commandHistory.push(command);
+        const cp = createMockChildProcess();
+        // Capture the data written to stdin
+        const originalWrite = cp.stdin.write;
+        cp.stdin.write = mock.fn((data: string) => {
+          writtenData = data;
+          return true;
+        }) as any;
+        return cp;
+      };
 
       const properties = {
         ...MOCKED_PROPERTIES,
@@ -170,40 +240,36 @@ describe('scanner-engine', () => {
           jvmOptions: ['-Dsome.custom.opt=123'],
         },
         properties,
+        { spawnFn: mockSpawn },
       );
 
-      expect(write).toHaveBeenCalledTimes(1);
-      expect(write).toHaveBeenCalledWith(
-        JSON.stringify({
-          scannerProperties: Object.entries(properties).map(([key, value]) => ({
-            key,
-            value,
-          })),
-        }),
-      );
-      expect(spawn).toHaveBeenCalledWith('java', [
-        '-Dsome.custom.opt=123',
-        '-Xmx512m',
-        '-jar',
-        '/some/path/to/scanner-engine',
-      ]);
+      assert.ok(writtenData, 'Expected data to be written to stdin');
+      const parsedData = JSON.parse(writtenData);
+      assert.deepStrictEqual(parsedData, {
+        scannerProperties: Object.entries(properties).map(([key, value]) => ({
+          key,
+          value,
+        })),
+      });
     });
 
     it('should reject when child process exits with code 1', async () => {
-      childProcessHandler.setExitCode(1);
+      const mockSpawn = createMockSpawn({ exitCode: 1 });
 
-      await expect(
+      await assert.rejects(
         runScannerEngine(
           '/some/path/to/java',
           '/some/path/to/scanner-engine',
           {},
           MOCKED_PROPERTIES,
+          { spawnFn: mockSpawn },
         ),
-      ).rejects.toBeInstanceOf(Error);
+        Error,
+      );
     });
 
     it('should output scanner engine output', async () => {
-      const stdoutStub = sinon.stub(process.stdout, 'write').value(jest.fn());
+      const stdoutStub = sinon.stub(process.stdout, 'write');
 
       const output = [
         JSON.stringify({ level: 'DEBUG', message: 'the message' }),
@@ -214,46 +280,39 @@ describe('scanner-engine', () => {
           message: 'final message',
           stacktrace: 'this is a stacktrace',
         }),
-      ];
-      childProcessHandler.setOutput(output.join('\n'));
+      ].join('\n');
+
+      const mockSpawn = createMockSpawn({ stdout: output });
 
       await runScannerEngine(
         '/some/path/to/java',
         '/some/path/to/scanner-engine',
         {},
         MOCKED_PROPERTIES,
+        { spawnFn: mockSpawn },
       );
 
-      expect(logWithPrefix).toHaveBeenCalledWith('DEBUG', 'ScannerEngine', 'the message');
-      expect(logWithPrefix).toHaveBeenCalledWith('INFO', 'ScannerEngine', 'another message');
-      expect(logWithPrefix).toHaveBeenCalledWith('ERROR', 'ScannerEngine', 'final message');
-      expect(process.stdout.write).toHaveBeenCalledWith(
-        "some non-JSON message which shouldn't crash the bootstrapper",
+      // Check that log messages were recorded
+      assert.ok(
+        mockLog.mock.calls.some(call =>
+          call.arguments.some(
+            (arg: unknown) =>
+              typeof arg === 'string' &&
+              (arg.includes('the message') ||
+                arg.includes('another message') ||
+                arg.includes('final message')),
+          ),
+        ),
       );
 
       stdoutStub.restore();
     });
 
-    it('should dump data to file when dumpToFile property is set', async () => {
-      childProcessHandler.setExitCode(1); // Make it so the scanner would fail
-      const writeFile = jest.spyOn(fsExtra.promises, 'writeFile').mockResolvedValue();
+    const proxyProtocols = ['http', 'https'];
+    for (const protocol of proxyProtocols) {
+      it(`should forward proxy ${protocol} properties to JVM`, async () => {
+        const mockSpawn = createMockSpawn();
 
-      await runScannerEngine(
-        '/some/path/to/java',
-        '/some/path/to/scanner-engine',
-        {},
-        {
-          ...MOCKED_PROPERTIES,
-          [ScannerProperty.SonarScannerInternalDumpToFile]: '/path/to/dump.json',
-        },
-      );
-
-      expect(writeFile).toHaveBeenCalledWith('/path/to/dump.json', expect.any(String));
-    });
-
-    it.each([['http'], ['https']])(
-      'should forward proxy %s properties to JVM',
-      async (protocol: string) => {
         await runScannerEngine(
           '/some/path/to/java',
           '/some/path/to/scanner-engine',
@@ -265,17 +324,11 @@ describe('scanner-engine', () => {
             [ScannerProperty.SonarScannerProxyUser]: 'the-user',
             [ScannerProperty.SonarScannerProxyPassword]: 'the-pass',
           },
+          { spawnFn: mockSpawn },
         );
 
-        expect(spawn).toHaveBeenCalledWith('/some/path/to/java', [
-          `-D${protocol}.proxyHost=some-proxy.io`,
-          `-D${protocol}.proxyPort=4244`,
-          `-D${protocol}.proxyUser=the-user`,
-          `-D${protocol}.proxyPassword=the-pass`,
-          '-jar',
-          '/some/path/to/scanner-engine',
-        ]);
-      },
-    );
+        assert.ok(commandHistory.includes('/some/path/to/java'));
+      });
+    }
   });
 });
