@@ -119,6 +119,18 @@ export async function extractArchive(
     await extractionPromise;
   } else {
     const zip = new AdmZip(fromPath);
+    const resolvedToPath = path.resolve(toPath);
+
+    for (const entry of zip.getEntries()) {
+      const filePath = path.join(toPath, entry.entryName);
+      const resolvedPath = path.resolve(filePath);
+
+      // Prevent Zip Slip vulnerability by ensuring the resolved path is within the target directory
+      if (!resolvedPath.startsWith(resolvedToPath + path.sep) && resolvedPath !== resolvedToPath) {
+        throw new Error(`Entry "${entry.entryName}" would extract outside target directory`);
+      }
+    }
+
     zip.extractAllTo(toPath, true, true);
   }
 }
