@@ -47,11 +47,14 @@
     "sinon": "21.0.1",
     "toml": "3.0.0",
     "tsx": "4.21.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "nyc": "17.1.0",
+    "@istanbuljs/nyc-config-typescript": "1.0.2"
   },
   "scripts": {
     "build": "npm run license && tsc && tsx scripts/generate-package-json.ts",
-    "test": "tsx --test test/unit/*.test.ts",
+    "test": "nyc npm run test:run",
+    "test:run": "tsx --test test/unit/*.test.ts",
     "test-integration": "cd test/integration && npm install && npm test",
     "format": "prettier --write .",
     "check-format": "prettier --list-different .",
