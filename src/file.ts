@@ -84,6 +84,15 @@ export async function extractArchive(
         // Create the full path for the file
         const filePath = path.join(toPath, header.name);
 
+        // Prevent Zip Slip vulnerability by ensuring the resolved path is within the target directory
+        const resolvedPath = path.resolve(filePath);
+        const resolvedToPath = path.resolve(toPath);
+        if (!resolvedPath.startsWith(resolvedToPath + path.sep)) {
+          stream.resume();
+          reject(new Error(`Entry "${header.name}" would extract outside target directory`));
+          return;
+        }
+
         // Ensure the parent directory exists
         fsDeps.mkdirSync(path.dirname(filePath), { recursive: true });
 
