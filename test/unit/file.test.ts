@@ -203,6 +203,37 @@ describe('file', () => {
       }
     });
 
+    it('should reject tar.gz entries with path traversal (Zip Slip)', async () => {
+      const tarStream = await import('tar-stream');
+      const zlib = await import('node:zlib');
+      const fs = await import('node:fs');
+      const os = await import('node:os');
+
+      // Create a tar.gz with a malicious path traversal entry
+      const pack = tarStream.pack();
+      pack.entry({ name: '../../../etc/passwd' }, 'malicious content');
+      pack.finalize();
+
+      // Write to temp file
+      const tempPath = path.join(os.tmpdir(), `test-zipslip-${Date.now()}.tar.gz`);
+      const gzip = zlib.createGzip();
+      const writeStream = fs.createWriteStream(tempPath);
+
+      await new Promise<void>((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+        pack.pipe(gzip).pipe(writeStream);
+      });
+
+      try {
+        await assert.rejects(extractArchive(tempPath, '/tmp/safe-dir'), {
+          message: /would extract outside target directory/,
+        });
+      } finally {
+        fs.unlinkSync(tempPath);
+      }
+    });
+
     it('should handle tar.gz archives', async () => {
       // Create a mock that returns itself for pipe chaining
       const mockStream = {
