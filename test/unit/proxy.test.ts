@@ -17,11 +17,18 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { log } from '../../src/logging';
+import { describe, it, mock, beforeEach } from 'node:test';
+import assert from 'node:assert';
 import { getProxyUrl, proxyUrlToJavaOptions } from '../../src/proxy';
 import { ScannerProperties, ScannerProperty } from '../../src/types';
 
-jest.mock('../../src/logging');
+// Mock console.log to suppress output and capture log calls
+const mockLog = mock.fn();
+mock.method(console, 'log', mockLog);
+
+beforeEach(() => {
+  mockLog.mock.resetCalls();
+});
 
 describe('proxy', () => {
   describe('getProxyUrl', () => {
@@ -32,12 +39,18 @@ describe('proxy', () => {
         [ScannerProperty.SonarScannerProxyUser]: 'user',
         [ScannerProperty.SonarScannerProxyPassword]: 'password',
       };
-      getProxyUrl(properties);
+      const result = getProxyUrl(properties);
 
-      expect(getProxyUrl(properties)).toBeUndefined();
-      expect(log).toHaveBeenCalledWith(
-        'WARN',
-        `Detecting proxy: Incomplete proxy configuration. Proxy host is missing.`,
+      assert.strictEqual(result, undefined);
+      // Check that warning was logged
+      assert.ok(
+        mockLog.mock.calls.some(call =>
+          call.arguments.some(
+            (arg: unknown) =>
+              typeof arg === 'string' &&
+              arg.includes('Incomplete proxy configuration. Proxy host is missing'),
+          ),
+        ),
       );
     });
 
@@ -46,9 +59,8 @@ describe('proxy', () => {
         [ScannerProperty.SonarHostUrl]: 'http://sq.some-company.com',
         [ScannerProperty.SonarScannerProxyHost]: 'some-proxy.io',
       };
-      getProxyUrl(properties);
 
-      expect(getProxyUrl(properties)?.toString()).toBe('http://some-proxy.io/');
+      assert.strictEqual(getProxyUrl(properties)?.toString(), 'http://some-proxy.io/');
     });
 
     it('should detect proxy with only host on https endpoint', () => {
@@ -56,9 +68,8 @@ describe('proxy', () => {
         [ScannerProperty.SonarHostUrl]: 'https://sq.some-company.com',
         [ScannerProperty.SonarScannerProxyHost]: 'some-proxy.io',
       };
-      getProxyUrl(properties);
 
-      expect(getProxyUrl(properties)?.toString()).toBe('http://some-proxy.io/');
+      assert.strictEqual(getProxyUrl(properties)?.toString(), 'http://some-proxy.io/');
     });
 
     it('should detect proxy with host and port', () => {
@@ -67,9 +78,8 @@ describe('proxy', () => {
         [ScannerProperty.SonarScannerProxyHost]: 'some-proxy.io',
         [ScannerProperty.SonarScannerProxyPort]: '4234',
       };
-      getProxyUrl(properties);
 
-      expect(getProxyUrl(properties)?.toString()).toBe('http://some-proxy.io:4234/');
+      assert.strictEqual(getProxyUrl(properties)?.toString(), 'http://some-proxy.io:4234/');
     });
 
     it('should detect proxy with host, port and authentication', () => {
@@ -80,9 +90,11 @@ describe('proxy', () => {
         [ScannerProperty.SonarScannerProxyUser]: 'user',
         [ScannerProperty.SonarScannerProxyPassword]: 'password',
       };
-      getProxyUrl(properties);
 
-      expect(getProxyUrl(properties)?.toString()).toBe('http://user:password@some-proxy.io:4234/');
+      assert.strictEqual(
+        getProxyUrl(properties)?.toString(),
+        'http://user:password@some-proxy.io:4234/',
+      );
     });
   });
 
@@ -91,7 +103,7 @@ describe('proxy', () => {
       const options = proxyUrlToJavaOptions({
         [ScannerProperty.SonarHostUrl]: 'http://sq.some-company.com',
       });
-      expect(options).toEqual([]);
+      assert.deepStrictEqual(options, []);
     });
 
     it('should return java options for http proxy', () => {
@@ -100,7 +112,7 @@ describe('proxy', () => {
         [ScannerProperty.SonarScannerProxyHost]: 'some-proxy.io',
         [ScannerProperty.SonarScannerProxyPort]: '4234',
       });
-      expect(options).toEqual([
+      assert.deepStrictEqual(options, [
         '-Dhttp.proxyHost=some-proxy.io',
         '-Dhttp.proxyPort=4234',
         '-Dhttp.proxyUser=',
@@ -116,7 +128,7 @@ describe('proxy', () => {
         [ScannerProperty.SonarScannerProxyUser]: 'user',
         [ScannerProperty.SonarScannerProxyPassword]: 'password',
       });
-      expect(options).toEqual([
+      assert.deepStrictEqual(options, [
         '-Dhttps.proxyHost=some-proxy.io',
         '-Dhttps.proxyPort=4234',
         '-Dhttps.proxyUser=user',

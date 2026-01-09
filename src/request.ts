@@ -20,10 +20,10 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import fsExtra from 'fs-extra';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
-import https from 'https';
+import https from 'node:https';
 import forge from 'node-forge';
-import * as stream from 'stream';
-import { promisify } from 'util';
+import * as stream from 'node:stream';
+import { promisify } from 'node:util';
 import { LogLevel, log } from './logging';
 import { getProxyUrl } from './proxy';
 import { ScannerProperties, ScannerProperty } from './types';

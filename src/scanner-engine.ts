@@ -17,10 +17,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import fsExtra from 'fs-extra';
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants';
-import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file';
+import { defaultFsDeps, defaultSpawn, FsDeps, SpawnFn } from './deps';
+import {
+  extractArchive,
+  getCacheDirectories,
+  getCacheFileLocation,
+  validateChecksum,
+} from './file';
 import { LogLevel, log, logWithPrefix } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download, fetch } from './request';
@@ -32,14 +37,39 @@ import {
   ScannerProperty,
 } from './types';
 
-export async function fetchScannerEngine(properties: ScannerProperties) {
+export interface ScannerEngineDeps {
+  fsDeps?: FsDeps;
+  spawnFn?: SpawnFn;
+  fetchFn?: typeof fetch;
+  downloadFn?: typeof download;
+  getCacheFileLocationFn?: typeof getCacheFileLocation;
+  getCacheDirectoriesFn?: typeof getCacheDirectories;
+  validateChecksumFn?: typeof validateChecksum;
+  extractArchiveFn?: typeof extractArchive;
+}
+
+export async function fetchScannerEngine(
+  properties: ScannerProperties,
+  deps: ScannerEngineDeps = {},
+) {
+  const {
+    fsDeps = defaultFsDeps,
+    fetchFn = fetch,
+    downloadFn = download,
+    getCacheFileLocationFn = getCacheFileLocation,
+    getCacheDirectoriesFn = getCacheDirectories,
+    validateChecksumFn = validateChecksum,
+  } = deps;
+
   log(LogLevel.DEBUG, `Detecting latest version of ${SONAR_SCANNER_ALIAS}`);
-  const { data } = await fetch<AnalysisEngineResponseType>({ url: API_V2_SCANNER_ENGINE_ENDPOINT });
+  const { data } = await fetchFn<AnalysisEngineResponseType>({
+    url: API_V2_SCANNER_ENGINE_ENDPOINT,
+  });
   const { sha256: checksum, filename, downloadUrl } = data;
   log(LogLevel.DEBUG, `Latest ${SONAR_SCANNER_ALIAS} version:`, filename);
 
   log(LogLevel.DEBUG, `Looking for Cached ${SONAR_SCANNER_ALIAS}`);
-  const cachedScannerEngine = await getCacheFileLocation(properties, {
+  const cachedScannerEngine = await getCacheFileLocationFn(properties, {
     checksum,
     filename,
     alias: SONAR_SCANNER_ALIAS,
@@ -53,20 +83,20 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
 
   properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
 
-  const { archivePath } = await getCacheDirectories(properties, {
+  const { archivePath } = await getCacheDirectoriesFn(properties, {
     checksum,
     filename,
     alias: SONAR_SCANNER_ALIAS,
   });
   const url = downloadUrl ?? API_V2_SCANNER_ENGINE_ENDPOINT;
   log(LogLevel.DEBUG, `Starting download of ${SONAR_SCANNER_ALIAS}`);
-  await download(url, archivePath);
+  await downloadFn(url, archivePath);
   log(LogLevel.INFO, `Downloaded ${SONAR_SCANNER_ALIAS} to ${archivePath}`);
 
   try {
-    await validateChecksum(archivePath, checksum);
+    await validateChecksumFn(archivePath, checksum);
   } catch (error) {
-    await fsExtra.remove(archivePath);
+    await fsDeps.remove(archivePath);
     throw error;
   }
 
@@ -92,7 +122,10 @@ export function runScannerEngine(
   scannerEnginePath: string,
   scanOptions: ScanOptions,
   properties: ScannerProperties,
+  deps: ScannerEngineDeps = {},
 ) {
+  const { fsDeps = defaultFsDeps, spawnFn = defaultSpawn } = deps;
+
   log(LogLevel.DEBUG, `Running the ${SONAR_SCANNER_ALIAS}`);
 
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
@@ -124,11 +157,11 @@ export function runScannerEngine(
       args,
     };
     log(LogLevel.INFO, 'Dumping data to file and exiting');
-    return fsExtra.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
+    return fsDeps.promises.writeFile(dumpToFile, JSON.stringify(data, null, 2));
   }
 
   log(LogLevel.DEBUG, `Running ${SONAR_SCANNER_ALIAS}`, javaBinPath, ...args);
-  const child = spawn(javaBinPath, args);
+  const child = spawnFn(javaBinPath, args);
 
   log(LogLevel.DEBUG, `Writing properties to ${SONAR_SCANNER_ALIAS}`, propertiesJSON);
   child.stdin.write(propertiesJSON);
