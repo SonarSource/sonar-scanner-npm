@@ -113,6 +113,34 @@ describe('scan', () => {
     assert.strictEqual(getLogLevel(), LogLevel.DEBUG);
   });
 
+  it('should set the log level to ERROR when specified', async () => {
+    sinon.stub(process, 'cwd').returns(__dirname);
+
+    await scan({ options: { 'sonar.log.level': 'ERROR' } }, undefined, createScanDeps());
+    assert.strictEqual(getLogLevel(), LogLevel.ERROR);
+  });
+
+  it('should set the log level to WARN when specified', async () => {
+    sinon.stub(process, 'cwd').returns(__dirname);
+
+    await scan({ options: { 'sonar.log.level': 'WARN' } }, undefined, createScanDeps());
+    assert.strictEqual(getLogLevel(), LogLevel.WARN);
+  });
+
+  it('should set the log level to TRACE when specified', async () => {
+    sinon.stub(process, 'cwd').returns(__dirname);
+
+    await scan({ options: { 'sonar.log.level': 'TRACE' } }, undefined, createScanDeps());
+    assert.strictEqual(getLogLevel(), LogLevel.TRACE);
+  });
+
+  it('should default to INFO for invalid log level', async () => {
+    sinon.stub(process, 'cwd').returns(__dirname);
+
+    await scan({ options: { 'sonar.log.level': 'INVALID' } }, undefined, createScanDeps());
+    assert.strictEqual(getLogLevel(), LogLevel.INFO);
+  });
+
   it('should output the current version of the scanner', async () => {
     sinon.stub(process, 'cwd').returns(__dirname);
     mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
