@@ -19,6 +19,7 @@
  */
 import { describe, it, afterEach, mock, beforeEach } from 'node:test';
 import assert from 'node:assert';
+import path from 'node:path';
 import sinon from 'sinon';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
@@ -30,7 +31,53 @@ import {
 } from '../../src/constants';
 import { getHostProperties, getProperties } from '../../src/properties';
 import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types';
-import { FakeProjectMock } from './mocks/FakeProjectMock';
+
+const baseEnvVariables = process.env;
+
+class FakeProjectMock {
+  static getPathForProject(projectName: string) {
+    return path.join(__dirname, 'fixtures', projectName);
+  }
+
+  private projectPath: string = '';
+
+  private startTimeMs = 1713164095650;
+
+  reset(projectName?: string) {
+    if (projectName) {
+      this.projectPath = FakeProjectMock.getPathForProject(projectName);
+    } else {
+      this.projectPath = '';
+    }
+    sinon.stub(process, 'platform').value('windows');
+    sinon.stub(process, 'arch').value('aarch64');
+    sinon.stub(process, 'env').value(baseEnvVariables);
+    sinon.stub(process, 'cwd').value(() => this.projectPath);
+  }
+
+  setEnvironmentVariables(values: { [key: string]: string }) {
+    sinon.stub(process, 'env').value(values);
+  }
+
+  getStartTime() {
+    return this.startTimeMs;
+  }
+
+  getExpectedProperties(): ScannerProperties {
+    return {
+      'sonar.working.directory': '.scannerwork',
+      'sonar.exclusions': DEFAULT_SONAR_EXCLUSIONS,
+      'sonar.projectBaseDir': this.projectPath,
+      'sonar.scanner.bootstrapStartTime': this.startTimeMs.toString(),
+      'sonar.scanner.app': SCANNER_BOOTSTRAPPER_NAME,
+      'sonar.scanner.appVersion': 'SNAPSHOT',
+      'sonar.scanner.wasEngineCacheHit': 'false',
+      'sonar.scanner.wasJreCacheHit': CacheStatus.Disabled,
+      'sonar.scanner.os': 'windows',
+      'sonar.scanner.arch': 'aarch64',
+    };
+  }
+}
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();
