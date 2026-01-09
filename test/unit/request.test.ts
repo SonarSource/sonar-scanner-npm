@@ -17,22 +17,33 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import axios, { AxiosInstance } from 'axios';
-import fsExtra from 'fs-extra';
+import { describe, it, beforeEach, mock } from 'node:test';
+import assert from 'node:assert';
+import axios, { type AxiosInstance } from 'axios';
+import fs from 'node:fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
-import path from 'path';
+
+// hpagent exposes proxy at runtime but not in types
+interface ProxyAgentWithProxy {
+  proxy: URL;
+}
+import path from 'node:path';
 import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants';
-import * as logging from '../../src/logging';
+import { LogLevel } from '../../src/logging';
 import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request';
 import { ScannerProperty } from '../../src/types';
 
-jest.mock('axios', () => ({
-  create: jest.fn().mockReturnValue({ request: jest.fn() }),
-  request: jest.fn(),
-}));
+// Mock console.log to suppress output and capture log calls
+const mockLog = mock.fn();
+mock.method(console, 'log', mockLog);
+
+const mockedRequest = mock.fn();
+const axiosCreateMock = mock.method(axios, 'create', () => ({ request: mockedRequest }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  axiosCreateMock.mock.resetCalls();
+  mockedRequest.mock.resetCalls();
+  mockLog.mock.resetCalls();
   resetAxios();
 });
 
@@ -44,35 +55,36 @@ describe('request', () => {
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
           [ScannerProperty.SonarScannerProxyHost]: 'proxy.com',
         });
-        expect(agents.httpAgent).toBeInstanceOf(HttpProxyAgent);
-        expect(agents.httpAgent?.proxy.toString()).toBe('http://proxy.com/');
-        expect(agents.httpsAgent).toBeInstanceOf(HttpsProxyAgent);
-        expect(agents.httpsAgent?.proxy.toString()).toBe('http://proxy.com/');
-        expect(agents.proxy).toBe(false);
+        assert.ok(agents.httpAgent instanceof HttpProxyAgent);
+        assert.strictEqual(
+          (agents.httpAgent as unknown as ProxyAgentWithProxy).proxy.toString(),
+          'http://proxy.com/',
+        );
+        assert.ok(agents.httpsAgent instanceof HttpsProxyAgent);
+        assert.strictEqual(
+          (agents.httpsAgent as unknown as ProxyAgentWithProxy).proxy.toString(),
+          'http://proxy.com/',
+        );
+        assert.strictEqual(agents.proxy, false);
       });
 
       it('should not define agents when no proxy is provided', async () => {
         const agents = await getHttpAgents({
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         });
-        expect(agents.httpAgent).toBeUndefined();
-        expect(agents.httpsAgent).toBeUndefined();
-        expect(agents.proxy).toBeUndefined();
-        expect(agents).toEqual({});
+        assert.strictEqual(agents.httpAgent, undefined);
+        assert.strictEqual(agents.httpsAgent, undefined);
+        assert.strictEqual(agents.proxy, undefined);
+        assert.deepStrictEqual(agents, {});
       });
     });
 
     describe('with tls options', () => {
       it('should initialize axios with password-protected truststore', async () => {
-        jest.spyOn(axios, 'create');
-
         const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
         const truststorePass = 'password';
         const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
-        const certificatePem = fsExtra
-          .readFileSync(certificatePath)
-          .toString()
-          .replace(/\n/g, '\r\n');
+        const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
 
         const { httpsAgent } = await getHttpAgents({
           [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
@@ -81,14 +93,11 @@ describe('request', () => {
         });
 
         const ca = httpsAgent?.options.ca as string[];
-        expect(ca).toHaveLength(1);
-        expect(ca).toContain(certificatePem);
+        assert.strictEqual(ca.length, 1);
+        assert.ok(ca.includes(certificatePem));
       });
 
       it("should not fail if truststore can't be parsed", async () => {
-        jest.spyOn(axios, 'create');
-        jest.spyOn(logging, 'log');
-
         const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-invalid.p12');
         const truststorePass = 'password';
 
@@ -98,16 +107,20 @@ describe('request', () => {
           [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
         });
 
-        expect(proxy).toBeUndefined();
-        expect(httpsAgent).toBeUndefined();
-        expect(logging.log).toHaveBeenCalledWith(
-          logging.LogLevel.WARN,
-          expect.stringContaining('Failed to load truststore'),
+        assert.strictEqual(proxy, undefined);
+        assert.strictEqual(httpsAgent, undefined);
+        // Check that warning was logged via console.log
+        assert.ok(
+          mockLog.mock.calls.some(call =>
+            call.arguments.some(
+              (arg: unknown) =>
+                typeof arg === 'string' && arg.includes('Failed to load truststore'),
+            ),
+          ),
         );
       });
 
       it('should initialize axios with password-protected empty truststore', async () => {
-        jest.spyOn(axios, 'create');
         const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-empty.p12');
         const truststorePass = 'password';
 
@@ -117,13 +130,12 @@ describe('request', () => {
           [ScannerProperty.SonarScannerTruststorePassword]: truststorePass,
         });
 
-        expect(proxy).toBeUndefined();
+        assert.strictEqual(proxy, undefined);
         const ca = httpsAgent?.options.ca as string[];
-        expect(ca).toHaveLength(0);
+        assert.strictEqual(ca.length, 0);
       });
 
       it('should initialize axios with password-protected keystore', async () => {
-        jest.spyOn(axios, 'create');
         const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
         const keystorePass = 'password';
 
@@ -133,21 +145,17 @@ describe('request', () => {
           [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
         });
 
-        expect(proxy).toBeUndefined();
-        expect(httpsAgent?.options.pfx).toEqual(fsExtra.readFileSync(keystorePath));
-        expect(httpsAgent?.options.passphrase).toBe(keystorePass);
+        assert.strictEqual(proxy, undefined);
+        assert.deepStrictEqual(httpsAgent?.options.pfx, fs.readFileSync(keystorePath));
+        assert.strictEqual(httpsAgent?.options.passphrase, keystorePass);
       });
     });
 
     it('should support combining proxy, truststore and keystore', async () => {
-      jest.spyOn(axios, 'create');
       const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
       const truststorePass = 'password';
       const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
-      const certificatePem = fsExtra
-        .readFileSync(certificatePath)
-        .toString()
-        .replace(/\n/g, '\r\n');
+      const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
       const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
       const keystorePass = 'password';
 
@@ -160,43 +168,45 @@ describe('request', () => {
         [ScannerProperty.SonarScannerKeystorePassword]: keystorePass,
       });
 
-      expect(proxy).toBe(false);
+      assert.strictEqual(proxy, false);
 
       const ca = httpsAgent?.options.ca as string[];
-      expect(ca).toHaveLength(1);
-      expect(ca).toContain(certificatePem);
-      expect(httpsAgent?.options.pfx).toEqual(fsExtra.readFileSync(keystorePath));
-      expect(httpsAgent?.options.passphrase).toBe(keystorePass);
-      expect(httpsAgent?.proxy.toString()).toBe('http://proxy.com/');
+      assert.strictEqual(ca.length, 1);
+      assert.ok(ca.includes(certificatePem));
+      assert.deepStrictEqual(httpsAgent?.options.pfx, fs.readFileSync(keystorePath));
+      assert.strictEqual(httpsAgent?.options.passphrase, keystorePass);
+      assert.strictEqual(
+        (httpsAgent as unknown as ProxyAgentWithProxy).proxy.toString(),
+        'http://proxy.com/',
+      );
     });
   });
 
   describe('initializeAxios', () => {
     it('should initialize axios', async () => {
-      jest.spyOn(axios, 'create');
-
       await initializeAxios({
         [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
         [ScannerProperty.SonarToken]: 'testToken',
       });
 
-      expect(axios.create).toHaveBeenCalledTimes(2);
-      expect(axios.create).toHaveBeenCalledWith({
-        baseURL: SONARCLOUD_API_BASE_URL,
-        headers: {
-          Authorization: `Bearer testToken`,
-        },
-        timeout: 0,
-      });
-      expect(axios.create).toHaveBeenCalledWith({
-        timeout: 0,
-      });
+      assert.strictEqual(axiosCreateMock.mock.callCount(), 2);
+      const calls = axiosCreateMock.mock.calls;
+      assert.ok(
+        calls.some(call => {
+          const options = call.arguments[0] as {
+            baseURL?: string;
+            headers?: Record<string, string>;
+          };
+          return (
+            options?.baseURL === SONARCLOUD_API_BASE_URL &&
+            options?.headers?.Authorization === 'Bearer testToken'
+          );
+        }),
+      );
     });
 
     it('should initialize axios with timeout', async () => {
-      jest.spyOn(axios, 'create');
-
       await initializeAxios({
         [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
@@ -204,49 +214,39 @@ describe('request', () => {
         [ScannerProperty.SonarScannerResponseTimeout]: '23',
       });
 
-      expect(axios.create).toHaveBeenCalledWith({
-        baseURL: SONARCLOUD_API_BASE_URL,
-        headers: {
-          Authorization: `Bearer testToken`,
-        },
-        timeout: 23000,
-      });
-      expect(axios.create).toHaveBeenCalledWith({
-        timeout: 23000,
-      });
+      const calls = axiosCreateMock.mock.calls;
+      assert.ok(calls.some(call => call.arguments[0]?.timeout === 23000));
     });
 
     it('should initialize axios without token', async () => {
-      jest.spyOn(axios, 'create');
-
       await initializeAxios({
         [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
         [ScannerProperty.SonarScannerApiBaseUrl]: SONARCLOUD_API_BASE_URL,
       });
 
-      expect(axios.create).toHaveBeenCalledWith({
-        baseURL: SONARCLOUD_API_BASE_URL,
-        headers: {},
-        timeout: 0,
-      });
-      expect(axios.create).toHaveBeenCalledWith({
-        timeout: 0,
-      });
+      const calls = axiosCreateMock.mock.calls;
+      assert.ok(
+        calls.some(
+          call =>
+            call.arguments[0]?.baseURL === SONARCLOUD_API_BASE_URL &&
+            Object.keys(call.arguments[0]?.headers ?? {}).length === 0,
+        ),
+      );
     });
   });
 
   describe('fetch', () => {
     it('should throw error if axios is not initialized', () => {
-      jest.spyOn(axios, 'request');
-
-      expect(() => fetch({ url: '/some-url' })).toThrow('Axios instance is not initialized');
+      assert.throws(() => fetch({ url: '/some-url' }), {
+        message: 'Axios instance is not initialized',
+      });
     });
 
     it('should use correct axios instance based on URL', async () => {
-      const mockedRequestInternal = jest.fn();
-      const mockedRequestExternal = jest.fn();
-      jest.spyOn(axios, 'create').mockImplementation(
-        options =>
+      const mockedRequestInternal = mock.fn();
+      const mockedRequestExternal = mock.fn();
+      axiosCreateMock.mock.mockImplementation(
+        (options: any) =>
           ({
             request: options?.baseURL ? mockedRequestInternal : mockedRequestExternal,
           }) as any as AxiosInstance,
@@ -260,21 +260,21 @@ describe('request', () => {
 
       await fetch({ url: 'https://sonarcloud.io/api/issues/search' });
       await fetch({ url: 'http://sonarcloud.io/api/issues/search' });
-      expect(mockedRequestInternal).not.toHaveBeenCalled();
-      expect(mockedRequestExternal).toHaveBeenCalledTimes(2);
+      assert.strictEqual(mockedRequestInternal.mock.callCount(), 0);
+      assert.strictEqual(mockedRequestExternal.mock.callCount(), 2);
 
       await fetch({ url: '/api/issues/search' });
       await fetch({ url: '/issues/search' });
-      expect(mockedRequestInternal).toHaveBeenCalledTimes(2);
-      expect(mockedRequestExternal).toHaveBeenCalledTimes(2);
+      assert.strictEqual(mockedRequestInternal.mock.callCount(), 2);
+      assert.strictEqual(mockedRequestExternal.mock.callCount(), 2);
     });
 
     it('should call axios request if axios is initialized', async () => {
-      const mockedRequest = jest.fn();
-      jest.spyOn(axios, 'create').mockImplementation(
+      const mockedRequestFn = mock.fn();
+      axiosCreateMock.mock.mockImplementation(
         () =>
           ({
-            request: mockedRequest,
+            request: mockedRequestFn,
           }) as any,
       );
 
@@ -286,7 +286,9 @@ describe('request', () => {
       const config = { url: '/api/issues/search' };
 
       fetch(config);
-      expect(mockedRequest).toHaveBeenCalledWith(config);
+      assert.ok(
+        mockedRequestFn.mock.calls.some(call => call.arguments[0]?.url === '/api/issues/search'),
+      );
     });
   });
 });

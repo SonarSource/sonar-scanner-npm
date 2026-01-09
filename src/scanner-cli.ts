@@ -17,10 +17,10 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { AxiosRequestConfig } from 'axios';
-import { spawn } from 'child_process';
-import fsExtra from 'fs-extra';
-import path from 'path';
+import type { AxiosRequestConfig } from 'axios';
+import { spawn as nodeSpawn } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import semver from 'semver';
 import {
   ENV_TO_PROPERTY_NAME,
@@ -34,19 +34,68 @@ import { LogLevel, log } from './logging';
 import { isLinux, isMac, isWindows } from './platform';
 import { proxyUrlToJavaOptions } from './proxy';
 import { download } from './request';
-import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { type ScanOptions, type ScannerProperties, ScannerProperty } from './types';
 
-export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
-  if (isWindows()) {
+export interface ScannerCliFsDeps {
+  exists: (path: string) => Promise<boolean>;
+  ensureDir: (path: string) => Promise<void>;
+}
+
+export interface ScannerCliProcessDeps {
+  platform: NodeJS.Platform;
+  arch: NodeJS.Architecture;
+  env: NodeJS.ProcessEnv;
+}
+
+type SpawnFn = typeof nodeSpawn;
+
+const defaultFsDeps: ScannerCliFsDeps = {
+  exists: async (filePath: string) => {
+    try {
+      await fs.promises.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  ensureDir: (dirPath: string) => fs.promises.mkdir(dirPath, { recursive: true }).then(() => {}),
+};
+
+const defaultProcessDeps: ScannerCliProcessDeps = {
+  get platform() {
+    return process.platform;
+  },
+  get arch() {
+    return process.arch;
+  },
+  get env() {
+    return process.env;
+  },
+};
+
+const defaultSpawn: SpawnFn = nodeSpawn;
+
+export interface ScannerCliDeps {
+  fsDeps?: ScannerCliFsDeps;
+  processDeps?: ScannerCliProcessDeps;
+  spawnFn?: SpawnFn;
+  downloadFn?: typeof download;
+  extractArchiveFn?: typeof extractArchive;
+}
+
+export function normalizePlatformName(
+  processDeps: ScannerCliProcessDeps = defaultProcessDeps,
+): 'windows' | 'linux' | 'macosx' {
+  if (isWindows(processDeps)) {
     return 'windows';
   }
-  if (isLinux()) {
+  if (isLinux(processDeps)) {
     return 'linux';
   }
-  if (isMac()) {
+  if (isMac(processDeps)) {
     return 'macosx';
   }
-  throw Error(`Your platform '${process.platform}' is currently not supported.`);
+  throw new Error(`Your platform '${processDeps.platform}' is currently not supported.`);
 }
 
 /**
@@ -56,6 +105,7 @@ function getScannerCliUrl(
   properties: ScannerProperties,
   versionStr: string,
   archStr?: string,
+  processDeps: ScannerCliProcessDeps = defaultProcessDeps,
 ): URL {
   // Get location to download scanner-cli from
 
@@ -63,11 +113,19 @@ function getScannerCliUrl(
   const scannerCliMirror = properties[ScannerProperty.SonarScannerCliMirror] ?? SCANNER_CLI_MIRROR;
 
   const archSuffix = archStr ? `-${archStr}` : '';
-  const scannerCliFileName = `sonar-scanner-cli-${versionStr}-${normalizePlatformName()}${archSuffix}.zip`;
+  const scannerCliFileName = `sonar-scanner-cli-${versionStr}-${normalizePlatformName(processDeps)}${archSuffix}.zip`;
   return new URL(scannerCliFileName, scannerCliMirror);
 }
 
-export async function downloadScannerCli(properties: ScannerProperties): Promise<string> {
+export async function downloadScannerCli(
+  properties: ScannerProperties,
+  {
+    fsDeps = defaultFsDeps,
+    processDeps = defaultProcessDeps,
+    downloadFn = download,
+    extractArchiveFn = extractArchive,
+  }: ScannerCliDeps = {},
+): Promise<string> {
   const versionStr = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
   const version = semver.coerce(versionStr);
   if (!version) {
@@ -77,21 +135,21 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   const archSuffix = archStr ? `-${archStr}` : '';
 
   // Build paths
-  const binExt = normalizePlatformName() === 'windows' ? '.bat' : '';
-  const dirName = `sonar-scanner-${versionStr}-${normalizePlatformName()}${archSuffix}`;
+  const binExt = normalizePlatformName(processDeps) === 'windows' ? '.bat' : '';
+  const dirName = `sonar-scanner-${versionStr}-${normalizePlatformName(processDeps)}${archSuffix}`;
   const installDir = path.join(properties[ScannerProperty.SonarUserHome], SCANNER_CLI_INSTALL_PATH);
   const archivePath = path.join(installDir, `${dirName}.zip`);
   const binPath = path.join(installDir, dirName, 'bin', `sonar-scanner${binExt}`);
 
-  if (await fsExtra.exists(binPath)) {
+  if (await fsDeps.exists(binPath)) {
     return binPath;
   }
 
   // Create parent directory if needed
-  await fsExtra.ensureDir(installDir);
+  await fsDeps.ensureDir(installDir);
 
   // Add basic auth credentials when used in the UR
-  const scannerCliUrl = getScannerCliUrl(properties, versionStr, archStr);
+  const scannerCliUrl = getScannerCliUrl(properties, versionStr, archStr, processDeps);
   let overrides: AxiosRequestConfig | undefined;
   if (scannerCliUrl.username && scannerCliUrl.password) {
     overrides = {
@@ -106,10 +164,10 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   // Download SonarScanner CLI
   log(LogLevel.INFO, 'Downloading SonarScanner CLI');
   log(LogLevel.DEBUG, `Downloading from ${scannerCliUrl.href}`);
-  await download(scannerCliUrl.href, archivePath, overrides);
+  await downloadFn(scannerCliUrl.href, archivePath, overrides);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
-  await extractArchive(archivePath, installDir);
+  await extractArchiveFn(archivePath, installDir);
 
   return binPath;
 }
@@ -121,16 +179,17 @@ export async function runScannerCli(
   scanOptions: ScanOptions,
   properties: ScannerProperties,
   binPath: string,
+  { processDeps = defaultProcessDeps, spawnFn = defaultSpawn }: ScannerCliDeps = {},
 ) {
   log(LogLevel.INFO, 'Starting analysis');
   // We filter out env properties that are passed to the scanner
   // otherwise, they would supersede the properties passed to the scanner through SONARQUBE_SCANNER_PARAMS
   const filteredEnvKeys = ENV_TO_PROPERTY_NAME.map(env => env[0]);
-  const filteredEnv = Object.entries(process.env)
+  const filteredEnv = Object.entries(processDeps.env)
     .filter(([key]) => !filteredEnvKeys.includes(key))
     .filter(([key]) => !key.startsWith(ENV_VAR_PREFIX));
 
-  const child = spawn(
+  const child = spawnFn(
     binPath,
     [...(scanOptions.jvmOptions ?? []), ...proxyUrlToJavaOptions(properties)],
     {
@@ -138,7 +197,7 @@ export async function runScannerCli(
         ...Object.fromEntries(filteredEnv),
         SONARQUBE_SCANNER_PARAMS: JSON.stringify(properties),
       },
-      shell: isWindows(),
+      shell: isWindows(processDeps),
     },
   );
 

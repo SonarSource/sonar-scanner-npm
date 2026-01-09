@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`@sonar/scan` is an NPM module that triggers SonarQube Server and SonarCloud analyses on JavaScript codebases without requiring specific tools or Java runtime installation. The scanner detects server capabilities and either uses JRE provisioning (preferred, SonarQube 10.6+) or falls back to native sonar-scanner-cli.
+`@sonar/scan` is an NPM module that triggers SonarQube Server and SonarCloud analyses on JavaScript codebases without requiring specific tools or Java runtime installation. The scanner detects server capabilities and either uses JRE provisioning (preferred) or falls back to native sonar-scanner-cli.
 
 ## Common Commands
 
 | Command                    | Purpose                                                            |
 | -------------------------- | ------------------------------------------------------------------ |
 | `npm run build`            | Compile TypeScript, run license check, generate build/package.json |
-| `npm test`                 | Run Jest unit tests with coverage                                  |
+| `npm test`                 | Run unit tests                                                     |
 | `npm run test-integration` | Run integration tests from test/integration/                       |
 | `npm run format`           | Format code with Prettier                                          |
 | `npm run check-format`     | Check formatting without changes                                   |
@@ -20,13 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Run a single test file:
 
 ```bash
-npx jest test/unit/properties.test.ts
-```
-
-Run tests matching a pattern:
-
-```bash
-npx jest --testNamePattern="should build properties"
+npx tsx --test test/unit/properties.test.ts
 ```
 
 ## Architecture
@@ -87,48 +81,72 @@ logWithPrefix(LogLevel.INFO, 'ComponentName', 'message');
 
 Prettier config: 100 char width, trailing commas, single quotes, LF line endings. Pre-commit hook auto-formats staged files.
 
+### Pre-commit Checks
+
+Before committing, verify there are no TypeScript errors and no unused exports:
+
+```bash
+npx tsc --noEmit -p tsconfig.json
+npx tsc --noEmit -p test/unit/tsconfig.json
+npx knip
+```
+
+Note: `test/integration/tsconfig.json` requires running `npm install` in `test/integration/` first, as it depends on the build artifact.
+
+### External Tools
+
+- Use `gh` CLI to interact with GitHub (issues, PRs, etc.)
+- Use `acli` tool to interact with Jira
+
+### Node.js Imports
+
+Always use the `node:` prefix for Node.js built-in modules:
+
+```typescript
+// Correct
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+
+// Incorrect
+import path from 'path';
+import { spawn } from 'child_process';
+```
+
+### Type Imports
+
+Use `import type` when importing types only. This helps with tree-shaking and makes it clear which imports are only used for type checking:
+
+```typescript
+// When all imports are types, use import type
+import type { ScannerProperties, ScanOptions } from './types';
+import type { ChildProcess, SpawnOptions } from 'node:child_process';
+
+// When mixing types and values, use inline type modifier
+import { type ChildProcess, spawn } from 'node:child_process';
+import { type ScannerProperties, ScannerProperty } from './types';
+
+// Incorrect: importing types as regular imports
+import { ScannerProperties, ScanOptions } from './types';
+```
+
 ## Testing
 
 ### Unit Tests
 
 Location: `test/unit/`
 
-```
-test/unit/
-├── tsconfig.json        # TypeScript config for unit tests
-├── setup.ts             # Jest setup - mocks logging to suppress output
-├── mocks/               # Test mocks (ChildProcessMock, FakeProjectMock)
-├── fixtures/            # Test fixture projects
-└── *.test.ts            # Test files
-```
+Uses Node's native test runner with tsx. Mocking is done via dependency injection and `mock.fn()` / `mock.method()` from `node:test`.
 
 Run a single unit test:
 
 ```bash
-npx jest test/unit/properties.test.ts
-npx jest --testNamePattern="should build properties"
+npx tsx --test test/unit/properties.test.ts
 ```
 
 ### Integration Tests
 
 Integration tests run end-to-end scans against a real SonarQube instance. Uses Node's native test runner with tsx.
-
-**Structure:**
-
-```
-test/integration/
-├── package.json              # Separate npm project (ESM, tsx, node:test)
-├── tsconfig.json             # TypeScript config for integration tests
-├── scanner.test.ts           # Integration tests (API and CLI)
-├── orchestrator/             # SonarQube lifecycle management
-│   ├── download.ts           # Download SonarQube
-│   ├── sonarqube.ts          # Start/stop, API calls
-│   ├── index.ts              # Exports
-│   └── stop.java             # Java helper to stop SonarQube
-└── fixtures/
-    └── fake_project_for_integration/
-        └── src/index.js      # Test project with intentional code issue
-```
 
 **How to run:**
 
@@ -140,37 +158,4 @@ npm run build && npm run test-integration
 cd test/integration && npm test
 ```
 
-**Orchestrator functions (from `test/integration/orchestrator/`):**
-
-Manages a local SonarQube instance:
-
-- Downloads SonarQube Community Edition (cached in `~/.sonar/sonarqube/`)
-- Starts/stops SonarQube on localhost:9000
-- Generates authentication tokens
-- Creates test projects
-- Polls for analysis completion
-
-Key functions:
-
-- `getLatestSonarQube()` - Download/cache SonarQube
-- `startAndReady(sqPath, maxWaitMs)` - Start and wait until operational
-- `stop(sqPath)` - Stop SonarQube instance
-- `generateToken()` - Generate GLOBAL_ANALYSIS_TOKEN
-- `createProject()` - Create project with random key
-- `waitForAnalysisFinished(maxWaitMs)` - Poll until analysis queue empty
-- `getIssues(projectKey)` - Fetch detected issues
-
-**What the integration test validates:**
-
-1. SonarQube provisioning and startup
-2. Token generation and project creation
-3. Scanner invocation via API (`scan()` function)
-4. Scanner invocation via CLI (`npx sonar`)
-5. Issue detection (fake project has intentional issue at line 21)
-6. Result verification (asserts exactly 1 issue found)
-
-**Configuration:**
-
-- Timeout: 500 seconds (SonarQube startup is slow)
-- SonarQube credentials: admin:admin (hardcoded in orchestrator)
-- Optional env vars: `ARTIFACTORY_URL`, `ARTIFACTORY_ACCESS_TOKEN` for SonarQube download
+The orchestrator (`test/integration/orchestrator/`) manages a local SonarQube instance for testing.

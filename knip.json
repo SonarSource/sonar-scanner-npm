@@ -5,10 +5,9 @@
       "project": "src/*.ts"
     },
     "test/integration": {
-      "entry": ["scanner.test.ts"],
       "project": "**/*.ts"
     }
   },
-  "ignore": ["build/**/*", "**/fixtures/**/*", "scripts/ci-analysis.js"],
-  "ignoreDependencies": ["@sonar/scan"]
+  "ignoreDependencies": ["node-reporter-sonarqube"],
+  "ignore": ["build/**/*", "**/fixtures/**/*", "scripts/ci-analysis.js"]
 }

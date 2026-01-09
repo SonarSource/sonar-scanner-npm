@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { scan } from './scan';
-import { ScanOptions } from './types';
+import type { ScanOptions } from './types';
 
 export { scan };
 

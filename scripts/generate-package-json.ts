@@ -17,10 +17,27 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import * as path from 'path';
+import * as path from 'node:path';
 import * as toml from 'toml';
-import { ensureDir, readJson, writeJson } from 'fs-extra';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+
+async function readJson(filePath: string): Promise<any> {
+  const content = await readFile(filePath, 'utf-8');
+  return JSON.parse(content);
+}
+
+async function writeJson(
+  filePath: string,
+  data: any,
+  options: { spaces?: number } = {},
+): Promise<void> {
+  const content = JSON.stringify(data, null, options.spaces);
+  await writeFile(filePath, content + '\n');
+}
+
+async function ensureDir(dirPath: string): Promise<void> {
+  await mkdir(dirPath, { recursive: true });
+}
 
 async function main() {
   // Paths
