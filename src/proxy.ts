@@ -17,9 +17,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { URL } from 'url';
+import { URL } from 'node:url';
 import { LogLevel, log } from './logging';
-import { ScannerProperties, ScannerProperty } from './types';
+import { type ScannerProperties, ScannerProperty } from './types';
 
 export function getProxyUrl(properties: ScannerProperties): URL | undefined {
   const proxyHost = properties[ScannerProperty.SonarScannerProxyHost];

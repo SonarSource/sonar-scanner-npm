@@ -17,16 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import fsExtra from 'fs-extra';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import fs from 'node:fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
-import https from 'https';
+import https from 'node:https';
 import forge from 'node-forge';
-import * as stream from 'stream';
-import { promisify } from 'util';
+import * as stream from 'node:stream';
+import { promisify } from 'node:util';
 import { LogLevel, log } from './logging';
 import { getProxyUrl } from './proxy';
-import { ScannerProperties, ScannerProperty } from './types';
+import { type ScannerProperties, ScannerProperty } from './types';
 
 const finished = promisify(stream.finished);
 
@@ -71,7 +71,7 @@ export async function getHttpAgents(
   const truststorePath = properties[ScannerProperty.SonarScannerTruststorePath];
   if (truststorePath) {
     log(LogLevel.DEBUG, `Using truststore at ${truststorePath}`);
-    const p12Base64 = await fsExtra.promises.readFile(truststorePath, { encoding: 'base64' });
+    const p12Base64 = await fs.promises.readFile(truststorePath, { encoding: 'base64' });
     try {
       const certs = await extractTruststoreCerts(
         p12Base64,
@@ -87,7 +87,7 @@ export async function getHttpAgents(
   const keystorePath = properties[ScannerProperty.SonarScannerKeystorePath];
   if (keystorePath) {
     log(LogLevel.DEBUG, `Using keystore at ${keystorePath}`);
-    httpsAgentOptions.pfx = await fsExtra.promises.readFile(keystorePath);
+    httpsAgentOptions.pfx = await fs.promises.readFile(keystorePath);
     httpsAgentOptions.passphrase = properties[ScannerProperty.SonarScannerKeystorePassword] ?? '';
   }
 
@@ -160,7 +160,7 @@ export async function download(url: string, destPath: string, overrides?: AxiosR
     log(LogLevel.INFO, 'Download complete');
   });
 
-  const writer = fsExtra.createWriteStream(destPath);
+  const writer = fs.createWriteStream(destPath);
   const streamPipeline = promisify(stream.pipeline);
   await streamPipeline(response.data, writer);
   response.data.pipe(writer);

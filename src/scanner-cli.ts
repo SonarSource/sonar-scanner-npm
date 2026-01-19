@@ -17,10 +17,8 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { AxiosRequestConfig } from 'axios';
-import { spawn } from 'child_process';
-import fsExtra from 'fs-extra';
-import path from 'path';
+import type { AxiosRequestConfig } from 'axios';
+import path from 'node:path';
 import semver from 'semver';
 import {
   ENV_TO_PROPERTY_NAME,
@@ -29,12 +27,11 @@ import {
   SCANNER_CLI_MIRROR,
   SCANNER_CLI_VERSION,
 } from './constants';
-import { extractArchive } from './file';
+import { getDeps } from './deps';
 import { LogLevel, log } from './logging';
 import { isLinux, isMac, isWindows } from './platform';
 import { proxyUrlToJavaOptions } from './proxy';
-import { download } from './request';
-import { ScanOptions, ScannerProperties, ScannerProperty } from './types';
+import { type ScanOptions, type ScannerProperties, ScannerProperty } from './types';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (isWindows()) {
@@ -46,7 +43,8 @@ export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (isMac()) {
     return 'macosx';
   }
-  throw Error(`Your platform '${process.platform}' is currently not supported.`);
+  const { process } = getDeps();
+  throw new Error(`Your platform '${process.platform}' is currently not supported.`);
 }
 
 /**
@@ -68,6 +66,7 @@ function getScannerCliUrl(
 }
 
 export async function downloadScannerCli(properties: ScannerProperties): Promise<string> {
+  const { fs, http } = getDeps();
   const versionStr = properties[ScannerProperty.SonarScannerCliVersion] ?? SCANNER_CLI_VERSION;
   const version = semver.coerce(versionStr);
   if (!version) {
@@ -83,12 +82,12 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
   const archivePath = path.join(installDir, `${dirName}.zip`);
   const binPath = path.join(installDir, dirName, 'bin', `sonar-scanner${binExt}`);
 
-  if (await fsExtra.exists(binPath)) {
+  if (await fs.exists(binPath)) {
     return binPath;
   }
 
   // Create parent directory if needed
-  await fsExtra.ensureDir(installDir);
+  await fs.ensureDir(installDir);
 
   // Add basic auth credentials when used in the UR
   const scannerCliUrl = getScannerCliUrl(properties, versionStr, archStr);
@@ -103,10 +102,12 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
     };
   }
 
+  const { extractArchive } = getDeps().file;
+
   // Download SonarScanner CLI
   log(LogLevel.INFO, 'Downloading SonarScanner CLI');
   log(LogLevel.DEBUG, `Downloading from ${scannerCliUrl.href}`);
-  await download(scannerCliUrl.href, archivePath, overrides);
+  await http.download(scannerCliUrl.href, archivePath, overrides);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
   await extractArchive(archivePath, installDir);
@@ -122,6 +123,7 @@ export async function runScannerCli(
   properties: ScannerProperties,
   binPath: string,
 ) {
+  const { process, spawn } = getDeps();
   log(LogLevel.INFO, 'Starting analysis');
   // We filter out env properties that are passed to the scanner
   // otherwise, they would supersede the properties passed to the scanner through SONARQUBE_SCANNER_PARAMS
@@ -142,7 +144,7 @@ export async function runScannerCli(
     },
   );
 
-  child.stdout.on('data', buffer => process.stdout.write(buffer));
+  child.stdout.on('data', buffer => globalThis.process.stdout.write(buffer));
   child.stderr.on('data', buffer => log(LogLevel.ERROR, buffer.toString()));
 
   return new Promise<void>((resolve, reject) => {

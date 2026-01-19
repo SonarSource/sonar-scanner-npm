@@ -17,57 +17,80 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import sinon from 'sinon';
+import { describe, it, mock, afterEach, type Mock } from 'node:test';
+import assert from 'node:assert';
 import { SCANNER_CLI_DEFAULT_BIN_NAME, WINDOWS_WHERE_EXE_PATH } from '../../src/constants';
+import { setDeps, resetDeps, type ExecAsyncFn } from '../../src/deps';
 import { locateExecutableFromPath } from '../../src/process';
-import { ChildProcessMock } from './mocks/ChildProcessMock';
+import { createMockProcessDeps } from './test-helpers';
 
-jest.mock('fs-extra');
-jest.mock('child_process');
-jest.mock('../../src/request');
-jest.mock('../../src/file');
-jest.mock('../../src/logging');
+// Mock console.log to suppress output
+mock.method(console, 'log', () => {});
 
-const childProcessHandler = new ChildProcessMock();
-
-beforeEach(() => {
-  childProcessHandler.reset();
+afterEach(() => {
+  resetDeps();
 });
 
 describe('process', () => {
   describe('locateExecutableFromPath', () => {
     it('should use windows where.exe when on windows', async () => {
-      // mock windows with stub
-      const stub = sinon.stub(process, 'platform').value('win32');
-
-      childProcessHandler.setOutput('/bin/path/to/stuff\n', '');
-
-      expect(await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe(
-        '/bin/path/to/stuff',
-      );
-      expect(childProcessHandler.getCommandHistory()).toContain(
-        `${WINDOWS_WHERE_EXE_PATH} ${SCANNER_CLI_DEFAULT_BIN_NAME}`,
+      const mockExecAsync = mock.fn(() =>
+        Promise.resolve({ stdout: '/bin/path/to/stuff\n', stderr: '' }),
       );
 
-      stub.restore();
+      setDeps({
+        process: createMockProcessDeps({ platform: 'win32' }),
+        execAsync: mockExecAsync,
+      });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
+
+      assert.strictEqual(result, '/bin/path/to/stuff');
+      assert.strictEqual(mockExecAsync.mock.callCount(), 1);
+      assert.ok(
+        (mockExecAsync as Mock<ExecAsyncFn>).mock.calls[0].arguments[0].includes(
+          `${WINDOWS_WHERE_EXE_PATH} ${SCANNER_CLI_DEFAULT_BIN_NAME}`,
+        ),
+      );
     });
 
     it('should detect locally installed command', async () => {
-      childProcessHandler.setOutput('some output\n', '');
+      const mockExecAsync = mock.fn(() => Promise.resolve({ stdout: 'some output\n', stderr: '' }));
 
-      expect(await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe('some output');
+      setDeps({
+        process: createMockProcessDeps({ platform: 'linux' }),
+        execAsync: mockExecAsync,
+      });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
+
+      assert.strictEqual(result, 'some output');
     });
 
     it('should not detect locally installed command (when exit code is 1)', async () => {
-      childProcessHandler.setExitCode(1);
+      const mockExecAsync = mock.fn(() => Promise.reject(new Error('command not found')));
 
-      expect(await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe(null);
+      setDeps({
+        process: createMockProcessDeps({ platform: 'linux' }),
+        execAsync: mockExecAsync,
+      });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
+
+      assert.strictEqual(result, null);
     });
 
     it('should not detect locally installed command (when empty stdout)', async () => {
-      childProcessHandler.setOutput('', '');
+      const mockExecAsync = mock.fn(() => Promise.resolve({ stdout: '', stderr: '' }));
 
-      expect(await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME)).toBe(null);
+      setDeps({
+        process: createMockProcessDeps({ platform: 'linux' }),
+        execAsync: mockExecAsync,
+      });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
+
+      assert.strictEqual(result, null);
     });
   });
 });

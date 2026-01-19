@@ -18,14 +18,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
-import { fetchJRE, serverSupportsJREProvisioning } from './java';
+import { getDeps } from './deps';
 import { LogLevel, log, setLogLevel } from './logging';
-import { locateExecutableFromPath } from './process';
 import { getProperties } from './properties';
 import { initializeAxios } from './request';
-import { downloadScannerCli, runScannerCli } from './scanner-cli';
-import { fetchScannerEngine, runScannerEngine } from './scanner-engine';
-import { CliArgs, ScanOptions, ScannerProperty } from './types';
+import type { CliArgs, ScanOptions } from './types';
+import { ScannerProperty } from './types';
 import { version } from './version';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
@@ -38,6 +36,17 @@ export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
 }
 
 async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
+  // Get dependencies from the container
+  const {
+    serverSupportsJREProvisioning,
+    fetchJRE,
+    downloadScannerCli,
+    runScannerCli,
+    fetchScannerEngine,
+    runScannerEngine,
+    locateExecutableFromPath,
+  } = getDeps().scan;
+
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
 

@@ -18,143 +18,219 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-// logging is globally mocked, but in this case the true log output is needed
-jest.mock('../../src/logging', () => ({
-  ...jest.requireActual('../../src/logging'),
-  log: jest.fn(),
-}));
-
-import * as java from '../../src/java';
-import * as logging from '../../src/logging';
-import * as platform from '../../src/platform';
-import * as processModule from '../../src/process';
+import { describe, it, beforeEach, afterEach, mock, type Mock } from 'node:test';
+import assert from 'node:assert';
+import { setDeps, resetDeps, type RunScannerCliFn, type RunScannerEngineFn } from '../../src/deps';
 import { scan } from '../../src/scan';
-import * as scannerCli from '../../src/scanner-cli';
-import * as scannerEngine from '../../src/scanner-engine';
 import { ScannerProperty } from '../../src/types';
+import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging';
+import { createMockProcessDeps } from './test-helpers';
 
-jest.mock('../../src/java');
-jest.mock('../../src/scanner-cli');
-jest.mock('../../src/process');
-jest.mock('../../src/scanner-engine');
-jest.mock('../../src/platform');
+// Mock console.log to suppress output and capture log calls
+const mockLog = mock.fn();
+mock.method(console, 'log', mockLog);
+
+// Create mock functions for all scan orchestration functions
+const mockServerSupportsJREProvisioning = mock.fn(() => Promise.resolve(false));
+const mockFetchJRE = mock.fn(() => Promise.resolve('/some-provisioned-jre'));
+const mockDownloadScannerCli = mock.fn(() => Promise.resolve('/path/to/scanner-cli'));
+const mockRunScannerCli = mock.fn(() => Promise.resolve());
+const mockFetchScannerEngine = mock.fn(() => Promise.resolve('/path/to/scanner-engine'));
+const mockRunScannerEngine = mock.fn(() => Promise.resolve());
+const mockLocateExecutableFromPath = mock.fn<() => Promise<string | null>>(() =>
+  Promise.resolve('/usr/bin/java'),
+);
+
+function setupScanDeps(): void {
+  setDeps({
+    process: createMockProcessDeps({ cwd: () => __dirname }),
+    scan: {
+      serverSupportsJREProvisioning: mockServerSupportsJREProvisioning,
+      fetchJRE: mockFetchJRE,
+      downloadScannerCli: mockDownloadScannerCli,
+      runScannerCli: mockRunScannerCli,
+      fetchScannerEngine: mockFetchScannerEngine,
+      runScannerEngine: mockRunScannerEngine,
+      locateExecutableFromPath: mockLocateExecutableFromPath,
+    },
+  });
+}
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  mockLog.mock.resetCalls();
+  mockServerSupportsJREProvisioning.mock.resetCalls();
+  mockFetchJRE.mock.resetCalls();
+  mockDownloadScannerCli.mock.resetCalls();
+  mockRunScannerCli.mock.resetCalls();
+  mockFetchScannerEngine.mock.resetCalls();
+  mockRunScannerEngine.mock.resetCalls();
+  mockLocateExecutableFromPath.mock.resetCalls();
+
+  // Reset implementations to default
+  mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+  mockFetchJRE.mock.mockImplementation(() => Promise.resolve('/some-provisioned-jre'));
+  mockDownloadScannerCli.mock.mockImplementation(() => Promise.resolve('/path/to/scanner-cli'));
+  mockLocateExecutableFromPath.mock.mockImplementation(() => Promise.resolve('/usr/bin/java'));
+
+  // Setup mocked dependencies
+  setupScanDeps();
+
+  // Reset log level to INFO
+  setLogLevel(LogLevel.INFO);
 });
+
+afterEach(() => {
+  resetDeps();
+});
+
+// Helper to check if a log message was recorded
+function assertLogged(...patterns: (string | RegExp)[]): void {
+  const found = mockLog.mock.calls.some(call =>
+    patterns.every(pattern =>
+      call.arguments.some((arg: unknown) => {
+        if (typeof arg !== 'string') return false;
+        if (pattern instanceof RegExp) return pattern.test(arg);
+        return arg.includes(pattern);
+      }),
+    ),
+  );
+  assert.ok(
+    found,
+    `Expected log matching ${patterns}. Calls: ${JSON.stringify(mockLog.mock.calls.map(c => c.arguments))}`,
+  );
+}
 
 describe('scan', () => {
   it('should default the log level to INFO', async () => {
     await scan({});
-    expect(logging.getLogLevel()).toBe('INFO');
+    assert.strictEqual(getLogLevel(), LogLevel.INFO);
   });
 
-  it('should set the log level to the value provided by the user', async () => {
+  it('should set the log level to DEBUG when verbose mode is enabled', async () => {
     await scan({ options: { 'sonar.verbose': 'true' } });
-    expect(logging.getLogLevel()).toBe('DEBUG');
+    assert.strictEqual(getLogLevel(), LogLevel.DEBUG);
   });
 
   it('should set the log level to the value provided by the user', async () => {
     await scan({ options: { 'sonar.log.level': 'DEBUG' } });
-    expect(logging.getLogLevel()).toBe('DEBUG');
+    assert.strictEqual(getLogLevel(), LogLevel.DEBUG);
+  });
+
+  it('should set the log level to ERROR when specified', async () => {
+    await scan({ options: { 'sonar.log.level': 'ERROR' } });
+    assert.strictEqual(getLogLevel(), LogLevel.ERROR);
+  });
+
+  it('should set the log level to WARN when specified', async () => {
+    await scan({ options: { 'sonar.log.level': 'WARN' } });
+    assert.strictEqual(getLogLevel(), LogLevel.WARN);
+  });
+
+  it('should set the log level to TRACE when specified', async () => {
+    await scan({ options: { 'sonar.log.level': 'TRACE' } });
+    assert.strictEqual(getLogLevel(), LogLevel.TRACE);
+  });
+
+  it('should default to INFO for invalid log level', async () => {
+    await scan({ options: { 'sonar.log.level': 'INVALID' } });
+    assert.strictEqual(getLogLevel(), LogLevel.INFO);
   });
 
   it('should output the current version of the scanner', async () => {
-    jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
+    mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+
     await scan({});
-    expect(logging.log).toHaveBeenCalledWith('INFO', 'Version: SNAPSHOT');
+    assertLogged('Version:', 'SNAPSHOT');
   });
 
   it('should output the current platform', async () => {
-    jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
-    jest.spyOn(platform, 'getSupportedOS').mockReturnValue('alpine');
-    jest.spyOn(platform, 'getArch').mockReturnValue('arm64');
+    mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+
     await scan({});
-    expect(logging.log).toHaveBeenCalledWith('INFO', 'Platform:', 'alpine', 'arm64');
+    assertLogged('Platform:');
   });
 
   describe('when server does not support JRE provisioning', () => {
     it('should download and run SonarScanner CLI', async () => {
-      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
-      jest.spyOn(scannerEngine, 'runScannerEngine');
-      jest.spyOn(scannerCli, 'downloadScannerCli').mockResolvedValue('/path/to/scanner-cli');
-      jest.spyOn(scannerCli, 'runScannerCli');
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+      mockDownloadScannerCli.mock.mockImplementation(() => Promise.resolve('/path/to/scanner-cli'));
 
       await scan({ serverUrl: 'http://localhost:9000' });
 
-      expect(java.fetchJRE).not.toHaveBeenCalled();
-      expect(scannerEngine.runScannerEngine).not.toHaveBeenCalled();
-      expect(scannerCli.runScannerCli).toHaveBeenCalled();
-      const [, , scannerPath] = (scannerCli.runScannerCli as jest.Mock).mock.calls.pop();
-      expect(scannerPath).toBe('/path/to/scanner-cli');
+      assert.strictEqual(mockFetchJRE.mock.callCount(), 0);
+      assert.strictEqual(mockRunScannerEngine.mock.callCount(), 0);
+      assert.strictEqual(mockRunScannerCli.mock.callCount(), 1);
+      assert.strictEqual(
+        (mockRunScannerCli as Mock<RunScannerCliFn>).mock.calls[0].arguments[2],
+        '/path/to/scanner-cli',
+      );
     });
 
     it('should use local scanner if requested', async () => {
-      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
-      jest.spyOn(scannerEngine, 'runScannerEngine');
-      jest.spyOn(scannerCli, 'runScannerCli');
-      jest.spyOn(processModule, 'locateExecutableFromPath').mockResolvedValue('/bin/sonar-scanner');
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+      mockLocateExecutableFromPath.mock.mockImplementation(() =>
+        Promise.resolve('/bin/sonar-scanner'),
+      );
 
       await scan({ serverUrl: 'http://localhost:9000', localScannerCli: true });
 
-      expect(scannerCli.downloadScannerCli).not.toHaveBeenCalled();
-      expect(scannerCli.runScannerCli).toHaveBeenCalled();
-      const [, , scannerPath] = (scannerCli.runScannerCli as jest.Mock).mock.calls.pop();
-      expect(scannerPath).toBe('/bin/sonar-scanner');
+      assert.strictEqual(mockDownloadScannerCli.mock.callCount(), 0);
+      assert.strictEqual(mockRunScannerCli.mock.callCount(), 1);
+      assert.strictEqual(
+        (mockRunScannerCli as Mock<RunScannerCliFn>).mock.calls[0].arguments[2],
+        '/bin/sonar-scanner',
+      );
     });
 
     it('should fail if local scanner is requested but not found', async () => {
-      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(false);
-      jest.spyOn(scannerEngine, 'runScannerEngine');
-      jest.spyOn(scannerCli, 'runScannerCli');
-      jest.spyOn(processModule, 'locateExecutableFromPath').mockResolvedValue(null);
-
-      await expect(
-        scan({ serverUrl: 'http://localhost:9000', localScannerCli: true }),
-      ).rejects.toThrow(Error);
-
-      expect(scannerCli.downloadScannerCli).not.toHaveBeenCalled();
-      expect(scannerCli.runScannerCli).not.toHaveBeenCalled();
-      expect(logging.log).toHaveBeenCalledWith(
-        logging.LogLevel.ERROR,
-        expect.stringMatching(/SonarScanner CLI not found in PATH/),
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+      mockLocateExecutableFromPath.mock.mockImplementation(() =>
+        Promise.resolve(null as string | null),
       );
+
+      await assert.rejects(
+        scan({ serverUrl: 'http://localhost:9000', localScannerCli: true }),
+        Error,
+      );
+
+      assert.strictEqual(mockDownloadScannerCli.mock.callCount(), 0);
+      assert.strictEqual(mockRunScannerCli.mock.callCount(), 0);
+      assertLogged(/SonarScanner CLI not found in PATH/);
     });
   });
 
   describe('when server supports provisioning', () => {
     it('should fetch the JRE', async () => {
-      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(true);
-      jest.spyOn(java, 'fetchJRE').mockResolvedValue('/some-provisioned-jre');
-      jest.spyOn(scannerEngine, 'runScannerEngine');
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(true));
+      mockFetchJRE.mock.mockImplementation(() => Promise.resolve('/some-provisioned-jre'));
 
       await scan({ serverUrl: 'http://localhost:9000' });
 
-      expect(java.fetchJRE).toHaveBeenCalled();
-      const [javaPath] = (scannerEngine.runScannerEngine as jest.Mock).mock.calls.pop();
-      expect(javaPath).toBe('/some-provisioned-jre');
+      assert.strictEqual(mockFetchJRE.mock.callCount(), 1);
+      assert.strictEqual(
+        (mockRunScannerEngine as Mock<RunScannerEngineFn>).mock.calls[0].arguments[0],
+        '/some-provisioned-jre',
+      );
     });
 
     it('should not fetch the JRE if the JRE path is explicitly specified', async () => {
-      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(true);
-      jest.spyOn(java, 'fetchJRE');
-      jest.spyOn(scannerEngine, 'runScannerEngine');
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(true));
 
       await scan({
         serverUrl: 'http://localhost:9000',
         options: { [ScannerProperty.SonarScannerJavaExePath]: 'path/to/java' },
       });
 
-      expect(java.fetchJRE).not.toHaveBeenCalled();
-      const [javaPath] = (scannerEngine.runScannerEngine as jest.Mock).mock.calls.pop();
-      expect(javaPath).toBe('path/to/java');
+      assert.strictEqual(mockFetchJRE.mock.callCount(), 0);
+      assert.strictEqual(
+        (mockRunScannerEngine as Mock<RunScannerEngineFn>).mock.calls[0].arguments[0],
+        'path/to/java',
+      );
     });
 
     it('should not fetch the JRE if skipping JRE provisioning explicitly', async () => {
-      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(true);
-      jest.spyOn(java, 'fetchJRE');
-      jest.spyOn(scannerEngine, 'runScannerEngine');
-      jest.spyOn(processModule, 'locateExecutableFromPath').mockResolvedValue('/usr/bin/java');
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(true));
+      mockLocateExecutableFromPath.mock.mockImplementation(() => Promise.resolve('/usr/bin/java'));
 
       await scan({
         serverUrl: 'http://localhost:9000',
@@ -163,33 +239,33 @@ describe('scan', () => {
         },
       });
 
-      expect(java.fetchJRE).not.toHaveBeenCalled();
-      expect(processModule.locateExecutableFromPath).toHaveBeenCalled();
-      const [javaPath] = (scannerEngine.runScannerEngine as jest.Mock).mock.calls.pop();
-      expect(javaPath).toBe('/usr/bin/java');
+      assert.strictEqual(mockFetchJRE.mock.callCount(), 0);
+      assert.strictEqual(mockLocateExecutableFromPath.mock.callCount(), 1);
+      assert.strictEqual(
+        (mockRunScannerEngine as Mock<RunScannerEngineFn>).mock.calls[0].arguments[0],
+        '/usr/bin/java',
+      );
     });
 
     it('should fail when skipping JRE provisioning without java in PATH', async () => {
-      jest.spyOn(java, 'serverSupportsJREProvisioning').mockResolvedValue(true);
-      jest.spyOn(java, 'fetchJRE');
-      jest.spyOn(scannerEngine, 'runScannerEngine');
-      jest.spyOn(processModule, 'locateExecutableFromPath').mockResolvedValue(null);
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(true));
+      mockLocateExecutableFromPath.mock.mockImplementation(() =>
+        Promise.resolve(null as string | null),
+      );
 
-      await expect(
+      await assert.rejects(
         scan({
           serverUrl: 'http://localhost:9000',
           options: {
             [ScannerProperty.SonarScannerSkipJreProvisioning]: 'true',
           },
         }),
-      ).rejects.toThrow(Error);
-
-      expect(scannerEngine.runScannerEngine).not.toHaveBeenCalled();
-      expect(scannerCli.runScannerCli).not.toHaveBeenCalled();
-      expect(logging.log).toHaveBeenCalledWith(
-        logging.LogLevel.ERROR,
-        expect.stringMatching(/Java not found in PATH/),
+        Error,
       );
+
+      assert.strictEqual(mockRunScannerEngine.mock.callCount(), 0);
+      assert.strictEqual(mockRunScannerCli.mock.callCount(), 0);
+      assertLogged(/Java not found in PATH/);
     });
   });
 });

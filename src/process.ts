@@ -18,13 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { exec } from 'child_process';
-import util from 'util';
 import { WINDOWS_WHERE_EXE_PATH } from './constants';
+import { getDeps } from './deps';
 import { log, LogLevel } from './logging';
 import { isWindows } from './platform';
-
-const execAsync = util.promisify(exec);
 
 /**
  * Verify that a given executable is accessible from the PATH.
@@ -33,6 +30,7 @@ const execAsync = util.promisify(exec);
  * for the executable.
  */
 export async function locateExecutableFromPath(executable: string): Promise<string | null> {
+  const { execAsync } = getDeps();
   try {
     log(LogLevel.INFO, `Trying to find ${executable}`);
     const child = await execAsync(

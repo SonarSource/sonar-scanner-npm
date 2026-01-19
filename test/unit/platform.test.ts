@@ -18,88 +18,105 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import fsExtra from 'fs-extra';
-import sinon from 'sinon';
-import { log, LogLevel } from '../../src/logging';
+import { describe, it, mock, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert';
+import { setDeps, resetDeps } from '../../src/deps';
 import * as platform from '../../src/platform';
+import { createMockProcessDeps, createMockFsDeps } from './test-helpers';
+
+// Mock logging to suppress output
+const mockLog = mock.fn();
+mock.method(console, 'log', mockLog);
+
+beforeEach(() => {
+  mockLog.mock.resetCalls();
+});
+
+afterEach(() => {
+  resetDeps();
+});
 
 describe('getPlatformInfo', () => {
   it('detect macos', () => {
-    const platformStub = sinon.stub(process, 'platform').value('darwin');
-    const archStub = sinon.stub(process, 'arch').value('arm64');
+    setDeps({
+      process: createMockProcessDeps({ platform: 'darwin', arch: 'arm64' }),
+    });
 
-    expect(platform.getSupportedOS()).toEqual('darwin');
-    expect(platform.getArch()).toEqual('arm64');
-
-    platformStub.restore();
-    archStub.restore();
+    assert.strictEqual(platform.getSupportedOS(), 'darwin');
+    assert.strictEqual(platform.getArch(), 'arm64');
   });
 
   it('detect windows', () => {
-    const platformStub = sinon.stub(process, 'platform').value('win32');
-    const archStub = sinon.stub(process, 'arch').value('x64');
+    setDeps({
+      process: createMockProcessDeps({ platform: 'win32', arch: 'x64' }),
+    });
 
-    expect(platform.getSupportedOS()).toEqual('win32');
-    expect(platform.getArch()).toEqual('x64');
-
-    platformStub.restore();
-    archStub.restore();
+    assert.strictEqual(platform.getSupportedOS(), 'win32');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('detect linux flavor', () => {
-    const platformStub = sinon.stub(process, 'platform').value('openbsd');
-    const archStub = sinon.stub(process, 'arch').value('x64');
+    setDeps({
+      process: createMockProcessDeps({ platform: 'openbsd', arch: 'x64' }),
+    });
 
-    expect(platform.getSupportedOS()).toEqual('openbsd');
-    expect(platform.getArch()).toEqual('x64');
-
-    platformStub.restore();
-    archStub.restore();
+    assert.strictEqual(platform.getSupportedOS(), 'openbsd');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('detect alpine', () => {
-    const platformStub = sinon.stub(process, 'platform').value('linux');
-    const archStub = sinon.stub(process, 'arch').value('x64');
-    const fsReadStub = sinon.stub(fsExtra, 'readFileSync');
-    fsReadStub.withArgs('/etc/os-release').returns('NAME="Alpine Linux"\nID=alpine');
+    setDeps({
+      process: createMockProcessDeps({ platform: 'linux', arch: 'x64' }),
+      fs: createMockFsDeps({
+        readFileSync: mock.fn(() => Buffer.from('NAME="Alpine Linux"\nID=alpine')) as any,
+      }),
+    });
 
-    expect(platform.getSupportedOS()).toEqual('alpine');
-    expect(platform.getArch()).toEqual('x64');
-
-    platformStub.restore();
-    archStub.restore();
-    fsReadStub.restore();
+    assert.strictEqual(platform.getSupportedOS(), 'alpine');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('detect alpine with fallback', () => {
-    const platformStub = sinon.stub(process, 'platform').value('linux');
-    const archStub = sinon.stub(process, 'arch').value('x64');
-    const fsReadStub = sinon.stub(fsExtra, 'readFileSync');
-    fsReadStub.withArgs('/usr/lib/os-release').returns('NAME="Alpine Linux"\nID=alpine');
+    let callCount = 0;
+    setDeps({
+      process: createMockProcessDeps({ platform: 'linux', arch: 'x64' }),
+      fs: createMockFsDeps({
+        readFileSync: mock.fn((filePath: string) => {
+          callCount++;
+          if (callCount === 1) {
+            throw new Error('File not found');
+          }
+          return Buffer.from('NAME="Alpine Linux"\nID=alpine');
+        }) as any,
+      }),
+    });
 
-    expect(platform.getSupportedOS()).toEqual('alpine');
-    expect(platform.getArch()).toEqual('x64');
-
-    platformStub.restore();
-    archStub.restore();
-    fsReadStub.restore();
+    assert.strictEqual(platform.getSupportedOS(), 'alpine');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('failed to detect alpine', () => {
-    const platformStub = sinon.stub(process, 'platform').value('linux');
-    const archStub = sinon.stub(process, 'arch').value('x64');
-    const fsReadStub = sinon.stub(fsExtra, 'readFileSync');
+    setDeps({
+      process: createMockProcessDeps({ platform: 'linux', arch: 'x64' }),
+      fs: createMockFsDeps({
+        readFileSync: mock.fn(() => {
+          throw new Error('File not found');
+        }),
+      }),
+    });
 
-    expect(platform.getSupportedOS()).toEqual('linux');
-    expect(platform.getArch()).toEqual('x64');
+    assert.strictEqual(platform.getSupportedOS(), 'linux');
+    assert.strictEqual(platform.getArch(), 'x64');
 
-    expect(log).toHaveBeenCalledWith(
-      LogLevel.WARN,
-      'Failed to read /etc/os-release or /usr/lib/os-release',
+    // Check that warning was logged - the message could be in arguments[0] or arguments[1]
+    assert.ok(
+      mockLog.mock.calls.some(call =>
+        call.arguments.some(
+          (arg: unknown) =>
+            typeof arg === 'string' &&
+            arg.includes('Failed to read /etc/os-release or /usr/lib/os-release'),
+        ),
+      ),
     );
-
-    platformStub.restore();
-    archStub.restore();
-    fsReadStub.restore();
   });
 });

@@ -36,6 +36,7 @@ scanner({
     'sonar.tests': 'test',
     'sonar.host.url': process.env.SONAR_HOST_URL,
     'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
+    'sonar.testExecutionReportPaths': path.join(__dirname, '..', 'test-report.xml'),
     'sonar.verbose': 'true',
   },
 }).catch(err => {

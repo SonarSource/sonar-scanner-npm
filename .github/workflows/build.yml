@@ -57,6 +57,7 @@ jobs:
             build/
             coverage/
             node_modules/
+            test-report.xml
           if-no-files-found: error
 
   qa-linux:
