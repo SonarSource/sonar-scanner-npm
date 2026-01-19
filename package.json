@@ -3,8 +3,8 @@
   "version": "SNAPSHOT",
   "homepage": "https://github.com/SonarSource/sonar-scanner-npm",
   "author": {
-    "name": "Fabrice Bellingard",
-    "email": "fabrice.bellingard@sonarsource.com"
+    "name": "SonarSource",
+    "email": "quality.web@sonarsource.com"
   },
   "repository": {
     "type": "git",
