@@ -46,7 +46,7 @@ export function isMac() {
  */
 
 function isAlpineLinux(): boolean {
-  const { process, fs } = getDeps();
+  const { fs } = getDeps();
   if (!isLinux()) {
     return false;
   }
