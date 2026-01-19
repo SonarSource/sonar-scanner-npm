@@ -38,7 +38,7 @@
     "eslint": "9.39.2",
     "eslint-plugin-notice": "1.0.0",
     "husky": "9.1.7",
-    "knip": "5.81.0",
+    "knip": "5.82.1",
     "prettier": "3.8.0",
     "node-reporter-sonarqube": "1.0.3",
     "nyc": "17.1.0",
