@@ -18,97 +18,95 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { describe, it, mock, beforeEach } from 'node:test';
+import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
+import { setDeps, resetDeps } from '../../src/deps';
 import * as platform from '../../src/platform';
-import type { PlatformFsDeps, PlatformProcessDeps } from '../../src/platform';
+import { createMockProcessDeps, createMockFsDeps } from './test-helpers';
 
 // Mock logging to suppress output
 const mockLog = mock.fn();
 mock.method(console, 'log', mockLog);
 
-function createMockProcessDeps(overrides: Partial<PlatformProcessDeps> = {}): PlatformProcessDeps {
-  return {
-    platform: 'linux',
-    arch: 'x64',
-    ...overrides,
-  };
-}
-
-function createMockFsDeps(readFileSyncResult?: string | Error): Partial<PlatformFsDeps> {
-  return {
-    readFileSync: mock.fn(() => {
-      if (readFileSyncResult instanceof Error) {
-        throw readFileSyncResult;
-      }
-      return Buffer.from(readFileSyncResult ?? '');
-    }) as unknown as PlatformFsDeps['readFileSync'],
-  };
-}
-
 beforeEach(() => {
   mockLog.mock.resetCalls();
 });
 
+afterEach(() => {
+  resetDeps();
+});
+
 describe('getPlatformInfo', () => {
   it('detect macos', () => {
-    const processDeps = createMockProcessDeps({ platform: 'darwin', arch: 'arm64' });
+    setDeps({
+      process: createMockProcessDeps({ platform: 'darwin', arch: 'arm64' }),
+    });
 
-    assert.strictEqual(platform.getSupportedOS(processDeps), 'darwin');
-    assert.strictEqual(platform.getArch(processDeps), 'arm64');
+    assert.strictEqual(platform.getSupportedOS(), 'darwin');
+    assert.strictEqual(platform.getArch(), 'arm64');
   });
 
   it('detect windows', () => {
-    const processDeps = createMockProcessDeps({ platform: 'win32', arch: 'x64' });
+    setDeps({
+      process: createMockProcessDeps({ platform: 'win32', arch: 'x64' }),
+    });
 
-    assert.strictEqual(platform.getSupportedOS(processDeps), 'win32');
-    assert.strictEqual(platform.getArch(processDeps), 'x64');
+    assert.strictEqual(platform.getSupportedOS(), 'win32');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('detect linux flavor', () => {
-    const processDeps = createMockProcessDeps({ platform: 'openbsd', arch: 'x64' });
+    setDeps({
+      process: createMockProcessDeps({ platform: 'openbsd', arch: 'x64' }),
+    });
 
-    assert.strictEqual(platform.getSupportedOS(processDeps), 'openbsd');
-    assert.strictEqual(platform.getArch(processDeps), 'x64');
+    assert.strictEqual(platform.getSupportedOS(), 'openbsd');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('detect alpine', () => {
-    const processDeps = createMockProcessDeps({ platform: 'linux', arch: 'x64' });
-    const fsDeps = createMockFsDeps('NAME="Alpine Linux"\nID=alpine');
+    setDeps({
+      process: createMockProcessDeps({ platform: 'linux', arch: 'x64' }),
+      fs: createMockFsDeps({
+        readFileSync: mock.fn(() => Buffer.from('NAME="Alpine Linux"\nID=alpine')) as any,
+      }),
+    });
 
-    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as PlatformFsDeps), 'alpine');
-    assert.strictEqual(platform.getArch(processDeps), 'x64');
+    assert.strictEqual(platform.getSupportedOS(), 'alpine');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('detect alpine with fallback', () => {
-    const processDeps = createMockProcessDeps({ platform: 'linux', arch: 'x64' });
-
-    // First call throws, second returns alpine
     let callCount = 0;
-    const fsDeps: Partial<PlatformFsDeps> = {
-      readFileSync: mock.fn((filePath: string) => {
-        callCount++;
-        if (callCount === 1) {
-          throw new Error('File not found');
-        }
-        return Buffer.from('NAME="Alpine Linux"\nID=alpine');
-      }) as unknown as PlatformFsDeps['readFileSync'],
-    };
+    setDeps({
+      process: createMockProcessDeps({ platform: 'linux', arch: 'x64' }),
+      fs: createMockFsDeps({
+        readFileSync: mock.fn((filePath: string) => {
+          callCount++;
+          if (callCount === 1) {
+            throw new Error('File not found');
+          }
+          return Buffer.from('NAME="Alpine Linux"\nID=alpine');
+        }) as any,
+      }),
+    });
 
-    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as PlatformFsDeps), 'alpine');
-    assert.strictEqual(platform.getArch(processDeps), 'x64');
+    assert.strictEqual(platform.getSupportedOS(), 'alpine');
+    assert.strictEqual(platform.getArch(), 'x64');
   });
 
   it('failed to detect alpine', () => {
-    const processDeps = createMockProcessDeps({ platform: 'linux', arch: 'x64' });
-    const fsDeps: Partial<PlatformFsDeps> = {
-      readFileSync: mock.fn(() => {
-        throw new Error('File not found');
-      }) as unknown as PlatformFsDeps['readFileSync'],
-    };
+    setDeps({
+      process: createMockProcessDeps({ platform: 'linux', arch: 'x64' }),
+      fs: createMockFsDeps({
+        readFileSync: mock.fn(() => {
+          throw new Error('File not found');
+        }),
+      }),
+    });
 
-    assert.strictEqual(platform.getSupportedOS(processDeps, fsDeps as PlatformFsDeps), 'linux');
-    assert.strictEqual(platform.getArch(processDeps), 'x64');
+    assert.strictEqual(platform.getSupportedOS(), 'linux');
+    assert.strictEqual(platform.getArch(), 'x64');
 
     // Check that warning was logged - the message could be in arguments[0] or arguments[1]
     assert.ok(

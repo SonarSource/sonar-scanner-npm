@@ -17,7 +17,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import fs from 'node:fs';
 import path from 'node:path';
 import semver, { type SemVer } from 'semver';
 import {
@@ -28,6 +27,7 @@ import {
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
 } from './constants';
+import { getDeps } from './deps';
 import {
   extractArchive,
   getCacheDirectories,
@@ -35,7 +35,6 @@ import {
   validateChecksum,
 } from './file';
 import { LogLevel, log } from './logging';
-import { download, fetch } from './request';
 import {
   type AnalysisJreMetaData,
   type AnalysisJresResponseType,
@@ -44,33 +43,13 @@ import {
   ScannerProperty,
 } from './types';
 
-export interface JavaFsDeps {
-  remove: (path: string) => Promise<void>;
-}
-
-const defaultFsDeps: JavaFsDeps = {
-  remove: (filePath: string) => fs.promises.rm(filePath, { recursive: true, force: true }),
-};
-
-export interface JavaDeps {
-  fsDeps?: JavaFsDeps;
-  fetchFn?: typeof fetch;
-  downloadFn?: typeof download;
-  getCacheFileLocationFn?: typeof getCacheFileLocation;
-  getCacheDirectoriesFn?: typeof getCacheDirectories;
-  validateChecksumFn?: typeof validateChecksum;
-  extractArchiveFn?: typeof extractArchive;
-}
-
-export async function fetchServerVersion(
-  properties: ScannerProperties,
-  { fetchFn = fetch }: JavaDeps = {},
-): Promise<SemVer> {
+export async function fetchServerVersion(properties: ScannerProperties): Promise<SemVer> {
+  const { http } = getDeps();
   let version: SemVer | null = null;
   try {
     // Try and fetch the new version endpoint first
     log(LogLevel.DEBUG, `Fetching API V2 ${API_V2_VERSION_ENDPOINT}`);
-    const response = await fetchFn<string>({
+    const response = await http.fetch<string>({
       url: API_V2_VERSION_ENDPOINT,
     });
     version = semver.coerce(response.data);
@@ -81,7 +60,7 @@ export async function fetchServerVersion(
         LogLevel.DEBUG,
         `Unable to fetch API V2 ${API_V2_VERSION_ENDPOINT}: ${error}. Falling back on ${API_OLD_VERSION_ENDPOINT}`,
       );
-      const response = await fetchFn<string>({
+      const response = await http.fetch<string>({
         url: `${properties[ScannerProperty.SonarHostUrl]}${API_OLD_VERSION_ENDPOINT}`,
       });
       version = semver.coerce(response.data);
@@ -108,7 +87,6 @@ export async function fetchServerVersion(
 
 export async function serverSupportsJREProvisioning(
   properties: ScannerProperties,
-  { fetchFn = fetch }: JavaDeps = {},
 ): Promise<boolean> {
   if (properties[ScannerProperty.SonarScannerInternalIsSonarCloud] === 'true') {
     return true;
@@ -118,7 +96,7 @@ export async function serverSupportsJREProvisioning(
   log(LogLevel.DEBUG, 'Detecting SonarQube server version');
   const SQServerInfo =
     semver.coerce(properties[ScannerProperty.SonarScannerInternalSqVersion]) ??
-    (await fetchServerVersion(properties, { fetchFn }));
+    (await fetchServerVersion(properties));
   log(LogLevel.INFO, 'SonarQube server version:', SQServerInfo.version);
 
   const supports = semver.satisfies(SQServerInfo, `>=${SONARQUBE_JRE_PROVISIONING_MIN_VERSION}`);
@@ -126,24 +104,15 @@ export async function serverSupportsJREProvisioning(
   return supports;
 }
 
-export async function fetchJRE(
-  properties: ScannerProperties,
-  {
-    fsDeps = defaultFsDeps,
-    fetchFn = fetch,
-    downloadFn = download,
-    getCacheFileLocationFn = getCacheFileLocation,
-    getCacheDirectoriesFn = getCacheDirectories,
-    validateChecksumFn = validateChecksum,
-    extractArchiveFn = extractArchive,
-  }: JavaDeps = {},
-): Promise<string> {
+export async function fetchJRE(properties: ScannerProperties): Promise<string> {
+  const { fs, http } = getDeps();
+
   log(LogLevel.DEBUG, 'Detecting latest version of JRE');
-  const jreMetaData = await fetchLatestSupportedJRE(properties, fetchFn);
+  const jreMetaData = await fetchLatestSupportedJRE(properties);
   log(LogLevel.DEBUG, 'Latest Supported JRE: ', jreMetaData);
 
   log(LogLevel.DEBUG, 'Looking for Cached JRE');
-  const cachedJrePath = await getCacheFileLocationFn(properties, {
+  const cachedJrePath = await getCacheFileLocation(properties, {
     checksum: jreMetaData.sha256,
     filename: jreMetaData.filename,
     alias: JRE_ALIAS,
@@ -157,7 +126,7 @@ export async function fetchJRE(
   }
 
   // JRE not found in cache. Download it.
-  const { archivePath, unarchivePath: jreDirPath } = await getCacheDirectoriesFn(properties, {
+  const { archivePath, unarchivePath: jreDirPath } = await getCacheDirectories(properties, {
     checksum: jreMetaData.sha256,
     filename: jreMetaData.filename,
     alias: JRE_ALIAS,
@@ -167,29 +136,29 @@ export async function fetchJRE(
   const url = jreMetaData.downloadUrl ?? `${API_V2_JRE_ENDPOINT}/${jreMetaData.id}`;
 
   log(LogLevel.DEBUG, `Starting download of ${JRE_ALIAS}`);
-  await downloadFn(url, archivePath);
+  await http.download(url, archivePath);
   log(LogLevel.INFO, `Downloaded ${JRE_ALIAS} to ${archivePath}`);
 
   try {
-    await validateChecksumFn(archivePath, jreMetaData.sha256);
+    await validateChecksum(archivePath, jreMetaData.sha256);
   } catch (error) {
-    await fsDeps.remove(archivePath);
+    await fs.remove(archivePath);
     throw error;
   }
-  await extractArchiveFn(archivePath, jreDirPath);
+  await extractArchive(archivePath, jreDirPath);
   return path.join(jreDirPath, jreMetaData.javaPath);
 }
 
 async function fetchLatestSupportedJRE(
   properties: ScannerProperties,
-  fetchFn: typeof fetch = fetch,
 ): Promise<AnalysisJreMetaData> {
+  const { http } = getDeps();
   const os = properties[ScannerProperty.SonarScannerOs];
   const arch = properties[ScannerProperty.SonarScannerArch];
 
   log(LogLevel.DEBUG, `Downloading JRE information for ${os} ${arch} from ${API_V2_JRE_ENDPOINT}`);
 
-  const { data } = await fetchFn<AnalysisJresResponseType>({
+  const { data } = await http.fetch<AnalysisJresResponseType>({
     url: API_V2_JRE_ENDPOINT,
     params: {
       os,

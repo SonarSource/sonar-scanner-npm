@@ -17,21 +17,19 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { describe, it, mock, Mock } from 'node:test';
+import { describe, it, mock, afterEach, type Mock } from 'node:test';
 import assert from 'node:assert';
 import { SCANNER_CLI_DEFAULT_BIN_NAME, WINDOWS_WHERE_EXE_PATH } from '../../src/constants';
-import { locateExecutableFromPath, type ProcessProcessDeps } from '../../src/process';
+import { setDeps, resetDeps, type ExecAsyncFn } from '../../src/deps';
+import { locateExecutableFromPath } from '../../src/process';
+import { createMockProcessDeps } from './test-helpers';
 
 // Mock console.log to suppress output
 mock.method(console, 'log', () => {});
 
-function createMockProcessDeps(overrides: Partial<ProcessProcessDeps> = {}): ProcessProcessDeps {
-  return {
-    platform: 'linux',
-    arch: 'x64',
-    ...overrides,
-  };
-}
+afterEach(() => {
+  resetDeps();
+});
 
 describe('process', () => {
   describe('locateExecutableFromPath', () => {
@@ -39,19 +37,18 @@ describe('process', () => {
       const mockExecAsync = mock.fn(() =>
         Promise.resolve({ stdout: '/bin/path/to/stuff\n', stderr: '' }),
       );
-      const processDeps = createMockProcessDeps({ platform: 'win32' });
 
-      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME, {
-        processDeps,
-        execAsyncFn: mockExecAsync,
+      setDeps({
+        process: createMockProcessDeps({ platform: 'win32' }),
+        execAsync: mockExecAsync,
       });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
 
       assert.strictEqual(result, '/bin/path/to/stuff');
       assert.strictEqual(mockExecAsync.mock.callCount(), 1);
-      type ExecFn = (cmd: string) => Promise<{ stdout: string; stderr: string }>;
-      const execFn = mockExecAsync as Mock<ExecFn>;
       assert.ok(
-        execFn.mock.calls[0].arguments[0].includes(
+        (mockExecAsync as Mock<ExecAsyncFn>).mock.calls[0].arguments[0].includes(
           `${WINDOWS_WHERE_EXE_PATH} ${SCANNER_CLI_DEFAULT_BIN_NAME}`,
         ),
       );
@@ -59,36 +56,39 @@ describe('process', () => {
 
     it('should detect locally installed command', async () => {
       const mockExecAsync = mock.fn(() => Promise.resolve({ stdout: 'some output\n', stderr: '' }));
-      const processDeps = createMockProcessDeps({ platform: 'linux' });
 
-      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME, {
-        processDeps,
-        execAsyncFn: mockExecAsync,
+      setDeps({
+        process: createMockProcessDeps({ platform: 'linux' }),
+        execAsync: mockExecAsync,
       });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
 
       assert.strictEqual(result, 'some output');
     });
 
     it('should not detect locally installed command (when exit code is 1)', async () => {
       const mockExecAsync = mock.fn(() => Promise.reject(new Error('command not found')));
-      const processDeps = createMockProcessDeps({ platform: 'linux' });
 
-      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME, {
-        processDeps,
-        execAsyncFn: mockExecAsync,
+      setDeps({
+        process: createMockProcessDeps({ platform: 'linux' }),
+        execAsync: mockExecAsync,
       });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
 
       assert.strictEqual(result, null);
     });
 
     it('should not detect locally installed command (when empty stdout)', async () => {
       const mockExecAsync = mock.fn(() => Promise.resolve({ stdout: '', stderr: '' }));
-      const processDeps = createMockProcessDeps({ platform: 'linux' });
 
-      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME, {
-        processDeps,
-        execAsyncFn: mockExecAsync,
+      setDeps({
+        process: createMockProcessDeps({ platform: 'linux' }),
+        execAsync: mockExecAsync,
       });
+
+      const result = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
 
       assert.strictEqual(result, null);
     });

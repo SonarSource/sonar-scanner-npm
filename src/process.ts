@@ -18,34 +18,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { exec } from 'node:child_process';
-import util from 'node:util';
 import { WINDOWS_WHERE_EXE_PATH } from './constants';
+import { getDeps } from './deps';
 import { log, LogLevel } from './logging';
 import { isWindows } from './platform';
-
-const execAsync = util.promisify(exec);
-
-export interface ProcessProcessDeps {
-  platform: NodeJS.Platform;
-  arch: NodeJS.Architecture;
-}
-
-const defaultProcessDeps: ProcessProcessDeps = {
-  get platform() {
-    return process.platform;
-  },
-  get arch() {
-    return process.arch;
-  },
-};
-
-type ExecAsyncFn = (command: string) => Promise<{ stdout: string; stderr: string }>;
-
-export interface ProcessModuleDeps {
-  processDeps?: ProcessProcessDeps;
-  execAsyncFn?: ExecAsyncFn;
-}
 
 /**
  * Verify that a given executable is accessible from the PATH.
@@ -53,14 +29,12 @@ export interface ProcessModuleDeps {
  * search path vulnerabilities. Otherwise, Windows would search the current directory
  * for the executable.
  */
-export async function locateExecutableFromPath(
-  executable: string,
-  { processDeps = defaultProcessDeps, execAsyncFn = execAsync }: ProcessModuleDeps = {},
-): Promise<string | null> {
+export async function locateExecutableFromPath(executable: string): Promise<string | null> {
+  const { execAsync } = getDeps();
   try {
     log(LogLevel.INFO, `Trying to find ${executable}`);
-    const child = await execAsyncFn(
-      `${isWindows(processDeps) ? WINDOWS_WHERE_EXE_PATH : 'which'} ${executable}`,
+    const child = await execAsync(
+      `${isWindows() ? WINDOWS_WHERE_EXE_PATH : 'which'} ${executable}`,
     );
     const stdout = child.stdout?.trim();
     if (stdout.length) {

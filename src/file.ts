@@ -19,46 +19,28 @@
  */
 import AdmZip from 'adm-zip';
 import crypto from 'node:crypto';
-import fs from 'node:fs';
 import path from 'node:path';
 import tarStream from 'tar-stream';
 import zlib from 'node:zlib';
 import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
+import { getDeps } from './deps';
 import { LogLevel, log } from './logging';
 import { type CacheFileData, type ScannerProperties, ScannerProperty } from './types';
-
-export interface FileDeps {
-  existsSync: typeof fs.existsSync;
-  readFile: typeof fs.readFile;
-  remove: (path: string) => Promise<void>;
-  mkdirSync: typeof fs.mkdirSync;
-  createReadStream: typeof fs.createReadStream;
-  createWriteStream: typeof fs.createWriteStream;
-}
-
-const defaultFileDeps: FileDeps = {
-  existsSync: fs.existsSync,
-  readFile: fs.readFile,
-  remove: (filePath: string) => fs.promises.rm(filePath, { recursive: true, force: true }),
-  mkdirSync: fs.mkdirSync,
-  createReadStream: fs.createReadStream,
-  createWriteStream: fs.createWriteStream,
-};
 
 export async function getCacheFileLocation(
   properties: ScannerProperties,
   { checksum, filename, alias }: CacheFileData,
-  fsDeps: FileDeps = defaultFileDeps,
 ) {
+  const { fs } = getDeps();
   const filePath = path.join(getParentCacheDirectory(properties), checksum, filename);
-  if (fsDeps.existsSync(filePath)) {
+  if (fs.existsSync(filePath)) {
     log(LogLevel.DEBUG, alias, 'version found in cache:', filename);
 
     // validate cache
     try {
-      await validateChecksum(filePath, checksum, fsDeps);
+      await validateChecksum(filePath, checksum);
     } catch (error) {
-      await fsDeps.remove(filePath);
+      await fs.remove(filePath);
       throw error;
     }
 
@@ -69,11 +51,8 @@ export async function getCacheFileLocation(
   }
 }
 
-export async function extractArchive(
-  fromPath: string,
-  toPath: string,
-  fsDeps: FileDeps = defaultFileDeps,
-) {
+export async function extractArchive(fromPath: string, toPath: string) {
+  const { fs } = getDeps();
   log(LogLevel.DEBUG, `Extracting ${fromPath} to ${toPath}`);
   if (fromPath.endsWith('.tar.gz')) {
     const tarFilePath = fromPath;
@@ -91,9 +70,9 @@ export async function extractArchive(
         }
 
         // Ensure the parent directory exists
-        fsDeps.mkdirSync(path.dirname(canonicalPath), { recursive: true });
+        fs.mkdirSync(path.dirname(canonicalPath), { recursive: true });
 
-        stream.pipe(fsDeps.createWriteStream(canonicalPath, { mode: header.mode }));
+        stream.pipe(fs.createWriteStream(canonicalPath, { mode: header.mode }));
         stream.on('end', next); // End of file, move onto next file
         stream.resume(); // Auto drain the stream
       });
@@ -108,7 +87,7 @@ export async function extractArchive(
       });
     });
 
-    const readStream = fsDeps.createReadStream(tarFilePath);
+    const readStream = fs.createReadStream(tarFilePath);
     const gunzip = zlib.createGunzip();
     const nextStep = readStream.pipe(gunzip);
     nextStep.pipe(extract);
@@ -130,9 +109,10 @@ export async function extractArchive(
   }
 }
 
-async function generateChecksum(filepath: string, fsDeps: FileDeps = defaultFileDeps) {
+async function generateChecksum(filepath: string) {
+  const { fs } = getDeps();
   return new Promise((resolve, reject) => {
-    fsDeps.readFile(filepath, (err, data) => {
+    fs.readFile(filepath, (err, data) => {
       if (err) {
         reject(err);
         return;
@@ -142,14 +122,10 @@ async function generateChecksum(filepath: string, fsDeps: FileDeps = defaultFile
   });
 }
 
-export async function validateChecksum(
-  filePath: string,
-  expectedChecksum: string,
-  fsDeps: FileDeps = defaultFileDeps,
-) {
+export async function validateChecksum(filePath: string, expectedChecksum: string) {
   if (expectedChecksum) {
     log(LogLevel.DEBUG, `Verifying checksum ${expectedChecksum}`);
-    const checksum = await generateChecksum(filePath, fsDeps);
+    const checksum = await generateChecksum(filePath);
 
     log(LogLevel.DEBUG, `Checksum Value: ${checksum}`);
     if (checksum !== expectedChecksum) {
@@ -165,8 +141,8 @@ export async function validateChecksum(
 export async function getCacheDirectories(
   properties: ScannerProperties,
   { checksum, filename }: CacheFileData,
-  fsDeps: FileDeps = defaultFileDeps,
 ) {
+  const { fs } = getDeps();
   const archivePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   const unarchivePath = path.join(
     getParentCacheDirectory(properties),
@@ -176,9 +152,9 @@ export async function getCacheDirectories(
 
   // Create destination directory if it doesn't exist
   const parentCacheDirectory = path.dirname(unarchivePath);
-  if (!fsDeps.existsSync(parentCacheDirectory)) {
+  if (!fs.existsSync(parentCacheDirectory)) {
     log(LogLevel.DEBUG, `Creating Cache directory as it doesn't exist: ${parentCacheDirectory}`);
-    fsDeps.mkdirSync(parentCacheDirectory, { recursive: true });
+    fs.mkdirSync(parentCacheDirectory, { recursive: true });
   }
 
   return { archivePath, unarchivePath };

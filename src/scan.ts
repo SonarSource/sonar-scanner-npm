@@ -18,57 +18,35 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
-import {
-  fetchJRE as defaultFetchJRE,
-  serverSupportsJREProvisioning as defaultServerSupportsJREProvisioning,
-} from './java';
+import { getDeps } from './deps';
 import { LogLevel, log, setLogLevel } from './logging';
-import { locateExecutableFromPath as defaultLocateExecutableFromPath } from './process';
 import { getProperties } from './properties';
 import { initializeAxios } from './request';
-import {
-  downloadScannerCli as defaultDownloadScannerCli,
-  runScannerCli as defaultRunScannerCli,
-} from './scanner-cli';
-import {
-  fetchScannerEngine as defaultFetchScannerEngine,
-  runScannerEngine as defaultRunScannerEngine,
-} from './scanner-engine';
-import { type CliArgs, type ScanOptions, ScannerProperty } from './types';
+import type { CliArgs, ScanOptions } from './types';
+import { ScannerProperty } from './types';
 import { version } from './version';
 
-export interface ScanDeps {
-  serverSupportsJREProvisioningFn?: typeof defaultServerSupportsJREProvisioning;
-  fetchJREFn?: typeof defaultFetchJRE;
-  downloadScannerCliFn?: typeof defaultDownloadScannerCli;
-  runScannerCliFn?: typeof defaultRunScannerCli;
-  fetchScannerEngineFn?: typeof defaultFetchScannerEngine;
-  runScannerEngineFn?: typeof defaultRunScannerEngine;
-  locateExecutableFromPathFn?: typeof defaultLocateExecutableFromPath;
-}
-
-export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs, deps: ScanDeps = {}) {
+export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   try {
-    await runScan(scanOptions, cliArgs, deps);
+    await runScan(scanOptions, cliArgs);
   } catch (error) {
     log(LogLevel.ERROR, `An error occurred: ${error}`);
     throw error;
   }
 }
 
-async function runScan(
-  scanOptions: ScanOptions,
-  cliArgs?: CliArgs,
-  {
-    serverSupportsJREProvisioningFn = defaultServerSupportsJREProvisioning,
-    fetchJREFn = defaultFetchJRE,
-    downloadScannerCliFn = defaultDownloadScannerCli,
-    runScannerCliFn = defaultRunScannerCli,
-    fetchScannerEngineFn = defaultFetchScannerEngine,
-    runScannerEngineFn = defaultRunScannerEngine,
-    locateExecutableFromPathFn = defaultLocateExecutableFromPath,
-  }: ScanDeps = {},
-) {
+async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
+  // Get dependencies from the container
+  const {
+    serverSupportsJREProvisioning,
+    fetchJRE,
+    downloadScannerCli,
+    runScannerCli,
+    fetchScannerEngine,
+    runScannerEngine,
+    locateExecutableFromPath,
+  } = getDeps().scan;
+
   const startTimestampMs = Date.now();
   const properties = getProperties(scanOptions, startTimestampMs, cliArgs);
 
@@ -96,21 +74,21 @@ async function runScan(
   log(LogLevel.INFO, `Version: ${version}`);
 
   log(LogLevel.DEBUG, 'Check if Server supports JRE provisioning');
-  const supportsJREProvisioning = await serverSupportsJREProvisioningFn(properties);
+  const supportsJREProvisioning = await serverSupportsJREProvisioning(properties);
   log(LogLevel.INFO, `JRE provisioning ${supportsJREProvisioning ? 'is' : 'is NOT'} supported`);
 
   if (!supportsJREProvisioning) {
     log(LogLevel.INFO, 'Falling back on using sonar-scanner-cli');
     if (scanOptions.localScannerCli) {
       log(LogLevel.INFO, 'Local scanner is requested, will not download sonar-scanner-cli');
-      const scannerPath = await locateExecutableFromPathFn(SCANNER_CLI_DEFAULT_BIN_NAME);
+      const scannerPath = await locateExecutableFromPath(SCANNER_CLI_DEFAULT_BIN_NAME);
       if (!scannerPath) {
         throw new Error('SonarScanner CLI not found in PATH');
       }
-      await runScannerCliFn(scanOptions, properties, scannerPath);
+      await runScannerCli(scanOptions, properties, scannerPath);
     } else {
-      const binPath = await downloadScannerCliFn(properties);
-      await runScannerCliFn(scanOptions, properties, binPath);
+      const binPath = await downloadScannerCli(properties);
+      await runScannerCli(scanOptions, properties, binPath);
     }
     return;
   }
@@ -120,18 +98,18 @@ async function runScan(
   if (properties[ScannerProperty.SonarScannerJavaExePath]) {
     javaPath = properties[ScannerProperty.SonarScannerJavaExePath];
   } else if (properties[ScannerProperty.SonarScannerSkipJreProvisioning] === 'true') {
-    const absoluteJavaPath = await locateExecutableFromPathFn('java');
+    const absoluteJavaPath = await locateExecutableFromPath('java');
     if (!absoluteJavaPath) {
       throw new Error('Java not found in PATH');
     }
     javaPath = absoluteJavaPath;
   } else {
-    javaPath = await fetchJREFn(properties);
+    javaPath = await fetchJRE(properties);
   }
 
   // Fetch the Scanner Engine
-  const latestScannerEngine = await fetchScannerEngineFn(properties);
+  const latestScannerEngine = await fetchScannerEngine(properties);
 
   // Run the Scanner Engine
-  await runScannerEngineFn(javaPath, latestScannerEngine, scanOptions, properties);
+  await runScannerEngine(javaPath, latestScannerEngine, scanOptions, properties);
 }

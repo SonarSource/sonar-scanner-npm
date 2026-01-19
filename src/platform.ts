@@ -18,67 +18,45 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import fs from 'node:fs';
+import { getDeps } from './deps';
 import { LogLevel, log } from './logging';
 
-export interface PlatformProcessDeps {
-  platform: NodeJS.Platform;
-  arch: NodeJS.Architecture;
+export function getArch(): NodeJS.Architecture {
+  const { process } = getDeps();
+  return process.arch;
 }
 
-export interface PlatformFsDeps {
-  readFileSync: typeof fs.readFileSync;
+export function isLinux(): boolean {
+  const { process } = getDeps();
+  return process.platform === 'linux';
 }
 
-const defaultProcessDeps: PlatformProcessDeps = {
-  get platform() {
-    return process.platform;
-  },
-  get arch() {
-    return process.arch;
-  },
-};
-
-const defaultFsDeps: PlatformFsDeps = {
-  readFileSync: fs.readFileSync,
-};
-
-export function getArch(
-  processDeps: PlatformProcessDeps = defaultProcessDeps,
-): NodeJS.Architecture {
-  return processDeps.arch;
+export function isWindows() {
+  const { process } = getDeps();
+  return process.platform === 'win32';
 }
 
-export function isLinux(processDeps: PlatformProcessDeps = defaultProcessDeps): boolean {
-  return processDeps.platform === 'linux';
-}
-
-export function isWindows(processDeps: PlatformProcessDeps = defaultProcessDeps) {
-  return processDeps.platform === 'win32';
-}
-
-export function isMac(processDeps: PlatformProcessDeps = defaultProcessDeps) {
-  return processDeps.platform === 'darwin';
+export function isMac() {
+  const { process } = getDeps();
+  return process.platform === 'darwin';
 }
 
 /**
  * @see https://github.com/microsoft/vscode/blob/64874113ad3c59e8d045f75dc2ef9d33d13f3a03/src/vs/platform/extensionManagement/common/extensionManagementUtil.ts#L171C1-L190C1
  */
 
-function isAlpineLinux(
-  processDeps: PlatformProcessDeps = defaultProcessDeps,
-  fsDeps: PlatformFsDeps = defaultFsDeps,
-): boolean {
-  if (!isLinux(processDeps)) {
+function isAlpineLinux(): boolean {
+  const { process, fs } = getDeps();
+  if (!isLinux()) {
     return false;
   }
   let content: string | undefined;
   try {
-    const fileContent = fsDeps.readFileSync('/etc/os-release');
+    const fileContent = fs.readFileSync('/etc/os-release');
     content = fileContent.toString();
   } catch (error) {
     try {
-      const fileContent = fsDeps.readFileSync('/usr/lib/os-release');
+      const fileContent = fs.readFileSync('/usr/lib/os-release');
       content = fileContent.toString();
     } catch (error) {
       log(LogLevel.WARN, 'Failed to read /etc/os-release or /usr/lib/os-release');
@@ -88,9 +66,7 @@ function isAlpineLinux(
   return !!content && (match ? match[1] === 'alpine' : false);
 }
 
-export function getSupportedOS(
-  processDeps: PlatformProcessDeps = defaultProcessDeps,
-  fsDeps: PlatformFsDeps = defaultFsDeps,
-): NodeJS.Platform | 'alpine' {
-  return isAlpineLinux(processDeps, fsDeps) ? 'alpine' : processDeps.platform;
+export function getSupportedOS(): NodeJS.Platform | 'alpine' {
+  const { process } = getDeps();
+  return isAlpineLinux() ? 'alpine' : process.platform;
 }

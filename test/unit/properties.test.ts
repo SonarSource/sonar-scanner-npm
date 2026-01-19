@@ -20,7 +20,6 @@
 import { describe, it, afterEach, mock, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
-import sinon from 'sinon';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
   REGION_US,
@@ -29,10 +28,18 @@ import {
   SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
 } from '../../src/constants';
+import { setDeps, resetDeps } from '../../src/deps';
 import { getHostProperties, getProperties } from '../../src/properties';
 import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types';
+import { createMockProcessDeps } from './test-helpers';
 
-const baseEnvVariables = process.env;
+// Environment variables that need to be set on global process.env for proxy-from-env library
+// Note: On Windows, env vars are case-insensitive, so HTTP_PROXY and http_proxy are the same
+const PROXY_ENV_VARS = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY'];
+// Store original env values to restore after tests
+const originalEnvValues: { [key: string]: string | undefined } = {};
+// Track which env vars we've modified in the current test
+let modifiedEnvVars: string[] = [];
 
 class FakeProjectMock {
   static getPathForProject(projectName: string) {
@@ -43,20 +50,45 @@ class FakeProjectMock {
 
   private startTimeMs = 1713164095650;
 
+  private envVariables: { [key: string]: string } = {};
+
   reset(projectName?: string) {
     if (projectName) {
       this.projectPath = FakeProjectMock.getPathForProject(projectName);
     } else {
       this.projectPath = '';
     }
-    sinon.stub(process, 'platform').value('windows');
-    sinon.stub(process, 'arch').value('aarch64');
-    sinon.stub(process, 'env').value(baseEnvVariables);
-    sinon.stub(process, 'cwd').value(() => this.projectPath);
+    this.envVariables = {};
+    this.applyDeps();
   }
 
   setEnvironmentVariables(values: { [key: string]: string }) {
-    sinon.stub(process, 'env').value(values);
+    this.envVariables = values;
+    this.applyDeps();
+
+    // Also set proxy variables on global process.env for proxy-from-env library
+    // Only set/modify the keys that are provided in values (don't delete others)
+    for (const key of PROXY_ENV_VARS) {
+      if (key in values) {
+        // Save original value if not already saved
+        if (!(key in originalEnvValues)) {
+          originalEnvValues[key] = process.env[key];
+        }
+        process.env[key] = values[key];
+        modifiedEnvVars.push(key);
+      }
+    }
+  }
+
+  private applyDeps() {
+    setDeps({
+      process: createMockProcessDeps({
+        platform: 'win32' as NodeJS.Platform,
+        arch: 'arm64' as NodeJS.Architecture,
+        env: this.envVariables,
+        cwd: () => this.projectPath,
+      }),
+    });
   }
 
   getStartTime() {
@@ -73,10 +105,25 @@ class FakeProjectMock {
       'sonar.scanner.appVersion': 'SNAPSHOT',
       'sonar.scanner.wasEngineCacheHit': 'false',
       'sonar.scanner.wasJreCacheHit': CacheStatus.Disabled,
-      'sonar.scanner.os': 'windows',
-      'sonar.scanner.arch': 'aarch64',
+      'sonar.scanner.os': 'win32',
+      'sonar.scanner.arch': 'arm64',
     };
   }
+}
+
+function restoreProxyEnvVars() {
+  // Only restore keys we actually modified
+  for (const key of modifiedEnvVars) {
+    if (key in originalEnvValues) {
+      if (originalEnvValues[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalEnvValues[key];
+      }
+      delete originalEnvValues[key];
+    }
+  }
+  modifiedEnvVars = [];
 }
 
 // Mock console.log to suppress output and capture log calls
@@ -90,8 +137,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  sinon.restore();
-  projectHandler.reset();
+  resetDeps();
+  restoreProxyEnvVars();
 });
 
 // Helper to check if a specific log level and message pattern was logged

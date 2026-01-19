@@ -17,18 +17,11 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-import { spawn as nodeSpawn } from 'node:child_process';
-import fs from 'node:fs';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants';
-import {
-  extractArchive,
-  getCacheDirectories,
-  getCacheFileLocation,
-  validateChecksum,
-} from './file';
+import { getDeps } from './deps';
+import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file';
 import { LogLevel, log, logWithPrefix } from './logging';
 import { proxyUrlToJavaOptions } from './proxy';
-import { download, fetch } from './request';
 import {
   type AnalysisEngineResponseType,
   type ScanOptions,
@@ -37,51 +30,18 @@ import {
   ScannerProperty,
 } from './types';
 
-export interface ScannerEngineFsDeps {
-  remove: (path: string) => Promise<void>;
-  writeFile: (path: string, data: string) => Promise<void>;
-}
+export async function fetchScannerEngine(properties: ScannerProperties) {
+  const { fs, http } = getDeps();
 
-export type SpawnFn = typeof nodeSpawn;
-
-const defaultFsDeps: ScannerEngineFsDeps = {
-  remove: (filePath: string) => fs.promises.rm(filePath, { recursive: true, force: true }),
-  writeFile: (filePath: string, data: string) => fs.promises.writeFile(filePath, data),
-};
-
-const defaultSpawn: SpawnFn = nodeSpawn;
-
-export interface ScannerEngineDeps {
-  fsDeps?: ScannerEngineFsDeps;
-  spawnFn?: SpawnFn;
-  fetchFn?: typeof fetch;
-  downloadFn?: typeof download;
-  getCacheFileLocationFn?: typeof getCacheFileLocation;
-  getCacheDirectoriesFn?: typeof getCacheDirectories;
-  validateChecksumFn?: typeof validateChecksum;
-  extractArchiveFn?: typeof extractArchive;
-}
-
-export async function fetchScannerEngine(
-  properties: ScannerProperties,
-  {
-    fsDeps = defaultFsDeps,
-    fetchFn = fetch,
-    downloadFn = download,
-    getCacheFileLocationFn = getCacheFileLocation,
-    getCacheDirectoriesFn = getCacheDirectories,
-    validateChecksumFn = validateChecksum,
-  }: ScannerEngineDeps = {},
-) {
   log(LogLevel.DEBUG, `Detecting latest version of ${SONAR_SCANNER_ALIAS}`);
-  const { data } = await fetchFn<AnalysisEngineResponseType>({
+  const { data } = await http.fetch<AnalysisEngineResponseType>({
     url: API_V2_SCANNER_ENGINE_ENDPOINT,
   });
   const { sha256: checksum, filename, downloadUrl } = data;
   log(LogLevel.DEBUG, `Latest ${SONAR_SCANNER_ALIAS} version:`, filename);
 
   log(LogLevel.DEBUG, `Looking for Cached ${SONAR_SCANNER_ALIAS}`);
-  const cachedScannerEngine = await getCacheFileLocationFn(properties, {
+  const cachedScannerEngine = await getCacheFileLocation(properties, {
     checksum,
     filename,
     alias: SONAR_SCANNER_ALIAS,
@@ -95,20 +55,20 @@ export async function fetchScannerEngine(
 
   properties[ScannerProperty.SonarScannerWasEngineCacheHit] = 'false';
 
-  const { archivePath } = await getCacheDirectoriesFn(properties, {
+  const { archivePath } = await getCacheDirectories(properties, {
     checksum,
     filename,
     alias: SONAR_SCANNER_ALIAS,
   });
   const url = downloadUrl ?? API_V2_SCANNER_ENGINE_ENDPOINT;
   log(LogLevel.DEBUG, `Starting download of ${SONAR_SCANNER_ALIAS}`);
-  await downloadFn(url, archivePath);
+  await http.download(url, archivePath);
   log(LogLevel.INFO, `Downloaded ${SONAR_SCANNER_ALIAS} to ${archivePath}`);
 
   try {
-    await validateChecksumFn(archivePath, checksum);
+    await validateChecksum(archivePath, checksum);
   } catch (error) {
-    await fsDeps.remove(archivePath);
+    await fs.remove(archivePath);
     throw error;
   }
 
@@ -122,10 +82,10 @@ async function logOutput(message: string) {
     logWithPrefix(parsed.level, 'ScannerEngine', parsed.message);
     if (parsed.stacktrace) {
       // Console.log without newline
-      process.stdout.write(parsed.stacktrace);
+      globalThis.process.stdout.write(parsed.stacktrace);
     }
   } catch (e) {
-    process.stdout.write(message);
+    globalThis.process.stdout.write(message);
   }
 }
 
@@ -134,8 +94,9 @@ export function runScannerEngine(
   scannerEnginePath: string,
   scanOptions: ScanOptions,
   properties: ScannerProperties,
-  { fsDeps = defaultFsDeps, spawnFn = defaultSpawn }: ScannerEngineDeps = {},
 ) {
+  const { fs, spawn } = getDeps();
+
   log(LogLevel.DEBUG, `Running the ${SONAR_SCANNER_ALIAS}`);
 
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
@@ -167,11 +128,11 @@ export function runScannerEngine(
       args,
     };
     log(LogLevel.INFO, 'Dumping data to file and exiting');
-    return fsDeps.writeFile(dumpToFile, JSON.stringify(data, null, 2));
+    return fs.writeFile(dumpToFile, JSON.stringify(data, null, 2));
   }
 
   log(LogLevel.DEBUG, `Running ${SONAR_SCANNER_ALIAS}`, javaBinPath, ...args);
-  const child = spawnFn(javaBinPath, args);
+  const child = spawn(javaBinPath, args);
 
   log(LogLevel.DEBUG, `Writing properties to ${SONAR_SCANNER_ALIAS}`, propertiesJSON);
   child.stdin.write(propertiesJSON);
