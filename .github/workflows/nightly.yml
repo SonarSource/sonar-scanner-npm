@@ -90,7 +90,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ matrix.host_url }}
-        run: node ./scripts/ci-analysis.js
+        run: node ./ci-analysis.js
 
   iris:
     name: IRIS

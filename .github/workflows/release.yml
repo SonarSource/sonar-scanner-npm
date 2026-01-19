@@ -36,7 +36,9 @@ jobs:
       - name: Build the package
         run: |
           npm ci
-          VERSION=${RELEASE_TAG} npm run build
+          npm run license
+          npx tsc
+          npx pmg --entries=build/**/*.js --output=build/package.json --version=${RELEASE_TAG}
           cp LICENSE build
           cp README.md build
 
@@ -54,10 +56,22 @@ jobs:
           jfrog rt build-publish $BUILD_NAME $RELEASE_TAG
           jfrog rt build-promote --status released $BUILD_NAME $RELEASE_TAG $ARTIFACTORY_REPOSITORY_NAME
 
+      - name: Determine npm tag
+        id: npm-tag
+        run: |
+          if [ "${{ github.event.release.prerelease }}" == "true" ]; then
+            echo "tag=next" >> $GITHUB_OUTPUT
+          elif [ "${{ contains(github.event.release.body, '[skip-latest]') }}" == "true" ]; then
+            # Extract major version for the tag (e.g., "1.2.3" -> "release-1.x")
+            MAJOR=$(echo "$RELEASE_TAG" | sed 's/^v//' | cut -d. -f1)
+            echo "tag=release-${MAJOR}.x" >> $GITHUB_OUTPUT
+          else
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish the package to npm
         run: |
           cd build
-          [ ${{ github.event.release.prerelease }} == true ] && TAG="next" || TAG="latest"
-          npm publish --tag=$TAG --access=public
+          npm publish --tag=${{ steps.npm-tag.outputs.tag }} --access=public
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
-          npm publish --tag=$TAG --access=public
+          npm publish --tag=${{ steps.npm-tag.outputs.tag }} --access=public

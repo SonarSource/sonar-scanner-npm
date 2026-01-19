@@ -1,0 +1,78 @@
+# Developer Guide
+
+## Building
+
+```bash
+npm install
+npm run build
+```
+
+The build process:
+
+1. Runs ESLint license header check (`npm run license`)
+2. Compiles TypeScript (`tsc`)
+3. Generates `build/package.json` using [package-manifest-generator](https://www.npmjs.com/package/package-manifest-generator)
+
+The generated `build/package.json` is created from:
+
+- Dependencies extracted from the compiled JS files
+- Metadata from `.pmgrc.toml` (name, description, bin, engines, etc.)
+- Version defaults to `SNAPSHOT` (configured in `.pmgrc.toml`)
+
+## Testing
+
+```bash
+# Run unit tests
+npm test
+
+# Run a single test file
+npx tsx --test test/unit/properties.test.ts
+
+# Run integration tests (requires build first)
+npm run build
+npm run test-integration
+```
+
+## Releasing
+
+Releases are handled by the GitHub Actions workflow (`.github/workflows/release.yml`) when a release is published on GitHub.
+
+### Release Process
+
+1. Create a new release on GitHub
+2. Set the tag name (e.g., `1.2.3`)
+3. The workflow will:
+   - Build the package with the release version
+   - Publish to Artifactory
+   - Publish to npm under two package names:
+     - `@sonar/scan` (primary)
+     - `sonarqube-scanner` (legacy alias for backwards compatibility)
+
+### npm Tags
+
+The npm tag is determined automatically:
+
+| Condition                             | npm tag                                  |
+| ------------------------------------- | ---------------------------------------- |
+| Prerelease checkbox is checked        | `next`                                   |
+| Release body contains `[skip-latest]` | `release-X.x` (where X is major version) |
+| Otherwise                             | `latest`                                 |
+
+### Releasing Without Updating `latest`
+
+When releasing a patch for an older major version (e.g., releasing `1.2.4` when `2.x` is current), you don't want to move the `latest` tag. To do this:
+
+1. Create the release on GitHub
+2. Add `[skip-latest]` anywhere in the release notes body
+3. Publish the release
+
+The package will be published with a tag like `release-1.x` instead of `latest`, so users running `npm install @sonar/scan` will continue to get the current latest version.
+
+Example release notes:
+
+```
+## Bug Fixes
+- Fixed issue with proxy configuration
+
+[skip-latest]
+```

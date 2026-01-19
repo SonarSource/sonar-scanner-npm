@@ -12,6 +12,7 @@ keywords = [
   "sonar-runner"
 ]
 homepage = "https://docs.sonarsource.com/sonarqube-server/latest/analyzing-source-code/scanners/npm/introduction/"
+version = "SNAPSHOT"
 
 [data.bugs]
 url = "https://community.sonarsource.com/tag/scanner"
