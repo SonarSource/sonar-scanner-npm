@@ -9,5 +9,5 @@
     }
   },
   "ignoreDependencies": ["node-reporter-sonarqube"],
-  "ignore": ["build/**/*", "**/fixtures/**/*", "scripts/ci-analysis.js"]
+  "ignore": ["build/**/*", "**/fixtures/**/*", "ci-analysis.js"]
 }

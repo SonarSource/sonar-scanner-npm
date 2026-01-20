@@ -3,8 +3,8 @@
   "version": "SNAPSHOT",
   "homepage": "https://github.com/SonarSource/sonar-scanner-npm",
   "author": {
-    "name": "Fabrice Bellingard",
-    "email": "fabrice.bellingard@sonarsource.com"
+    "name": "SonarSource",
+    "email": "quality.web@sonarsource.com"
   },
   "repository": {
     "type": "git",
@@ -42,13 +42,13 @@
     "prettier": "3.8.0",
     "node-reporter-sonarqube": "1.0.3",
     "nyc": "17.1.0",
+    "package-manifest-generator": "1.0.0-beta.4",
     "pretty-quick": "4.2.2",
-    "toml": "3.0.0",
     "tsx": "4.21.0",
     "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "npm run license && tsc && tsx scripts/generate-package-json.ts",
+    "build": "npm run license && tsc && pmg --entries=build/**/*.js --output=build/package.json",
     "test": "nyc npm run test:run",
     "test:run": "tsx --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=node-reporter-sonarqube --test-reporter-destination=test-report.xml test/unit/*.test.ts",
     "test-integration": "cd test/integration && npm install && npm test",

@@ -20,7 +20,7 @@
 const path = require('node:path');
 
 // Regular users will call 'require('@sonar/scan')' - but not here: eat your own dog food! :-)
-const scanner = require('../build').scan;
+const scanner = require('./build').scan;
 
 // We just run an analysis and push it to SonarCloud
 // (No need to pass the server URL and the token, we're using the Travis
@@ -35,8 +35,8 @@ scanner({
     'sonar.sources': 'src',
     'sonar.tests': 'test',
     'sonar.host.url': process.env.SONAR_HOST_URL,
-    'sonar.javascript.lcov.reportPaths': path.join(__dirname, '..', 'coverage', 'lcov.info'),
-    'sonar.testExecutionReportPaths': path.join(__dirname, '..', 'test-report.xml'),
+    'sonar.javascript.lcov.reportPaths': path.join(__dirname, 'coverage', 'lcov.info'),
+    'sonar.testExecutionReportPaths': path.join(__dirname, 'test-report.xml'),
     'sonar.verbose': 'true',
   },
 }).catch(err => {
