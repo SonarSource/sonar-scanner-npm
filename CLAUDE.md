@@ -98,6 +98,19 @@ Note: `test/integration/tsconfig.json` requires running `npm install` in `test/i
 - Use `gh` CLI to interact with GitHub (issues, PRs, etc.)
 - Use `acli` tool to interact with Jira (project key: `SCANNPM`)
 
+#### acli Usage Examples
+
+```bash
+# Search backlog items
+acli jira workitem search --jql "project = SCANNPM AND status in ('To Do', 'Open', 'Backlog') ORDER BY priority DESC" --limit 20
+
+# View a specific issue
+acli jira workitem view SCANNPM-123
+
+# Search with custom fields and CSV output
+acli jira workitem search --jql "project = SCANNPM" --fields "key,summary,assignee,status" --csv
+```
+
 ### Node.js Imports
 
 Always use the `node:` prefix for Node.js built-in modules:
