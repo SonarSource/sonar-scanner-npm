@@ -96,7 +96,7 @@ Note: `test/integration/tsconfig.json` requires running `npm install` in `test/i
 ### External Tools
 
 - Use `gh` CLI to interact with GitHub (issues, PRs, etc.)
-- Use `acli` tool to interact with Jira
+- Use `acli` tool to interact with Jira (project key: `SCANNPM`)
 
 ### Node.js Imports
 
