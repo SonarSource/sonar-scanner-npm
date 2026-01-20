@@ -76,3 +76,17 @@ Example release notes:
 
 [skip-latest]
 ```
+
+### Testing the Release Workflow (Dry Run)
+
+You can test the release workflow without actually publishing by using the manual trigger:
+
+1. Go to **Actions** → **Release** workflow
+2. Click **Run workflow**
+3. Fill in the inputs:
+   - **Dry run**: ✅ checked (skips all publish steps)
+   - **Release tag**: The version to simulate (e.g., `1.2.3`)
+   - **Simulate prerelease**: Check to test prerelease behavior
+   - **Simulate [skip-latest]**: Check to test the skip-latest behavior
+
+The workflow will run and display the npm tag that would be used without performing any actual build or publish operations.

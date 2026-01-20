@@ -2,6 +2,23 @@ on:
   release:
     types:
       - published
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip publish, only show npm tag)'
+        type: boolean
+        default: true
+      release_tag:
+        description: 'Release tag to simulate (e.g., 1.2.3)'
+        required: true
+      prerelease:
+        description: 'Simulate prerelease'
+        type: boolean
+        default: false
+      skip_latest:
+        description: 'Simulate [skip-latest] in release body'
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -10,12 +27,14 @@ jobs:
       id-token: write # required for SonarSource/vault-action-wrapper
     runs-on: github-ubuntu-latest-s
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
-      RELEASE_NAME: ${{ github.event.release.name }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+      RELEASE_NAME: ${{ github.event.release.name || inputs.release_tag }}
       BUILD_NAME: 'sonar-scanner-npm'
       ARTIFACTORY_REPOSITORY_NAME: 'sonarsource-npm-public-releases'
+      DRY_RUN: ${{ inputs.dry_run || false }}
     steps:
       - name: Fetch the secrets
+        if: ${{ !inputs.dry_run }}
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
@@ -29,11 +48,13 @@ jobs:
           node-version: 24
 
       - name: Setup the registries
+        if: ${{ !inputs.dry_run }}
         run: |
           npm config set //registry.npmjs.org/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).npm_token }}
           npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
 
       - name: Build the package
+        if: ${{ !inputs.dry_run }}
         run: |
           npm ci
           npm run license
@@ -43,9 +64,11 @@ jobs:
           cp README.md build
 
       - name: Install JFrog CLI
+        if: ${{ !inputs.dry_run }}
         uses: SonarSource/jfrog-setup-wrapper@v3
 
       - name: Publish the package to Artifactory
+        if: ${{ !inputs.dry_run }}
         run: |
           jfrog config add repox --url https://repox.jfrog.io --access-token ${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
           jfrog config use repox
@@ -58,10 +81,13 @@ jobs:
 
       - name: Determine npm tag
         id: npm-tag
+        env:
+          IS_PRERELEASE: ${{ github.event.release.prerelease || inputs.prerelease }}
+          HAS_SKIP_LATEST: ${{ contains(github.event.release.body, '[skip-latest]') || inputs.skip_latest }}
         run: |
-          if [ "${{ github.event.release.prerelease }}" == "true" ]; then
+          if [ "$IS_PRERELEASE" == "true" ]; then
             echo "tag=next" >> $GITHUB_OUTPUT
-          elif [ "${{ contains(github.event.release.body, '[skip-latest]') }}" == "true" ]; then
+          elif [ "$HAS_SKIP_LATEST" == "true" ]; then
             # Extract major version for the tag (e.g., "1.2.3" -> "release-1.x")
             MAJOR=$(echo "$RELEASE_TAG" | sed 's/^v//' | cut -d. -f1)
             echo "tag=release-${MAJOR}.x" >> $GITHUB_OUTPUT
@@ -69,7 +95,17 @@ jobs:
             echo "tag=latest" >> $GITHUB_OUTPUT
           fi
 
+      - name: Show npm tag (dry run)
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "========================================"
+          echo "DRY RUN - Would publish with:"
+          echo "  Release tag: $RELEASE_TAG"
+          echo "  npm tag: ${{ steps.npm-tag.outputs.tag }}"
+          echo "========================================"
+
       - name: Publish the package to npm
+        if: ${{ !inputs.dry_run }}
         run: |
           cd build
           npm publish --tag=${{ steps.npm-tag.outputs.tag }} --access=public
