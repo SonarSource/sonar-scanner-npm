@@ -9,14 +9,14 @@ on:
         type: boolean
         default: true
       release_tag:
-        description: 'Release tag to simulate (e.g., 1.2.3)'
+        description: 'Release tag to test (e.g., 1.2.3)'
         required: true
       prerelease:
-        description: 'Simulate prerelease'
+        description: 'Mark as prerelease (publishes to npm "next" tag instead of "latest")'
         type: boolean
         default: false
       skip_latest:
-        description: 'Simulate [skip-latest] in release body'
+        description: 'Skip updating "latest" tag (use for older version patches)'
         type: boolean
         default: false
 
@@ -108,6 +108,8 @@ jobs:
         if: ${{ !inputs.dry_run }}
         run: |
           cd build
+          # Publish as @sonar/scan (primary package name)
           npm publish --tag=${{ steps.npm-tag.outputs.tag }} --access=public
+          # Publish as sonarqube-scanner (legacy alias for backwards compatibility)
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
           npm publish --tag=${{ steps.npm-tag.outputs.tag }} --access=public
