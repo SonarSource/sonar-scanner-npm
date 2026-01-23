@@ -41,12 +41,23 @@ Releases are handled by the GitHub Actions workflow (`.github/workflows/release.
 
 1. Create a new release on GitHub
 2. Set the tag name (e.g., `1.2.3`)
-3. The workflow will:
+3. Add a `Description:` line in the release body (required for the Update Center)
+4. The workflow will:
    - Build the package with the release version
    - Publish to Artifactory
    - Publish to npm under two package names:
      - `@sonar/scan` (primary)
      - `sonarqube-scanner` (legacy alias for backwards compatibility)
+   - Create a PR in [sonar-update-center-properties](https://github.com/SonarSource/sonar-update-center-properties)
+
+Example release body:
+
+```
+Description: Support new authentication method
+
+## What's Changed
+* SCANNPM-XXX Add new auth support by @user in #123
+```
 
 ### npm Tags
 
@@ -86,33 +97,30 @@ You can test the release workflow without actually publishing by using the manua
 3. Fill in the inputs:
    - **Dry run**: ✅ checked (skips all publish steps)
    - **Release tag**: The version to simulate (e.g., `1.2.3`)
+   - **Release description**: The description for the Update Center entry
    - **Simulate prerelease**: Check to test prerelease behavior
    - **Simulate [skip-latest]**: Check to test the skip-latest behavior
 
-The workflow will run and display the npm tag that would be used without performing any actual build or publish operations.
+The workflow will run and display the npm tag that would be used without performing any actual build or publish operations. The Update Center PR is still created during dry runs so you can verify the changes (just close the PR afterwards).
 
 ### Sonar Update Center
 
-After publishing a new release, the [Sonar Update Center](https://xtranet-sonarsource.atlassian.net/wiki/spaces/DOC/pages/3385294896/The+Sonar+Update+Center) needs to be updated. This makes release information available at `downloads.sonarsource.com` for documentation and tooling.
+The [Sonar Update Center](https://xtranet-sonarsource.atlassian.net/wiki/spaces/DOC/pages/3385294896/The+Sonar+Update+Center) is automatically updated by the release workflow. When a release is published, the workflow creates a PR in [sonar-update-center-properties](https://github.com/SonarSource/sonar-update-center-properties) to update `scannernpm.properties` that:
 
-#### Update Process
+- Adds the new version entry using the `Description:` from the release body
+- Moves the previous public version to `archivedVersions`
+- Requests review from `@SonarSource/quality-web-squad`
 
-1. **Create a PR** in [sonar-update-center-properties](https://github.com/SonarSource/sonar-update-center-properties) to update `scannernpm.properties`
+#### Version Entry Format
 
-2. **Add the new version entry** with the following format:
+Each version entry in `scannernpm.properties` follows this format:
 
-   ```properties
-   X.Y.Z.description=Short description of the release
-   X.Y.Z.date=YYYY-MM-DD
-   X.Y.Z.changelogUrl=https://github.com/SonarSource/sonar-scanner-npm/releases/tag/X.Y.Z
-   X.Y.Z.downloadUrl=https://www.npmjs.com/package/@sonar/scan/v/X.Y.Z
-   ```
-
-3. **Update version lists**:
-   - Move the previous public version to `archivedVersions`
-   - Set the new version in `publicVersions`
-
-4. **After PR is merged**, run the scanner release notes GitHub Action on the [SonarQube-Documentation](https://github.com/SonarSource/SonarQube-Documentation) repo to create a PR that pushes the update to product docs
+```properties
+X.Y.Z.description=Short description of the release
+X.Y.Z.date=YYYY-MM-DD
+X.Y.Z.changelogUrl=https://github.com/SonarSource/sonar-scanner-npm/releases/tag/X.Y.Z
+X.Y.Z.downloadUrl=https://www.npmjs.com/package/@sonar/scan/v/X.Y.Z
+```
 
 #### Reference
 

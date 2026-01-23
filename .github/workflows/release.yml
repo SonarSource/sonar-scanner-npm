@@ -11,6 +11,9 @@ on:
       release_tag:
         description: 'Release tag to test (e.g., 1.2.3)'
         required: true
+      release_description:
+        description: 'Release description for Update Center (e.g., "Support new feature")'
+        required: true
       prerelease:
         description: 'Mark as prerelease (publishes to npm "next" tag instead of "latest")'
         type: boolean
@@ -33,6 +36,33 @@ jobs:
       ARTIFACTORY_REPOSITORY_NAME: 'sonarsource-npm-public-releases'
       DRY_RUN: ${{ inputs.dry_run || false }}
     steps:
+      - name: Validate release description
+        id: description
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+          INPUT_DESCRIPTION: ${{ inputs.release_description }}
+        run: |
+          # Use input description for manual trigger, otherwise extract from release body
+          if [ -n "$INPUT_DESCRIPTION" ]; then
+            DESCRIPTION="$INPUT_DESCRIPTION"
+          else
+            # Extract description from release body (line starting with "Description:")
+            DESCRIPTION=$(echo "$RELEASE_BODY" | grep -i "^Description:" | sed 's/^[Dd]escription:[[:space:]]*//')
+          fi
+
+          if [ -z "$DESCRIPTION" ]; then
+            echo "::error::Release body must contain a 'Description:' line for the Update Center entry."
+            echo "::error::Example format:"
+            echo "::error::  Description: Support new authentication method"
+            echo "::error::"
+            echo "::error::  ## What's Changed"
+            echo "::error::  * PR details..."
+            exit 1
+          fi
+
+          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "Extracted description: $DESCRIPTION"
+
       - name: Fetch the secrets
         if: ${{ !inputs.dry_run }}
         id: secrets
@@ -113,3 +143,86 @@ jobs:
           # Publish as sonarqube-scanner (legacy alias for backwards compatibility)
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
           npm publish --tag=${{ steps.npm-tag.outputs.tag }} --access=public
+
+    outputs:
+      description: ${{ steps.description.outputs.description }}
+
+  update-center:
+    needs: publish
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+    steps:
+      - name: Fetch GitHub token
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: development/github/token/SonarSource-sonar-scanner-npm-update-center token | github_token;
+
+      - name: Checkout sonar-update-center-properties
+        uses: actions/checkout@v6
+        with:
+          repository: SonarSource/sonar-update-center-properties
+          token: ${{ fromJSON(steps.secrets.outputs.vault).github_token }}
+          path: update-center
+
+      - name: Update scannernpm.properties
+        working-directory: update-center
+        env:
+          RELEASE_DESCRIPTION: ${{ needs.publish.outputs.description }}
+        run: |
+          FILE="scannernpm.properties"
+          VERSION="${RELEASE_TAG}"
+          DATE=$(date +%Y-%m-%d)
+
+          # Get current publicVersions
+          CURRENT_PUBLIC=$(grep "^publicVersions=" "$FILE" | cut -d= -f2)
+
+          # Get current archivedVersions
+          CURRENT_ARCHIVED=$(grep "^archivedVersions=" "$FILE" | cut -d= -f2)
+
+          # Update archivedVersions: append current public versions
+          if [ -n "$CURRENT_ARCHIVED" ]; then
+            NEW_ARCHIVED="${CURRENT_ARCHIVED},${CURRENT_PUBLIC}"
+          else
+            NEW_ARCHIVED="${CURRENT_PUBLIC}"
+          fi
+
+          # Update the file
+          sed -i "s/^archivedVersions=.*/archivedVersions=${NEW_ARCHIVED}/" "$FILE"
+          sed -i "s/^publicVersions=.*/publicVersions=${VERSION}/" "$FILE"
+
+          # Find the line number of publicVersions and insert new version entry after it
+          LINE_NUM=$(grep -n "^publicVersions=" "$FILE" | cut -d: -f1)
+
+          # Create the new version entry and insert it
+          NEW_ENTRY="${VERSION}.description=${RELEASE_DESCRIPTION}
+          ${VERSION}.date=${DATE}
+          ${VERSION}.changelogUrl=https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${VERSION}
+          ${VERSION}.downloadUrl=https://www.npmjs.com/package/@sonar/scan/v/${VERSION}"
+
+          # Use awk to insert after the publicVersions line
+          awk -v line="$LINE_NUM" -v entry="$NEW_ENTRY" 'NR==line {print; print ""; print entry; next} 1' "$FILE" > tmp && mv tmp "$FILE"
+
+      - name: Create Pull Request
+        working-directory: update-center
+        env:
+          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).github_token }}
+        run: |
+          BRANCH="scannernpm-${RELEASE_TAG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add scannernpm.properties
+          git commit -m "Update SonarScanner for NPM to ${RELEASE_TAG}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "Update SonarScanner for NPM to ${RELEASE_TAG}" \
+            --body "Automated PR to update SonarScanner for NPM to version ${RELEASE_TAG}.
+
+          Created by [sonar-scanner-npm release workflow](https://github.com/SonarSource/sonar-scanner-npm/actions/runs/${{ github.run_id }})." \
+            --base master \
+            --reviewer SonarSource/quality-web-squad
