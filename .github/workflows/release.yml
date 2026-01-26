@@ -156,11 +156,13 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
-      - name: Fetch GitHub token
+      - name: Fetch secrets
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
-          secrets: development/github/token/SonarSource-sonar-scanner-npm-release-automation token | github_token;
+          secrets: |
+            development/github/token/SonarSource-sonar-scanner-npm-release-automation token | github_token;
+            development/kv/data/slack webhook | slack_webhook;
 
       - name: Checkout sonar-update-center-properties
         uses: actions/checkout@v6
@@ -208,6 +210,7 @@ jobs:
           awk -v line="$LINE_NUM" -v entry="$NEW_ENTRY" 'NR==line {print; print ""; print entry; next} 1' "$FILE" > tmp && mv tmp "$FILE"
 
       - name: Create Pull Request
+        id: create-pr
         working-directory: update-center
         env:
           GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).github_token }}
@@ -219,9 +222,27 @@ jobs:
           git add scannernpm.properties
           git commit -m "Update SonarScanner for NPM to ${RELEASE_TAG}"
           git push origin "$BRANCH"
-          gh pr create \
+          PR_URL=$(gh pr create \
             --title "Update SonarScanner for NPM to ${RELEASE_TAG}" \
             --body "Automated PR to update SonarScanner for NPM to version ${RELEASE_TAG}.
 
           Created by [sonar-scanner-npm release workflow](https://github.com/SonarSource/sonar-scanner-npm/actions/runs/${{ github.run_id }})." \
-            --base master
+            --base master)
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v2.1.0
+        env:
+          SLACK_WEBHOOK_URL: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        with:
+          payload: |
+            {
+              "channel": "squad-analysis-experience",
+              "attachments": [
+                {
+                  "color": "#36a64f",
+                  "text": ":package: *SonarScanner for NPM ${{ env.RELEASE_TAG }}* has been released!\n\n<https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${{ env.RELEASE_TAG }}|View Release> | <https://www.npmjs.com/package/@sonar/scan/v/${{ env.RELEASE_TAG }}|npm package>\n\n:memo: Please merge the Update Center PR: <${{ steps.create-pr.outputs.pr_url }}|${{ steps.create-pr.outputs.pr_url }}>"
+                }
+              ]
+            }
