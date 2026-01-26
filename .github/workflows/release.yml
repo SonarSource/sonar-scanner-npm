@@ -173,43 +173,18 @@ jobs:
           token: ${{ fromJSON(steps.secrets.outputs.vault).github_token }}
           path: update-center
 
+      - name: Checkout sonar-scanner-npm (for scripts)
+        uses: actions/checkout@v6
+        with:
+          path: sonar-scanner-npm
+
       - name: Update scannernpm.properties
         working-directory: update-center
-        env:
-          RELEASE_DESCRIPTION: ${{ needs.publish.outputs.description }}
         run: |
-          FILE="scannernpm.properties"
-          VERSION="${RELEASE_TAG}"
-          DATE=$(date +%Y-%m-%d)
-
-          # Get current publicVersions
-          CURRENT_PUBLIC=$(grep "^publicVersions=" "$FILE" | cut -d= -f2)
-
-          # Get current archivedVersions
-          CURRENT_ARCHIVED=$(grep "^archivedVersions=" "$FILE" | cut -d= -f2)
-
-          # Update archivedVersions: append current public versions
-          if [ -n "$CURRENT_ARCHIVED" ]; then
-            NEW_ARCHIVED="${CURRENT_ARCHIVED},${CURRENT_PUBLIC}"
-          else
-            NEW_ARCHIVED="${CURRENT_PUBLIC}"
-          fi
-
-          # Update the file
-          sed -i "s/^archivedVersions=.*/archivedVersions=${NEW_ARCHIVED}/" "$FILE"
-          sed -i "s/^publicVersions=.*/publicVersions=${VERSION}/" "$FILE"
-
-          # Find the line number of publicVersions and insert new version entry after it
-          LINE_NUM=$(grep -n "^publicVersions=" "$FILE" | cut -d: -f1)
-
-          # Create the new version entry and insert it
-          NEW_ENTRY="${VERSION}.description=${RELEASE_DESCRIPTION}
-          ${VERSION}.date=${DATE}
-          ${VERSION}.changelogUrl=https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${VERSION}
-          ${VERSION}.downloadUrl=https://www.npmjs.com/package/@sonar/scan/v/${VERSION}"
-
-          # Use awk to insert after the publicVersions line
-          awk -v line="$LINE_NUM" -v entry="$NEW_ENTRY" 'NR==line {print; print ""; print entry; next} 1' "$FILE" > tmp && mv tmp "$FILE"
+          bash ../sonar-scanner-npm/scripts/update-update-center.sh \
+            scannernpm.properties \
+            "${RELEASE_TAG}" \
+            "${{ needs.publish.outputs.description }}"
 
       - name: Create Pull Request
         id: create-pr
