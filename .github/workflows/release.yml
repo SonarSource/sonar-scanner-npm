@@ -23,9 +23,9 @@ on:
         type: boolean
         default: false
       slack_channel:
-        description: 'Slack channel ID for release notification'
+        description: 'Slack channel for release notification'
         type: string
-        default: 'C03DLUN6GR3'
+        default: 'ask-squad-web'
 
 jobs:
   publish:
@@ -257,7 +257,7 @@ jobs:
           errors: true
           payload: |
             {
-              "channel": "${{ inputs.slack_channel || 'C03DLUN6GR3' }}",
+              "channel": "${{ inputs.slack_channel || 'ask-squad-web' }}",
               "attachments": [
                 {
                   "color": "#36a64f",
