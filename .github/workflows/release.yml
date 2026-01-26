@@ -243,17 +243,17 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
-      - name: Fetch Slack webhook
+      - name: Fetch Slack token
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
-          secrets: development/kv/data/slack webhook | slack_webhook;
+          secrets: development/kv/data/slack token | slack_token;
 
       - name: Send Slack notification
         uses: slackapi/slack-github-action@v2.1.0
         with:
-          webhook: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook }}
-          webhook-type: incoming-webhook
+          method: chat.postMessage
+          token: ${{ fromJSON(steps.secrets.outputs.vault).slack_token }}
           payload: |
             {
               "channel": "${{ inputs.slack_channel || 'squad-web-private' }}",
