@@ -25,7 +25,7 @@ on:
       slack_channel:
         description: 'Slack channel for release notification'
         type: string
-        default: 'squad-analysis-experience'
+        default: 'squad-web-private'
 
 jobs:
   publish:
@@ -256,7 +256,7 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "channel": "${{ inputs.slack_channel || 'squad-analysis-experience' }}",
+              "channel": "${{ inputs.slack_channel || 'squad-web-private' }}",
               "attachments": [
                 {
                   "color": "#36a64f",
