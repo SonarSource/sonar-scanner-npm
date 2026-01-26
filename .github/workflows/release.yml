@@ -160,7 +160,7 @@ jobs:
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
-          secrets: development/github/token/SonarSource-sonar-scanner-npm-update-center token | github_token;
+          secrets: development/github/token/SonarSource-sonar-scanner-npm-release-automation token | github_token;
 
       - name: Checkout sonar-update-center-properties
         uses: actions/checkout@v6
