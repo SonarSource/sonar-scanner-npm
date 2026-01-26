@@ -22,6 +22,10 @@ on:
         description: 'Skip updating "latest" tag (use for older version patches)'
         type: boolean
         default: false
+      slack_channel:
+        description: 'Slack channel for release notification'
+        type: string
+        default: 'squad-analysis-experience'
 
 jobs:
   publish:
@@ -156,13 +160,11 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
-      - name: Fetch secrets
+      - name: Fetch GitHub token
         id: secrets
         uses: SonarSource/vault-action-wrapper@v3
         with:
-          secrets: |
-            development/github/token/SonarSource-sonar-scanner-npm-release-automation token | github_token;
-            development/kv/data/slack webhook | slack_webhook;
+          secrets: development/github/token/SonarSource-sonar-scanner-npm-release-automation token | github_token;
 
       - name: Checkout sonar-update-center-properties
         uses: actions/checkout@v6
@@ -230,19 +232,35 @@ jobs:
             --base master)
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
 
+    outputs:
+      pr_url: ${{ steps.create-pr.outputs.pr_url }}
+
+  notify:
+    needs: [publish, update-center]
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+    steps:
+      - name: Fetch Slack webhook
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: development/kv/data/slack webhook | slack_webhook;
+
       - name: Send Slack notification
         uses: slackapi/slack-github-action@v2.1.0
-        env:
-          SLACK_WEBHOOK_URL: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
         with:
+          webhook: ${{ fromJSON(steps.secrets.outputs.vault).slack_webhook }}
+          webhook-type: incoming-webhook
           payload: |
             {
-              "channel": "squad-analysis-experience",
+              "channel": "${{ inputs.slack_channel || 'squad-analysis-experience' }}",
               "attachments": [
                 {
                   "color": "#36a64f",
-                  "text": ":package: *SonarScanner for NPM ${{ env.RELEASE_TAG }}* has been released!\n\n<https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${{ env.RELEASE_TAG }}|View Release> | <https://www.npmjs.com/package/@sonar/scan/v/${{ env.RELEASE_TAG }}|npm package>\n\n:memo: Please merge the Update Center PR: <${{ steps.create-pr.outputs.pr_url }}|${{ steps.create-pr.outputs.pr_url }}>"
+                  "text": ":package: *SonarScanner for NPM ${{ env.RELEASE_TAG }}* has been released!\n\n<https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${{ env.RELEASE_TAG }}|View Release> | <https://www.npmjs.com/package/@sonar/scan/v/${{ env.RELEASE_TAG }}|npm package>\n\n:memo: Please merge the Update Center PR: <${{ needs.update-center.outputs.pr_url }}|Update Center PR>"
                 }
               ]
             }
