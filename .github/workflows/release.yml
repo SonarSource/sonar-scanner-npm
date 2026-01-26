@@ -224,5 +224,4 @@ jobs:
             --body "Automated PR to update SonarScanner for NPM to version ${RELEASE_TAG}.
 
           Created by [sonar-scanner-npm release workflow](https://github.com/SonarSource/sonar-scanner-npm/actions/runs/${{ github.run_id }})." \
-            --base master \
-            --reviewer SonarSource/quality-web-squad
+            --base master

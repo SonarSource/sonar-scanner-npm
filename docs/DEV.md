@@ -109,7 +109,6 @@ The [Sonar Update Center](https://xtranet-sonarsource.atlassian.net/wiki/spaces/
 
 - Adds the new version entry using the `Description:` from the release body
 - Moves the previous public version to `archivedVersions`
-- Requests review from `@SonarSource/quality-web-squad`
 
 #### Version Entry Format
 
