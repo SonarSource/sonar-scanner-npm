@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import type { IncomingMessage } from 'node:http';
 import * as https from 'node:https';
 import * as fs from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -103,7 +104,29 @@ function download(
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(zipFilePath);
     console.log(`Downloading ${url} and saving it into ${zipFilePath}`);
-    https.get(options, response => {
+
+    const handleResponse = (response: IncomingMessage) => {
+      // Handle redirects (3xx status codes)
+      if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400) {
+        const redirectUrl = response.headers.location;
+        if (redirectUrl) {
+          console.log(`Following redirect to ${redirectUrl}`);
+          https.get(redirectUrl, handleResponse).on('error', reject);
+          return;
+        }
+      }
+
+      if (response.statusCode !== 200) {
+        file.close();
+        fs.unlinkSync(zipFilePath);
+        reject(
+          new Error(
+            `Failed to download SonarQube: HTTP ${response.statusCode}. ` +
+              `Make sure ARTIFACTORY_ACCESS_TOKEN is set and valid.`,
+          ),
+        );
+        return;
+      }
       response.pipe(file);
       file.on('finish', () => {
         file.close();
@@ -117,7 +140,9 @@ function download(
         console.error('Error while downloading file', error);
         reject(error);
       });
-    });
+    };
+
+    https.get(options, handleResponse).on('error', reject);
   });
 }
 
