@@ -6,7 +6,7 @@
     "test": "tsx --test scanner.test.ts"
   },
   "dependencies": {
-    "axios": "1.13.2",
+    "axios": "1.13.3",
     "mkdirp": "3.0.1",
     "@sonar/scan": "file:../../build/sonar-scan-SNAPSHOT.tgz"
   },
