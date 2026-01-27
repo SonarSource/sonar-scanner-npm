@@ -11,6 +11,9 @@ on:
       release_tag:
         description: 'Release tag to test (e.g., 1.2.3)'
         required: true
+      release_description:
+        description: 'Release description for Update Center (e.g., "Support new feature")'
+        required: true
       prerelease:
         description: 'Mark as prerelease (publishes to npm "next" tag instead of "latest")'
         type: boolean
@@ -19,6 +22,10 @@ on:
         description: 'Skip updating "latest" tag (use for older version patches)'
         type: boolean
         default: false
+      slack_channel:
+        description: 'Slack channel for release notification'
+        type: string
+        default: 'ask-squad-web'
 
 jobs:
   publish:
@@ -33,6 +40,33 @@ jobs:
       ARTIFACTORY_REPOSITORY_NAME: 'sonarsource-npm-public-releases'
       DRY_RUN: ${{ inputs.dry_run || false }}
     steps:
+      - name: Validate release description
+        id: description
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+          INPUT_DESCRIPTION: ${{ inputs.release_description }}
+        run: |
+          # Use input description for manual trigger, otherwise extract from release body
+          if [ -n "$INPUT_DESCRIPTION" ]; then
+            DESCRIPTION="$INPUT_DESCRIPTION"
+          else
+            # Extract description from release body (line starting with "Description:")
+            DESCRIPTION=$(echo "$RELEASE_BODY" | grep -i "^Description:" | sed 's/^[Dd]escription:[[:space:]]*//')
+          fi
+
+          if [ -z "$DESCRIPTION" ]; then
+            echo "::error::Release body must contain a 'Description:' line for the Update Center entry."
+            echo "::error::Example format:"
+            echo "::error::  Description: Support new authentication method"
+            echo "::error::"
+            echo "::error::  ## What's Changed"
+            echo "::error::  * PR details..."
+            exit 1
+          fi
+
+          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+          echo "Extracted description: $DESCRIPTION"
+
       - name: Fetch the secrets
         if: ${{ !inputs.dry_run }}
         id: secrets
@@ -113,3 +147,96 @@ jobs:
           # Publish as sonarqube-scanner (legacy alias for backwards compatibility)
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
           npm publish --tag=${{ steps.npm-tag.outputs.tag }} --access=public
+
+    outputs:
+      description: ${{ steps.description.outputs.description }}
+
+  update-center:
+    needs: publish
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+    steps:
+      - name: Fetch GitHub token
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: development/github/token/SonarSource-sonar-scanner-npm-release-automation token | github_token;
+
+      - name: Checkout sonar-update-center-properties
+        uses: actions/checkout@v6
+        with:
+          repository: SonarSource/sonar-update-center-properties
+          token: ${{ fromJSON(steps.secrets.outputs.vault).github_token }}
+          path: update-center
+
+      - name: Checkout sonar-scanner-npm (for scripts)
+        uses: actions/checkout@v6
+        with:
+          path: sonar-scanner-npm
+
+      - name: Update scannernpm.properties
+        working-directory: update-center
+        run: |
+          bash ../sonar-scanner-npm/scripts/update-update-center.sh \
+            scannernpm.properties \
+            "${RELEASE_TAG}" \
+            "${{ needs.publish.outputs.description }}"
+
+      - name: Create Pull Request
+        id: create-pr
+        working-directory: update-center
+        env:
+          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).github_token }}
+        run: |
+          BRANCH="scannernpm-${RELEASE_TAG}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add scannernpm.properties
+          git commit -m "Update SonarScanner for NPM to ${RELEASE_TAG}"
+          git push origin "$BRANCH"
+          PR_URL=$(gh pr create \
+            --title "Update SonarScanner for NPM to ${RELEASE_TAG}" \
+            --body "Automated PR to update SonarScanner for NPM to version ${RELEASE_TAG}.
+
+          Created by [sonar-scanner-npm release workflow](https://github.com/SonarSource/sonar-scanner-npm/actions/runs/${{ github.run_id }})." \
+            --base master)
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+
+    outputs:
+      pr_url: ${{ steps.create-pr.outputs.pr_url }}
+
+  notify:
+    needs: [publish, update-center]
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+    steps:
+      - name: Fetch Slack token
+        id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: development/kv/data/slack token | slack_token;
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v2.1.0
+        with:
+          method: chat.postMessage
+          token: ${{ fromJSON(steps.secrets.outputs.vault).slack_token }}
+          errors: true
+          payload: |
+            {
+              "channel": "${{ inputs.slack_channel || 'ask-squad-web' }}",
+              "attachments": [
+                {
+                  "color": "#36a64f",
+                  "text": ":package: *SonarScanner for NPM ${{ env.RELEASE_TAG }}* has been released!\n\n<https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${{ env.RELEASE_TAG }}|View Release> | <https://www.npmjs.com/package/@sonar/scan/v/${{ env.RELEASE_TAG }}|npm package>\n\n:clipboard: *Next steps to complete the release:*\n1. Merge the Update Center PR: <${{ needs.update-center.outputs.pr_url }}|sonar-update-center-properties PR>\n2. Run the <https://github.com/SonarSource/sonar-update-center-properties/actions/workflows/deploy.yml|Deploy workflow> to publish the Update Center JSON\n3. Run the <https://github.com/SonarSource/sonarqube-documentation/actions/workflows/generate-release-notes.yml|Generate Release Notes workflow> and merge the resulting PR"
+                }
+              ]
+            }
