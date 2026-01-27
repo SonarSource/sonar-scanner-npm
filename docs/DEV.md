@@ -110,6 +110,23 @@ The [Sonar Update Center](https://xtranet-sonarsource.atlassian.net/wiki/spaces/
 - Adds the new version entry using the `Description:` from the release body
 - Moves the previous public version to `archivedVersions`
 
+#### Post-Release Steps
+
+After the release workflow completes, the following manual steps are required to fully publish the new version:
+
+1. **Merge the Update Center PR**
+   - Review and merge the PR created in [sonar-update-center-properties](https://github.com/SonarSource/sonar-update-center-properties)
+   - The PR link is included in the Slack notification
+
+2. **Deploy the Update Center**
+   - Run the [deploy workflow](https://github.com/SonarSource/sonar-update-center-properties/actions/workflows/deploy.yml) in sonar-update-center-properties
+   - This publishes the updated JSON to https://downloads.sonarsource.com/sonarqube/update/scannernpm.json
+
+3. **Update the Documentation**
+   - Run the [generate-release-notes workflow](https://github.com/SonarSource/sonarqube-documentation/actions/workflows/generate-release-notes.yml) in sonarqube-documentation
+   - This creates a PR to update the scanner versions (example: [sonarqube-documentation#94](https://github.com/SonarSource/sonarqube-documentation/pull/94))
+   - Merge the generated PR to publish the new version at https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/npm/installing
+
 #### Version Entry Format
 
 Each version entry in `scannernpm.properties` follows this format:
@@ -124,4 +141,5 @@ X.Y.Z.downloadUrl=https://www.npmjs.com/package/@sonar/scan/v/X.Y.Z
 #### Reference
 
 - Initial setup PR: [sonar-update-center-properties#742](https://github.com/SonarSource/sonar-update-center-properties/pull/742)
-- Published JSON: `https://downloads.sonarsource.com/sonarqube/update/scannernpm.json`
+- Published JSON: https://downloads.sonarsource.com/sonarqube/update/scannernpm.json
+- Documentation page: https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/npm/installing

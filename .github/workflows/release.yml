@@ -236,7 +236,7 @@ jobs:
               "attachments": [
                 {
                   "color": "#36a64f",
-                  "text": ":package: *SonarScanner for NPM ${{ env.RELEASE_TAG }}* has been released!\n\n<https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${{ env.RELEASE_TAG }}|View Release> | <https://www.npmjs.com/package/@sonar/scan/v/${{ env.RELEASE_TAG }}|npm package>\n\n:memo: Please merge the Update Center PR: <${{ needs.update-center.outputs.pr_url }}|Update Center PR>"
+                  "text": ":package: *SonarScanner for NPM ${{ env.RELEASE_TAG }}* has been released!\n\n<https://github.com/SonarSource/sonar-scanner-npm/releases/tag/${{ env.RELEASE_TAG }}|View Release> | <https://www.npmjs.com/package/@sonar/scan/v/${{ env.RELEASE_TAG }}|npm package>\n\n:clipboard: *Next steps to complete the release:*\n1. Merge the Update Center PR: <${{ needs.update-center.outputs.pr_url }}|sonar-update-center-properties PR>\n2. Run the <https://github.com/SonarSource/sonar-update-center-properties/actions/workflows/deploy.yml|Deploy workflow> to publish the Update Center JSON\n3. Run the <https://github.com/SonarSource/sonarqube-documentation/actions/workflows/generate-release-notes.yml|Generate Release Notes workflow> and merge the resulting PR"
                 }
               ]
             }
