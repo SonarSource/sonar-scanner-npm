@@ -11,7 +11,7 @@
     "@sonar/scan": "file:../../build/sonar-scan-SNAPSHOT.tgz"
   },
   "devDependencies": {
-    "@types/node": "24.10.14",
+    "@types/node": "24.11.0",
     "tsx": "4.21.0"
   }
 }
