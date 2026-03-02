@@ -24,7 +24,7 @@
     "proxy-from-env": "1.1.0",
     "semver": "7.7.4",
     "slugify": "1.6.6",
-    "tar-stream": "3.1.7"
+    "tar-stream": "3.1.8"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "1.0.2",
