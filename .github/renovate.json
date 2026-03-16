@@ -10,6 +10,7 @@
   "packageRules": [
     {
       "description": "Don't group updates",
+      "matchPackageNames": ["*"],
       "groupName": null
     },
     {
