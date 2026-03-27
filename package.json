@@ -45,7 +45,7 @@
     "prettier": "3.8.1",
     "pretty-quick": "4.2.2",
     "tsx": "4.21.0",
-    "typescript": "5.9.3"
+    "typescript": "6.0.2"
   },
   "scripts": {
     "build": "npm run license && tsc && pmg --entries=build/**/*.js --output=build/package.json",
