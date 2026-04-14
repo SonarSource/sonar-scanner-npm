@@ -9,9 +9,10 @@
   "ignorePaths": ["**/fixtures/**"],
   "packageRules": [
     {
-      "description": "Don't group updates",
-      "matchPackageNames": ["*"],
-      "groupName": null
+      "description": "Group npm and maven updates per source repository (monorepo), fallback to per dependency",
+      "matchManagers": ["npm", "maven"],
+      "groupName": "{{#if sourceRepo}}{{sourceRepo}} monorepo{{else}}{{depName}}{{/if}}",
+      "groupSlug": "{{#if sourceRepo}}{{sourceRepo}}{{else}}{{depName}}{{/if}}"
     },
     {
       "matchManagers": ["github-actions"],
