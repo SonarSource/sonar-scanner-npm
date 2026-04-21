@@ -38,7 +38,7 @@
     "eslint": "10.2.0",
     "eslint-plugin-sonarjs": "4.0.2",
     "husky": "9.1.7",
-    "knip": "6.4.0",
+    "knip": "6.4.1",
     "node-reporter-sonarqube": "1.0.3",
     "nyc": "18.0.0",
     "package-manifest-generator": "1.0.0-beta.4",
