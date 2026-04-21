@@ -20,7 +20,7 @@
     "commander": "14.0.3",
     "hpagent": "1.2.0",
     "node-forge": "1.4.0",
-    "properties-file": "5.0.3",
+    "properties-file": "5.0.4",
     "proxy-from-env": "2.1.0",
     "semver": "7.7.4",
     "slugify": "1.6.9",
