@@ -464,6 +464,37 @@ describe('getProperties', () => {
   });
 
   describe('should handle sonar-project.properties correctly', () => {
+    it('should resolve ${env.VAR} references in sonar-project.properties', () => {
+      projectHandler.reset('fake_project_with_env_vars_in_sonar_properties');
+      projectHandler.setEnvironmentVariables({
+        MY_SONAR_TOKEN: 'resolved-token',
+        MY_PROJECT_NAME: 'My Resolved Project',
+        SONAR_HOST_URL: 'http://localhost/sonarqube',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      assert.strictEqual(properties['sonar.token'], 'resolved-token');
+      assert.strictEqual(properties['sonar.projectName'], 'My Resolved Project');
+    });
+
+    it('should replace ${env.VAR} with empty string and warn when the variable is undefined', () => {
+      projectHandler.reset('fake_project_with_env_vars_in_sonar_properties');
+      projectHandler.setEnvironmentVariables({
+        MY_SONAR_TOKEN: 'some-token',
+        MY_PROJECT_NAME: 'Some Project',
+        SONAR_HOST_URL: 'http://localhost/sonarqube',
+      });
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      assert.strictEqual(properties['sonar.scanner.proxyHost'], '');
+      assertLoggedWithLevel(
+        'WARN',
+        'Property "sonar.scanner.proxyHost" references undefined environment variable "UNDEFINED_VAR"',
+      );
+    });
+
     it('should parse sonar-project.properties properly', () => {
       projectHandler.reset('fake_project_with_sonar_properties_file');
       projectHandler.setEnvironmentVariables({});
