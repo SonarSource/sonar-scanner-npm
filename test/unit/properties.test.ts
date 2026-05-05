@@ -467,32 +467,33 @@ describe('getProperties', () => {
     it('should resolve ${env.VAR} references in sonar-project.properties', () => {
       projectHandler.reset('fake_project_with_env_vars_in_sonar_properties');
       projectHandler.setEnvironmentVariables({
-        MY_SONAR_TOKEN: 'resolved-token',
+        MY_PROJECT_KEY: 'resolved-project-key',
         MY_PROJECT_NAME: 'My Resolved Project',
-        SONAR_HOST_URL: 'http://localhost/sonarqube',
+        MY_SOURCE_DIR: 'src',
+        MY_TEST_DIR: 'test',
+        UNDEFINED_VAR: 'proxy.example.org',
       });
 
       const properties = getProperties({}, projectHandler.getStartTime());
 
-      assert.strictEqual(properties['sonar.token'], 'resolved-token');
+      assert.strictEqual(properties['sonar.projectKey'], 'resolved-project-key');
       assert.strictEqual(properties['sonar.projectName'], 'My Resolved Project');
+      assert.strictEqual(properties['sonar.sources'], 'src,test');
     });
 
-    it('should replace ${env.VAR} with empty string and warn when the variable is undefined', () => {
+    it('should throw when a referenced environment variable is undefined', () => {
       projectHandler.reset('fake_project_with_env_vars_in_sonar_properties');
       projectHandler.setEnvironmentVariables({
-        MY_SONAR_TOKEN: 'some-token',
+        MY_PROJECT_KEY: 'resolved-project-key',
         MY_PROJECT_NAME: 'Some Project',
-        SONAR_HOST_URL: 'http://localhost/sonarqube',
+        MY_SOURCE_DIR: 'src',
+        MY_TEST_DIR: 'test',
       });
 
-      const properties = getProperties({}, projectHandler.getStartTime());
-
-      assert.strictEqual(properties['sonar.scanner.proxyHost'], '');
-      assertLoggedWithLevel(
-        'WARN',
-        'Property "sonar.scanner.proxyHost" references undefined environment variable "UNDEFINED_VAR"',
-      );
+      assert.throws(() => getProperties({}, projectHandler.getStartTime()), {
+        message:
+          'Property "sonar.scanner.proxyHost" references undefined environment variable "UNDEFINED_VAR"',
+      });
     });
 
     it('should parse sonar-project.properties properly', () => {

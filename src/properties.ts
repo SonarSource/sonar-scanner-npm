@@ -244,15 +244,18 @@ function getCommandLineProperties(cliArgs?: CliArgs): ScannerProperties {
  */
 function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
   const { fs } = getDeps();
+  const sonarPropertiesFile = path.join(projectBaseDir, SONAR_PROJECT_FILENAME);
   // Read sonar project properties file in project base dir
+  let properties: ScannerProperties;
   try {
-    const sonarPropertiesFile = path.join(projectBaseDir, SONAR_PROJECT_FILENAME);
     const data = fs.readFileSync(sonarPropertiesFile);
-    return resolveEnvVariables(getPropertiesFile(data) as ScannerProperties);
+    properties = getPropertiesFile(data) as ScannerProperties;
   } catch (error) {
     log(LogLevel.DEBUG, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error}`);
     return {};
   }
+
+  return resolveEnvVariables(properties);
 }
 
 function resolveEnvVariables(properties: ScannerProperties): ScannerProperties {
@@ -261,14 +264,10 @@ function resolveEnvVariables(properties: ScannerProperties): ScannerProperties {
   const pattern = /\$\{env\.([^}]+)\}/g;
   const resolved: ScannerProperties = {};
   for (const [key, value] of Object.entries(properties)) {
-    resolved[key] = (value as string).replace(pattern, (_, varName: string) => {
+    resolved[key] = value.replaceAll(pattern, (_, varName: string) => {
       const envValue = env[varName];
-      if (typeof envValue === 'undefined') {
-        log(
-          LogLevel.WARN,
-          `Property "${key}" references undefined environment variable "${varName}"`,
-        );
-        return '';
+      if (envValue === undefined) {
+        throw new Error(`Property "${key}" references undefined environment variable "${varName}"`);
       }
       return envValue;
     });
