@@ -22,7 +22,7 @@
     "node-forge": "1.4.0",
     "properties-file": "5.0.4",
     "proxy-from-env": "2.1.0",
-    "semver": "7.7.4",
+    "semver": "7.8.0",
     "slugify": "1.6.9",
     "tar-stream": "3.2.0"
   },
