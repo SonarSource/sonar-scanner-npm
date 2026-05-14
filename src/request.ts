@@ -108,7 +108,7 @@ export async function initializeAxios(properties: ScannerProperties) {
   const baseURL = properties[ScannerProperty.SonarScannerApiBaseUrl];
   const agents = await getHttpAgents(properties);
   const timeout =
-    Math.floor(parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) * 1000;
+    Math.floor(Number.parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) * 1000;
 
   if (!_axiosInstances) {
     _axiosInstances = {

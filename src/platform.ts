@@ -52,11 +52,12 @@ function isAlpineLinux(): boolean {
     const fileContent = fs.readFileSync('/etc/os-release');
     content = fileContent.toString();
   } catch (error) {
+    log(LogLevel.DEBUG, `Failed to read /etc/os-release, trying /usr/lib/os-release: ${error}`);
     try {
       const fileContent = fs.readFileSync('/usr/lib/os-release');
       content = fileContent.toString();
-    } catch (error) {
-      log(LogLevel.WARN, 'Failed to read /etc/os-release or /usr/lib/os-release');
+    } catch (secondError) {
+      log(LogLevel.WARN, `Failed to read /etc/os-release or /usr/lib/os-release: ${secondError}`);
     }
   }
   const match = /^ID=([^\r\n]*)/m.exec(content ?? '');
