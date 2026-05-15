@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     name: Build and Test
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -53,7 +53,7 @@ jobs:
   analyze:
     name: Analyze in ${{ matrix.platform_name }}
     needs: build
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     strategy:
       matrix:
         include:
@@ -95,7 +95,7 @@ jobs:
   iris:
     name: IRIS
     needs: analyze
-    runs-on: github-ubuntu-latest-s
+    runs-on: warp-custom-ubuntu-24-04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
