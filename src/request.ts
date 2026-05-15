@@ -110,20 +110,18 @@ export async function initializeAxios(properties: ScannerProperties) {
   const timeout =
     Math.floor(parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) * 1000;
 
-  if (!_axiosInstances) {
-    _axiosInstances = {
-      internal: axios.create({
-        baseURL,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        timeout,
-        ...agents,
-      }),
-      external: axios.create({
-        timeout,
-        ...agents,
-      }),
-    };
-  }
+  _axiosInstances ??= {
+    internal: axios.create({
+      baseURL,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      timeout,
+      ...agents,
+    }),
+    external: axios.create({
+      timeout,
+      ...agents,
+    }),
+  };
 }
 
 export function fetch<T = unknown>(config: AxiosRequestConfig) {

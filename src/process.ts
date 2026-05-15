@@ -40,7 +40,7 @@ export async function locateExecutableFromPath(executable: string): Promise<stri
     log(LogLevel.INFO, 'Local install of SonarScanner CLI found.');
     return null;
   } catch (error) {
-    log(LogLevel.INFO, `Local install of SonarScanner CLI (${executable}) not found`);
+    log(LogLevel.INFO, `Local install of SonarScanner CLI (${executable}) not found: ${error}`);
     return null;
   }
 }

@@ -120,7 +120,7 @@ function readPackageJson(projectBaseDir: string): PackageJson | null {
     const packageData = fs.readFileSync(packageFile).toString();
     return JSON.parse(packageData);
   } catch (error) {
-    log(LogLevel.INFO, `Unable to read "package.json" file`);
+    log(LogLevel.INFO, `Unable to read "package.json" file: ${error}`);
     return null;
   }
 }
@@ -283,19 +283,19 @@ function getScanOptionsProperties(scanOptions: ScanOptions): ScannerProperties {
     ...scanOptions.options,
   };
 
-  if (typeof scanOptions.serverUrl !== 'undefined') {
+  if (scanOptions.serverUrl !== undefined) {
     properties[ScannerProperty.SonarHostUrl] = scanOptions.serverUrl;
   }
 
-  if (typeof scanOptions.token !== 'undefined') {
+  if (scanOptions.token !== undefined) {
     properties[ScannerProperty.SonarToken] = scanOptions.token;
   }
 
-  if (typeof scanOptions.verbose !== 'undefined') {
+  if (scanOptions.verbose !== undefined) {
     properties[ScannerProperty.SonarVerbose] = scanOptions.verbose ? 'true' : 'false';
   }
 
-  if (typeof scanOptions.version !== 'undefined') {
+  if (scanOptions.version !== undefined) {
     properties[ScannerProperty.SonarScannerCliVersion] = scanOptions.version;
   }
 
