@@ -249,7 +249,7 @@ function getSonarFileProperties(projectBaseDir: string): ScannerProperties {
   let properties: ScannerProperties;
   try {
     const data = fs.readFileSync(sonarPropertiesFile);
-    properties = getPropertiesFile(data) as ScannerProperties;
+    properties = getPropertiesFile(data);
   } catch (error) {
     log(LogLevel.DEBUG, `Failed to read ${SONAR_PROJECT_FILENAME} file: ${error}`);
     return {};
@@ -283,19 +283,19 @@ function getScanOptionsProperties(scanOptions: ScanOptions): ScannerProperties {
     ...scanOptions.options,
   };
 
-  if (typeof scanOptions.serverUrl !== 'undefined') {
+  if (scanOptions.serverUrl !== undefined) {
     properties[ScannerProperty.SonarHostUrl] = scanOptions.serverUrl;
   }
 
-  if (typeof scanOptions.token !== 'undefined') {
+  if (scanOptions.token !== undefined) {
     properties[ScannerProperty.SonarToken] = scanOptions.token;
   }
 
-  if (typeof scanOptions.verbose !== 'undefined') {
+  if (scanOptions.verbose !== undefined) {
     properties[ScannerProperty.SonarVerbose] = scanOptions.verbose ? 'true' : 'false';
   }
 
-  if (typeof scanOptions.version !== 'undefined') {
+  if (scanOptions.version !== undefined) {
     properties[ScannerProperty.SonarScannerCliVersion] = scanOptions.version;
   }
 
@@ -309,7 +309,7 @@ function getEnvironmentProperties() {
   const { process } = getDeps();
   const { env } = process;
 
-  const jsonEnvVariables = ['SONAR_SCANNER_JSON_PARAMS', 'SONARQUBE_SCANNER_PARAMS'];
+  const jsonEnvVariables = new Set(['SONAR_SCANNER_JSON_PARAMS', 'SONARQUBE_SCANNER_PARAMS']);
 
   let properties: ScannerProperties = {};
 
@@ -330,13 +330,13 @@ function getEnvironmentProperties() {
     ...Object.fromEntries(
       Object.entries(env)
         .filter(([key]) => key.startsWith(NPM_CONFIG_ENV_VAR_PREFIX))
-        .filter(([key]) => !jsonEnvVariables.includes(key))
+        .filter(([key]) => !jsonEnvVariables.has(key))
         .map(([key, value]) => [npmConfigEnvNameToSonarPropertyNameMapper(key), value as string]),
     ),
     ...Object.fromEntries(
       Object.entries(env)
         .filter(([key]) => key.startsWith(ENV_VAR_PREFIX))
-        .filter(([key]) => !jsonEnvVariables.includes(key))
+        .filter(([key]) => !jsonEnvVariables.has(key))
         .map(([key, value]) => [envNameToSonarPropertyNameMapper(key), value as string]),
     ),
   };
