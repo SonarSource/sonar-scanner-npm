@@ -69,7 +69,7 @@ export const SCANNER_CLI_MIRROR =
   'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/';
 export const SCANNER_CLI_INSTALL_PATH = 'native-sonar-scanner';
 
-export const WINDOWS_WHERE_EXE_PATH = 'C:\\Windows\\System32\\where.exe';
+export const WINDOWS_WHERE_EXE_PATH = String.raw`C:\Windows\System32\where.exe`;
 
 export const SCANNER_DEPRECATED_PROPERTIES: ScannerProperty[][] = [
   [ScannerProperty.SonarWsTimeout, ScannerProperty.SonarScannerResponseTimeout],

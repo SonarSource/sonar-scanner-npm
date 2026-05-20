@@ -124,9 +124,9 @@ export async function runScannerCli(
   log(LogLevel.INFO, 'Starting analysis');
   // We filter out env properties that are passed to the scanner
   // otherwise, they would supersede the properties passed to the scanner through SONARQUBE_SCANNER_PARAMS
-  const filteredEnvKeys = ENV_TO_PROPERTY_NAME.map(env => env[0]);
+  const filteredEnvKeys = new Set(ENV_TO_PROPERTY_NAME.map(env => env[0]));
   const filteredEnv = Object.entries(process.env)
-    .filter(([key]) => !filteredEnvKeys.includes(key))
+    .filter(([key]) => !filteredEnvKeys.has(key))
     .filter(([key]) => !key.startsWith(ENV_VAR_PREFIX));
 
   const child = spawn(
