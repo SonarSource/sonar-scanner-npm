@@ -82,6 +82,7 @@ async function logOutput(message: string) {
       globalThis.process.stdout.write(parsed.stacktrace);
     }
   } catch (e) {
+    log(LogLevel.DEBUG, `Failed to parse scanner engine log entry: ${e}`);
     globalThis.process.stdout.write(message);
   }
 }

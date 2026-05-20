@@ -120,7 +120,7 @@ function readPackageJson(projectBaseDir: string): PackageJson | null {
     const packageData = fs.readFileSync(packageFile).toString();
     return JSON.parse(packageData);
   } catch (error) {
-    log(LogLevel.INFO, `Unable to read "package.json" file`);
+    log(LogLevel.INFO, `Unable to read "package.json" file: ${error}`);
     return null;
   }
 }
