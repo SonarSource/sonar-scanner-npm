@@ -318,7 +318,7 @@ function getEnvironmentProperties() {
     if (envName in env) {
       const envValue = env[envName];
 
-      if (typeof envValue !== 'undefined') {
+      if (envValue !== undefined) {
         properties[scannerProperty] = envValue;
       }
     }
@@ -458,8 +458,8 @@ function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {
 
 function hotfixDeprecatedProperties(properties: ScannerProperties): ScannerProperties {
   for (const [oldProp, newProp] of SCANNER_DEPRECATED_PROPERTIES) {
-    if (typeof properties[oldProp] !== 'undefined') {
-      if (typeof properties[newProp] === 'undefined') {
+    if (properties[oldProp] !== undefined) {
+      if (properties[newProp] === undefined) {
         log(
           LogLevel.WARN,
           `Property "${oldProp}" is deprecated and will be removed in a future version. Please use "${newProp}" instead.`,
@@ -482,7 +482,7 @@ function normalizeProperties(properties: ScannerProperties) {
   for (const [key, value] of Object.entries(properties)) {
     if (value === null) {
       properties[key] = '';
-    } else if (typeof value === 'undefined') {
+    } else if (value === undefined) {
       delete properties[key];
     } else {
       properties[key] = value.toString().trim();
