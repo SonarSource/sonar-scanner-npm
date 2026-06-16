@@ -25,7 +25,7 @@ on:
       slack_channel:
         description: 'Slack channel for release notification'
         type: string
-        default: 'ask-squad-web'
+        default: 'ops-ci-experience'
 
 jobs:
   publish:
@@ -230,7 +230,7 @@ jobs:
           errors: true
           payload: |
             {
-              "channel": "${{ inputs.slack_channel || 'ask-squad-web' }}",
+              "channel": "${{ inputs.slack_channel || 'ops-ci-experience' }}",
               "attachments": [
                 {
                   "color": "#36a64f",
