@@ -1,2 +1,2 @@
-# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
-* @sonarsource/code-quality-ci-experience-squad
+# https://xtranet-sonarsource.atlassian.net/wiki/spaces/RE/pages/2169339970/GitHub+Authentication+Authorization#CODEOWNERS
+.github/CODEOWNERS @sonarsource/code-quality-ci-experience-squad
