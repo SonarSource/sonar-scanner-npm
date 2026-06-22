@@ -75,7 +75,7 @@ jobs:
         with:
           secrets: development/artifactory/token/SonarSource-sonar-scanner-npm-promoter access_token  | promoter_access_token;
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -165,14 +165,14 @@ jobs:
           secrets: development/github/token/SonarSource-sonar-scanner-npm-release-automation token | github_token;
 
       - name: Checkout sonar-update-center-properties
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: SonarSource/sonar-update-center-properties
           token: ${{ fromJSON(steps.secrets.outputs.vault).github_token }}
           path: update-center
 
       - name: Checkout sonar-scanner-npm (for scripts)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: sonar-scanner-npm
 
