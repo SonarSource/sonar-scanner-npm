@@ -17,8 +17,12 @@
 
 import { EventEmitter } from 'node:events';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { mock } from 'node:test';
-import type { Dependencies } from '../../src/deps';
+import type { Dependencies } from '../../src/deps.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Creates a mock child process for testing spawned commands.

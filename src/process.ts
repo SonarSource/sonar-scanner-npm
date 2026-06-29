@@ -15,10 +15,10 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 
-import { WINDOWS_WHERE_EXE_PATH } from './constants';
-import { getDeps } from './deps';
-import { log, LogLevel } from './logging';
-import { isWindows } from './platform';
+import { WINDOWS_WHERE_EXE_PATH } from './constants.js';
+import { getDeps } from './deps.js';
+import { log, LogLevel } from './logging.js';
+import { isWindows } from './platform.js';
 
 /**
  * Verify that a given executable is accessible from the PATH.

@@ -15,8 +15,8 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 import { URL } from 'node:url';
-import { LogLevel, log } from './logging';
-import { type ScannerProperties, ScannerProperty } from './types';
+import { LogLevel, log } from './logging.js';
+import { type ScannerProperties, ScannerProperty } from './types.js';
 
 export function getProxyUrl(properties: ScannerProperties): URL | undefined {
   const proxyHost = properties[ScannerProperty.SonarScannerProxyHost];

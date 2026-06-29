@@ -17,14 +17,14 @@
 
 import { describe, it, beforeEach, afterEach, mock, type Mock } from 'node:test';
 import assert from 'node:assert';
-import { setDeps, resetDeps, type Dependencies } from '../../src/deps';
-import { fetchScannerEngine, runScannerEngine } from '../../src/scanner-engine';
+import { setDeps, resetDeps, type Dependencies } from '../../src/deps.js';
+import { fetchScannerEngine, runScannerEngine } from '../../src/scanner-engine.js';
 import {
   type AnalysisEngineResponseType,
   type ScannerProperties,
   ScannerProperty,
-} from '../../src/types';
-import { createMockChildProcess, createMockFsDeps, createMockHttpDeps } from './test-helpers';
+} from '../../src/types.js';
+import { createMockChildProcess, createMockFsDeps, createMockHttpDeps } from './test-helpers.js';
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();

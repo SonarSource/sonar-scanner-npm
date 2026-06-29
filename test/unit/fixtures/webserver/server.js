@@ -18,9 +18,13 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Starts a server that listens on the provided port and answers with a zipped executable (Windows, Unix compatible)
@@ -28,7 +32,7 @@ const path = require('path');
  * @param {*} port
  * @returns
  */
-module.exports.startServer = function (port = 0) {
+export function startServer(port = 0) {
   const pathToZip = path.join(__dirname, 'executable.zip');
   const zipFileContent = fs.readFileSync(pathToZip);
 
@@ -49,9 +53,9 @@ module.exports.startServer = function (port = 0) {
     res.writeHead(200);
     res.end(resBody);
   }
-};
+}
 
-module.exports.closeServerPromise = function (server) {
+export function closeServerPromise(server) {
   return new Promise((resolve, reject) => {
     server.close(() => {
       resolve();
@@ -60,4 +64,4 @@ module.exports.closeServerPromise = function (server) {
       reject(error);
     });
   });
-};
+}

@@ -14,18 +14,18 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants';
-import { getDeps } from './deps';
-import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file';
-import { LogLevel, log, logWithPrefix } from './logging';
-import { proxyUrlToJavaOptions } from './proxy';
+import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants.js';
+import { getDeps } from './deps.js';
+import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file.js';
+import { LogLevel, log, logWithPrefix } from './logging.js';
+import { proxyUrlToJavaOptions } from './proxy.js';
 import {
   type AnalysisEngineResponseType,
   type ScanOptions,
   type ScannerLogEntry,
   type ScannerProperties,
   ScannerProperty,
-} from './types';
+} from './types.js';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
   const { fs, http } = getDeps();

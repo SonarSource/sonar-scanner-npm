@@ -19,10 +19,10 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import tarStream from 'tar-stream';
 import zlib from 'node:zlib';
-import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants';
-import { getDeps } from './deps';
-import { LogLevel, log } from './logging';
-import { type CacheFileData, type ScannerProperties, ScannerProperty } from './types';
+import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants.js';
+import { getDeps } from './deps.js';
+import { LogLevel, log } from './logging.js';
+import { type CacheFileData, type ScannerProperties, ScannerProperty } from './types.js';
 
 export async function getCacheFileLocation(
   properties: ScannerProperties,

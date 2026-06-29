@@ -17,16 +17,16 @@
 import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
-import { SONAR_CACHE_DIR } from '../../src/constants';
-import { setDeps, resetDeps } from '../../src/deps';
+import { SONAR_CACHE_DIR } from '../../src/constants.js';
+import { setDeps, resetDeps } from '../../src/deps.js';
 import {
   extractArchive,
   getCacheDirectories,
   getCacheFileLocation,
   validateChecksum,
-} from '../../src/file';
-import { ScannerProperty } from '../../src/types';
-import { createMockFsDeps } from './test-helpers';
+} from '../../src/file.js';
+import { ScannerProperty } from '../../src/types.js';
+import { createMockFsDeps } from './test-helpers.js';
 
 // Mock console.log to suppress output
 mock.method(console, 'log', () => {});

@@ -17,11 +17,21 @@
 
 import { describe, it, beforeEach, afterEach, mock, type Mock } from 'node:test';
 import assert from 'node:assert';
-import { setDeps, resetDeps, type RunScannerCliFn, type RunScannerEngineFn } from '../../src/deps';
-import { scan } from '../../src/scan';
-import { ScannerProperty } from '../../src/types';
-import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging';
-import { createMockProcessDeps } from './test-helpers';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  setDeps,
+  resetDeps,
+  type RunScannerCliFn,
+  type RunScannerEngineFn,
+} from '../../src/deps.js';
+import { scan } from '../../src/scan.js';
+import { ScannerProperty } from '../../src/types.js';
+import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging.js';
+import { createMockProcessDeps } from './test-helpers.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();

@@ -19,16 +19,20 @@ import assert from 'node:assert';
 import axios, { type AxiosInstance } from 'axios';
 import fs from 'node:fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // hpagent exposes proxy at runtime but not in types
 interface ProxyAgentWithProxy {
   proxy: URL;
 }
-import path from 'node:path';
-import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants';
-import { LogLevel } from '../../src/logging';
-import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request';
-import { ScannerProperty } from '../../src/types';
+import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants.js';
+import { LogLevel } from '../../src/logging.js';
+import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request.js';
+import { ScannerProperty } from '../../src/types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();

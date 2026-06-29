@@ -14,16 +14,18 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-const path = require('node:path');
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { scan } from './build/src/index.js';
 
-// Regular users will call 'require('@sonar/scan')' - but not here: eat your own dog food! :-)
-const scanner = require('./build').scan;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // We just run an analysis and push it to SonarCloud
 // (No need to pass the server URL and the token, we're using the Travis
 //  Addon for SonarCloud which does this for you.)
 // ---------
-scanner({
+scan({
   options: {
     'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
     'sonar.organization': 'sonarsource',

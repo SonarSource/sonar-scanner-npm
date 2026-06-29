@@ -15,10 +15,14 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 
-// Import version from package.json (located at build/package.json, one level up from build/src/)
-import packageJson from '../package.json';
+import { createRequire } from 'node:module';
 
-const packageVersion = (packageJson as { version?: string }).version;
+// Load package.json from the current package root. JSON import attributes are not available
+// on all supported Node 22 versions, so use createRequire from ESM.
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version?: string };
+
+const packageVersion = packageJson.version;
 
 if (!packageVersion) {
   throw new Error('Version not found in package.json. This indicates a build error.');

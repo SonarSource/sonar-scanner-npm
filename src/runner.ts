@@ -15,9 +15,9 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 
-import { scan } from './scan';
+import { scan } from './scan.js';
 import { program } from 'commander';
-import { version } from './version';
+import { version } from './version.js';
 
 program
   .option('-D, --define <property=value...>', 'Define property')

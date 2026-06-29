@@ -23,12 +23,12 @@ import {
   SCANNER_CLI_INSTALL_PATH,
   SCANNER_CLI_MIRROR,
   SCANNER_CLI_VERSION,
-} from './constants';
-import { getDeps } from './deps';
-import { LogLevel, log } from './logging';
-import { isLinux, isMac, isWindows } from './platform';
-import { proxyUrlToJavaOptions } from './proxy';
-import { type ScanOptions, type ScannerProperties, ScannerProperty } from './types';
+} from './constants.js';
+import { getDeps } from './deps.js';
+import { LogLevel, log } from './logging.js';
+import { isLinux, isMac, isWindows } from './platform.js';
+import { proxyUrlToJavaOptions } from './proxy.js';
+import { type ScanOptions, type ScannerProperties, ScannerProperty } from './types.js';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
   if (isWindows()) {
