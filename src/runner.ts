@@ -28,6 +28,8 @@ function parseArgs() {
   return program.parse().opts();
 }
 
-scan({}, parseArgs()).catch(() => {
+try {
+  await scan({}, parseArgs());
+} catch {
   process.exitCode = 1;
-});
+}

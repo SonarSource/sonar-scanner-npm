@@ -31,8 +31,7 @@ import { getHostProperties, getProperties } from '../../src/properties.js';
 import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types.js';
 import { createMockProcessDeps } from './test-helpers.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 // Environment variables that need to be set on global process.env for proxy-from-env library
 // Note: On Windows, env vars are case-insensitive, so HTTP_PROXY and http_proxy are the same
@@ -44,7 +43,7 @@ let modifiedEnvVars: string[] = [];
 
 class FakeProjectMock {
   static getPathForProject(projectName: string) {
-    return path.join(__dirname, 'fixtures', projectName);
+    return path.join(currentDir, 'fixtures', projectName);
   }
 
   private projectPath: string = '';

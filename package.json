@@ -48,7 +48,7 @@
   },
   "scripts": {
     "build": "npm run license && tsc && pmg --entries=build/**/*.js --output=build/package.json",
-    "test": "c8 --reporter=lcov --reporter=text-summary --reports-dir=coverage npm run test:run",
+    "test": "c8 npm run test:run",
     "test:run": "tsx --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=node-reporter-sonarqube --test-reporter-destination=test-report.xml test/unit/*.test.ts",
     "test-integration": "cd test/integration && npm install && npm test",
     "format": "prettier --write .",

@@ -31,8 +31,7 @@ import { LogLevel } from '../../src/logging.js';
 import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request.js';
 import { ScannerProperty } from '../../src/types.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();
@@ -82,9 +81,9 @@ describe('request', () => {
 
     describe('with tls options', () => {
       it('should initialize axios with password-protected truststore', async () => {
-        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
+        const truststorePath = path.join(currentDir, 'fixtures', 'ssl', 'truststore.p12');
         const truststorePass = 'password';
-        const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
+        const certificatePath = path.join(currentDir, 'fixtures', 'ssl', 'ca.pem');
         const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
 
         const { httpsAgent } = await getHttpAgents({
@@ -99,7 +98,7 @@ describe('request', () => {
       });
 
       it("should not fail if truststore can't be parsed", async () => {
-        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-invalid.p12');
+        const truststorePath = path.join(currentDir, 'fixtures', 'ssl', 'truststore-invalid.p12');
         const truststorePass = 'password';
 
         const { proxy, httpsAgent } = await getHttpAgents({
@@ -122,7 +121,7 @@ describe('request', () => {
       });
 
       it('should initialize axios with password-protected empty truststore', async () => {
-        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-empty.p12');
+        const truststorePath = path.join(currentDir, 'fixtures', 'ssl', 'truststore-empty.p12');
         const truststorePass = 'password';
 
         const { proxy, httpsAgent } = await getHttpAgents({
@@ -137,7 +136,7 @@ describe('request', () => {
       });
 
       it('should initialize axios with password-protected keystore', async () => {
-        const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
+        const keystorePath = path.join(currentDir, 'fixtures', 'ssl', 'keystore.p12');
         const keystorePass = 'password';
 
         const { proxy, httpsAgent } = await getHttpAgents({
@@ -153,11 +152,11 @@ describe('request', () => {
     });
 
     it('should support combining proxy, truststore and keystore', async () => {
-      const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
+      const truststorePath = path.join(currentDir, 'fixtures', 'ssl', 'truststore.p12');
       const truststorePass = 'password';
-      const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
+      const certificatePath = path.join(currentDir, 'fixtures', 'ssl', 'ca.pem');
       const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
-      const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
+      const keystorePath = path.join(currentDir, 'fixtures', 'ssl', 'keystore.p12');
       const keystorePass = 'password';
 
       const { httpsAgent, proxy } = await getHttpAgents({

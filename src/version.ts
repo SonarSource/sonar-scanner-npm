@@ -15,12 +15,7 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 
-import { createRequire } from 'node:module';
-
-// Load package.json from the current package root. JSON import attributes are not available
-// on all supported Node 22 versions, so use createRequire from ESM.
-const require = createRequire(import.meta.url);
-const packageJson = require('../package.json') as { version?: string };
+import packageJson from '../package.json' with { type: 'json' };
 
 const packageVersion = packageJson.version;
 

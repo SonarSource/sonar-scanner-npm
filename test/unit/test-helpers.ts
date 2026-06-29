@@ -21,8 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { mock } from 'node:test';
 import type { Dependencies } from '../../src/deps.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Creates a mock child process for testing spawned commands.
@@ -55,7 +54,7 @@ export function createMockChildProcess(options?: { exitCode?: number; autoExit?:
  * Returns a path relative to the fixtures directory.
  */
 export function fixturePath(fixtureName: string): string {
-  return path.join(__dirname, 'fixtures', fixtureName);
+  return path.join(currentDir, 'fixtures', fixtureName);
 }
 
 /**
