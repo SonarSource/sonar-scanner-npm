@@ -2,6 +2,9 @@
 
 ## Building
 
+Use Node.js 22.12.0 or later. If you use `mise`, run `mise install` from the repository
+root to install the version configured in `mise.toml`.
+
 ```bash
 npm install
 npm run build
@@ -32,6 +35,9 @@ npx tsx --test test/unit/properties.test.ts
 npm run build
 npm run test-integration
 ```
+
+Unit test coverage is collected with `c8`. The coverage configuration is in `.c8rc.json`;
+it limits reports to `src/**/*.ts` and includes untouched source files.
 
 ## Releasing
 
