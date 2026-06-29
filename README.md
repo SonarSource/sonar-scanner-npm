@@ -9,7 +9,7 @@ This module is analyzed on SonarQube Cloud.
 [![Build](https://github.com/SonarSource/sonar-scanner-npm/actions/workflows/build.yml/badge.svg)](https://github.com/SonarSource/sonar-scanner-npm/actions/workflows/build.yml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=alert_status)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=sqale_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=reliability_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Security](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=security_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Releases](https://img.shields.io/github/release/SonarSource/sonar-scanner-npm.svg)](https://github.com/SonarSource/sonar-scanner-npm/releases) [![npm version](https://badge.fury.io/js/@sonar%2Fscan.svg)](https://badge.fury.io/js/@sonar%2Fscan)
 
 This is the documentation for v5. If you are using v4, refer to
-[the v4 documentation](https://github.com/SonarSource/sonar-scanner-npm/tree/4.3.6). If
+[the v4 documentation](https://github.com/SonarSource/sonar-scanner-npm/tree/4.3.8). If
 you are using v3, refer to
 [the v3 documentation](https://github.com/SonarSource/sonar-scanner-npm/tree/3.5.0).
 
@@ -18,7 +18,7 @@ you are using v3, refer to
 _Prerequisite: Node v22.12.0+ (for v5 and above)_
 
 _Prerequisite: Node v18+ (for
-[v4](https://github.com/SonarSource/sonar-scanner-npm/tree/4.3.6))_
+[v4](https://github.com/SonarSource/sonar-scanner-npm/tree/4.3.8))_
 
 _Prerequisite: Node v16+ (for
 [v3](https://github.com/SonarSource/sonar-scanner-npm/tree/3.5.0), otherwise use
