@@ -17,7 +17,6 @@
 import { describe, it, afterEach, mock, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
   REGION_US,
@@ -31,8 +30,6 @@ import { getHostProperties, getProperties } from '../../src/properties.js';
 import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types.js';
 import { createMockProcessDeps } from './test-helpers.js';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-
 // Environment variables that need to be set on global process.env for proxy-from-env library
 // Note: On Windows, env vars are case-insensitive, so HTTP_PROXY and http_proxy are the same
 const PROXY_ENV_VARS = ['HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY'];
@@ -43,7 +40,7 @@ let modifiedEnvVars: string[] = [];
 
 class FakeProjectMock {
   static getPathForProject(projectName: string) {
-    return path.join(currentDir, 'fixtures', projectName);
+    return path.join(import.meta.dirname, 'fixtures', projectName);
   }
 
   private projectPath: string = '';

@@ -15,10 +15,7 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { scan } from './build/src/index.js';
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 // We just run an analysis and push it to SonarCloud
 // (No need to pass the server URL and the token, we're using the Travis
@@ -33,8 +30,8 @@ scan({
     'sonar.sources': 'src',
     'sonar.tests': 'test',
     'sonar.host.url': process.env.SONAR_HOST_URL,
-    'sonar.javascript.lcov.reportPaths': path.join(currentDir, 'coverage', 'lcov.info'),
-    'sonar.testExecutionReportPaths': path.join(currentDir, 'test-report.xml'),
+    'sonar.javascript.lcov.reportPaths': path.join(import.meta.dirname, 'coverage', 'lcov.info'),
+    'sonar.testExecutionReportPaths': path.join(import.meta.dirname, 'test-report.xml'),
     'sonar.verbose': 'true',
   },
 }).catch(err => {

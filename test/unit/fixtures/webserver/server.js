@@ -21,9 +21,6 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Starts a server that listens on the provided port and answers with a zipped executable (Windows, Unix compatible)
@@ -32,7 +29,7 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
  * @returns
  */
 export function startServer(port = 0) {
-  const pathToZip = path.join(currentDir, 'executable.zip');
+  const pathToZip = path.join(import.meta.dirname, 'executable.zip');
   const zipFileContent = fs.readFileSync(pathToZip);
 
   return new Promise((accept, reject) => {

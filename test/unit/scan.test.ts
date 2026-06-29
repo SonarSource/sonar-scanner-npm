@@ -17,8 +17,6 @@
 
 import { describe, it, beforeEach, afterEach, mock, type Mock } from 'node:test';
 import assert from 'node:assert';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   setDeps,
   resetDeps,
@@ -29,8 +27,6 @@ import { scan } from '../../src/scan.js';
 import { ScannerProperty } from '../../src/types.js';
 import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging.js';
 import { createMockProcessDeps } from './test-helpers.js';
-
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();
@@ -49,7 +45,7 @@ const mockLocateExecutableFromPath = mock.fn<() => Promise<string | null>>(() =>
 
 function setupScanDeps(): void {
   setDeps({
-    process: createMockProcessDeps({ cwd: () => currentDir }),
+    process: createMockProcessDeps({ cwd: () => import.meta.dirname }),
     scan: {
       serverSupportsJREProvisioning: mockServerSupportsJREProvisioning,
       fetchJRE: mockFetchJRE,
