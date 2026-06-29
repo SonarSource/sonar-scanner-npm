@@ -497,10 +497,7 @@ function normalizeProperties(properties: ScannerProperties) {
 
 function getDefaultTruststoreProperties(properties: ScannerProperties): ScannerProperties {
   const { fs } = getDeps();
-  const hasTruststorePath = Object.prototype.hasOwnProperty.call(
-    properties,
-    ScannerProperty.SonarScannerTruststorePath,
-  );
+  const hasTruststorePath = Object.hasOwn(properties, ScannerProperty.SonarScannerTruststorePath);
 
   if (hasTruststorePath) {
     return {};
@@ -521,12 +518,7 @@ function getDefaultTruststoreProperties(properties: ScannerProperties): ScannerP
     [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
   };
 
-  if (
-    !Object.prototype.hasOwnProperty.call(
-      properties,
-      ScannerProperty.SonarScannerTruststorePassword,
-    )
-  ) {
+  if (!Object.hasOwn(properties, ScannerProperty.SonarScannerTruststorePassword)) {
     truststoreProperties[ScannerProperty.SonarScannerTruststorePassword] =
       SONAR_SCANNER_TRUSTSTORE_DEFAULT_PASSWORD;
   }
