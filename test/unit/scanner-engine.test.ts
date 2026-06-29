@@ -17,6 +17,7 @@
 
 import { describe, it, beforeEach, afterEach, mock, type Mock } from 'node:test';
 import assert from 'node:assert';
+import path from 'node:path';
 import { setDeps, resetDeps, type Dependencies } from '../../src/deps';
 import { fetchScannerEngine, runScannerEngine } from '../../src/scanner-engine';
 import {
@@ -54,6 +55,95 @@ afterEach(() => {
 
 describe('scanner-engine', () => {
   describe('fetchScannerEngine', () => {
+    it('should use the configured local scanner engine', async () => {
+      const scannerEngineJarPath = 'scanner-engine.jar';
+      const mockDownload = mock.fn(() => Promise.resolve());
+      const mockFetch = mock.fn(() => Promise.resolve({ data: SCANNER_ENGINE_RESPONSE }));
+      const mockStatSync = mock.fn(() => ({ isFile: () => true }));
+      const properties = {
+        ...MOCKED_PROPERTIES,
+        [ScannerProperty.SonarScannerEngineJarPath]: scannerEngineJarPath,
+        [ScannerProperty.SonarScannerWasEngineCacheHit]: 'false',
+      };
+
+      setDeps({
+        fs: createMockFsDeps({
+          statSync: mockStatSync as any,
+        }),
+        http: createMockHttpDeps({
+          fetch: mockFetch as any,
+          download: mockDownload,
+        }),
+      });
+
+      const result = await fetchScannerEngine(properties);
+
+      assert.strictEqual(result, path.resolve(scannerEngineJarPath));
+      assert.strictEqual(mockStatSync.mock.callCount(), 1);
+      assert.strictEqual(
+        mockStatSync.mock.calls[0].arguments[0],
+        path.resolve(scannerEngineJarPath),
+      );
+      assert.strictEqual(mockFetch.mock.callCount(), 0);
+      assert.strictEqual(mockDownload.mock.callCount(), 0);
+      assert.strictEqual(properties[ScannerProperty.SonarScannerWasEngineCacheHit], undefined);
+    });
+
+    it('should fail when the configured local scanner engine does not exist', async () => {
+      const mockDownload = mock.fn(() => Promise.resolve());
+      const mockFetch = mock.fn(() => Promise.resolve({ data: SCANNER_ENGINE_RESPONSE }));
+
+      setDeps({
+        fs: createMockFsDeps({
+          statSync: mock.fn(() => ({ isFile: () => false })) as any,
+        }),
+        http: createMockHttpDeps({
+          fetch: mockFetch as any,
+          download: mockDownload,
+        }),
+      });
+
+      await assert.rejects(
+        fetchScannerEngine({
+          ...MOCKED_PROPERTIES,
+          [ScannerProperty.SonarScannerEngineJarPath]: 'missing-engine.jar',
+        }),
+        /Scanner Engine jar path 'missing-engine.jar' does not exist. Please check property 'sonar.scanner.engineJarPath'./,
+      );
+
+      assert.strictEqual(mockFetch.mock.callCount(), 0);
+      assert.strictEqual(mockDownload.mock.callCount(), 0);
+    });
+
+    it('should include the stat error when the configured local scanner engine cannot be accessed', async () => {
+      const mockDownload = mock.fn(() => Promise.resolve());
+      const mockFetch = mock.fn(() => Promise.resolve({ data: SCANNER_ENGINE_RESPONSE }));
+      const statError = Object.assign(new Error('permission denied'), { code: 'EACCES' });
+
+      setDeps({
+        fs: createMockFsDeps({
+          statSync: mock.fn(() => {
+            throw statError;
+          }) as any,
+        }),
+        http: createMockHttpDeps({
+          fetch: mockFetch as any,
+          download: mockDownload,
+        }),
+      });
+
+      await assert.rejects(
+        fetchScannerEngine({
+          ...MOCKED_PROPERTIES,
+          [ScannerProperty.SonarScannerEngineJarPath]: 'restricted-engine.jar',
+        }),
+        /Failed to access Scanner Engine jar path 'restricted-engine.jar': permission denied. Please check property 'sonar.scanner.engineJarPath'./,
+      );
+
+      assert.strictEqual(mockFetch.mock.callCount(), 0);
+      assert.strictEqual(mockDownload.mock.callCount(), 0);
+    });
+
     it('should fetch the latest version of the scanner engine', async () => {
       const mockDownload = mock.fn(() => Promise.resolve());
       const mockRemove = mock.fn(() => Promise.resolve());
