@@ -23,6 +23,7 @@ import {
   type RunScannerCliFn,
   type RunScannerEngineFn,
 } from '../../src/deps.js';
+import scanWithCallback, { customScanner } from '../../src/index.js';
 import { scan } from '../../src/scan.js';
 import { ScannerProperty } from '../../src/types.js';
 import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging.js';
@@ -72,6 +73,7 @@ beforeEach(() => {
   mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
   mockFetchJRE.mock.mockImplementation(() => Promise.resolve('/some-provisioned-jre'));
   mockDownloadScannerCli.mock.mockImplementation(() => Promise.resolve('/path/to/scanner-cli'));
+  mockRunScannerCli.mock.mockImplementation(() => Promise.resolve());
   mockLocateExecutableFromPath.mock.mockImplementation(() => Promise.resolve('/usr/bin/java'));
 
   // Setup mocked dependencies
@@ -269,5 +271,42 @@ describe('scan', () => {
       assert.strictEqual(mockRunScannerCli.mock.callCount(), 0);
       assertLogged(/Java not found in PATH/);
     });
+  });
+});
+
+describe('index', () => {
+  it('should return the scan promise and force local scanner usage for custom scanner', async () => {
+    const scanPromise = customScanner({ serverUrl: 'http://localhost:9000' });
+
+    assert.ok(scanPromise instanceof Promise);
+    await scanPromise;
+
+    assert.strictEqual(mockDownloadScannerCli.mock.callCount(), 0);
+    assert.strictEqual(mockLocateExecutableFromPath.mock.callCount(), 1);
+    assert.strictEqual(mockRunScannerCli.mock.callCount(), 1);
+    assert.strictEqual(
+      (mockRunScannerCli as Mock<RunScannerCliFn>).mock.calls[0].arguments[0].localScannerCli,
+      true,
+    );
+  });
+
+  it('should call the callback without an error after a successful scan', async () => {
+    const callback = mock.fn();
+
+    await scanWithCallback({ serverUrl: 'http://localhost:9000' }, callback);
+
+    assert.strictEqual(callback.mock.callCount(), 1);
+    assert.deepStrictEqual(callback.mock.calls[0].arguments, []);
+  });
+
+  it('should pass scan errors to the callback', async () => {
+    const error = new Error('scan failed');
+    const callback = mock.fn();
+    mockRunScannerCli.mock.mockImplementation(() => Promise.reject(error));
+
+    await scanWithCallback({ serverUrl: 'http://localhost:9000' }, callback);
+
+    assert.strictEqual(callback.mock.callCount(), 1);
+    assert.deepStrictEqual(callback.mock.calls[0].arguments, [error]);
   });
 });

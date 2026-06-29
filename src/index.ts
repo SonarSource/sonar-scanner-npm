@@ -26,14 +26,13 @@ export function customScanner(scanOptions: ScanOptions) {
   });
 }
 
-function scanWithCallback(scanOptions: ScanOptions, callback: (error?: unknown) => void) {
-  return scan(scanOptions)
-    .then(() => {
-      callback();
-    })
-    .catch(error => {
-      callback(error);
-    });
+async function scanWithCallback(scanOptions: ScanOptions, callback: (error?: unknown) => void) {
+  try {
+    await scan(scanOptions);
+    callback();
+  } catch (error) {
+    callback(error);
+  }
 }
 
 export default scanWithCallback;
