@@ -32,7 +32,10 @@ import {
   SONARCLOUD_URL_REGEX,
   SONARCLOUD_US_URL_REGEX,
   SONAR_DIR_DEFAULT,
+  SONAR_SCANNER_TRUSTSTORE_DEFAULT_PASSWORD,
+  SONAR_SSL_DIR,
   SONAR_PROJECT_FILENAME,
+  SONAR_TRUSTSTORE_FILENAME,
   SONARCLOUD_URL_US,
   SONARCLOUD_API_BASE_URL_US,
 } from './constants';
@@ -492,6 +495,45 @@ function normalizeProperties(properties: ScannerProperties) {
   return properties;
 }
 
+function getDefaultTruststoreProperties(properties: ScannerProperties): ScannerProperties {
+  const { fs } = getDeps();
+  const hasTruststorePath = Object.prototype.hasOwnProperty.call(
+    properties,
+    ScannerProperty.SonarScannerTruststorePath,
+  );
+
+  if (hasTruststorePath) {
+    return {};
+  }
+
+  const sonarUserHome = properties[ScannerProperty.SonarUserHome]?.toString().trim();
+  if (!sonarUserHome) {
+    return {};
+  }
+
+  const truststorePath = path.join(sonarUserHome, SONAR_SSL_DIR, SONAR_TRUSTSTORE_FILENAME);
+
+  if (!fs.existsSync(truststorePath)) {
+    return {};
+  }
+
+  const truststoreProperties: ScannerProperties = {
+    [ScannerProperty.SonarScannerTruststorePath]: truststorePath,
+  };
+
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      properties,
+      ScannerProperty.SonarScannerTruststorePassword,
+    )
+  ) {
+    truststoreProperties[ScannerProperty.SonarScannerTruststorePassword] =
+      SONAR_SCANNER_TRUSTSTORE_DEFAULT_PASSWORD;
+  }
+
+  return truststoreProperties;
+}
+
 export function getProperties(
   scanOptions: ScanOptions,
   startTimestampMs: number,
@@ -534,6 +576,7 @@ export function getProperties(
 
   properties = hotfixDeprecatedProperties({
     ...properties,
+    ...getDefaultTruststoreProperties(properties),
     // Can't be overridden:
     ...getHostProperties(properties), // Hotfix host properties with custom SonarCloud URL
     ...getBootstrapperProperties(startTimestampMs),
