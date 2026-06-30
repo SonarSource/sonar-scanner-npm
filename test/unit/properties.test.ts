@@ -24,8 +24,11 @@ import {
   SCANNER_BOOTSTRAPPER_NAME,
   SONARCLOUD_API_BASE_URL,
   SONARCLOUD_URL,
+  SONAR_SCANNER_TRUSTSTORE_DEFAULT_PASSWORD,
+  SONAR_SSL_DIR,
+  SONAR_TRUSTSTORE_FILENAME,
 } from '../../src/constants';
-import { setDeps, resetDeps } from '../../src/deps';
+import { getDeps, setDeps, resetDeps } from '../../src/deps';
 import { getHostProperties, getProperties } from '../../src/properties';
 import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types';
 import { createMockProcessDeps } from './test-helpers';
@@ -173,6 +176,19 @@ function assertProperties(actual: ScannerProperties, expected: ScannerProperties
   // Compare the rest
   const { 'sonar.userHome': _actualUserHome, ...actualRest } = actual;
   assert.deepStrictEqual(actualRest, expected);
+}
+
+function mockExistingDefaultTruststore(truststorePath: string): void {
+  const fsDeps = getDeps().fs;
+  const processDeps = getDeps().process;
+  const realExistsSync = fsDeps.existsSync;
+  setDeps({
+    process: processDeps,
+    fs: {
+      ...fsDeps,
+      existsSync: mock.fn(filePath => filePath === truststorePath || realExistsSync(filePath)),
+    },
+  });
 }
 
 describe('getProperties', () => {
@@ -791,6 +807,101 @@ describe('getProperties', () => {
       const properties = getProperties({}, projectHandler.getStartTime());
 
       assert.strictEqual(properties['sonar.scanner.mirror'], 'https://mirror.com/');
+    });
+  });
+
+  describe('should handle the default truststore', () => {
+    it('should use the truststore from the default sonar user home location when it exists', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_USER_HOME: '/tmp/.sonar',
+      });
+      const truststorePath = path.join('/tmp/.sonar', SONAR_SSL_DIR, SONAR_TRUSTSTORE_FILENAME);
+      mockExistingDefaultTruststore(truststorePath);
+
+      const properties = getProperties({}, projectHandler.getStartTime());
+
+      assertProperties(properties, {
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
+        'sonar.scanner.internal.isSonarCloud': 'true',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.userHome': '/tmp/.sonar',
+        'sonar.scanner.truststorePath': truststorePath,
+        'sonar.scanner.truststorePassword': SONAR_SCANNER_TRUSTSTORE_DEFAULT_PASSWORD,
+      });
+    });
+
+    it('should not use the default truststore location when a truststore path is configured', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_USER_HOME: '/tmp/.sonar',
+      });
+      const defaultTruststorePath = path.join(
+        '/tmp/.sonar',
+        SONAR_SSL_DIR,
+        SONAR_TRUSTSTORE_FILENAME,
+      );
+      const configuredTruststorePath = '/tmp/custom-truststore.p12';
+      mockExistingDefaultTruststore(defaultTruststorePath);
+
+      const properties = getProperties(
+        {
+          options: {
+            [ScannerProperty.SonarScannerTruststorePath]: configuredTruststorePath,
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      assertProperties(properties, {
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
+        'sonar.scanner.internal.isSonarCloud': 'true',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.userHome': '/tmp/.sonar',
+        'sonar.scanner.truststorePath': configuredTruststorePath,
+      });
+    });
+
+    it('should not override the configured truststore password for the default truststore', () => {
+      projectHandler.reset('fake_project_with_sonar_properties_file');
+      projectHandler.setEnvironmentVariables({
+        SONAR_USER_HOME: '/tmp/.sonar',
+      });
+      const truststorePath = path.join('/tmp/.sonar', SONAR_SSL_DIR, SONAR_TRUSTSTORE_FILENAME);
+      mockExistingDefaultTruststore(truststorePath);
+
+      const properties = getProperties(
+        {
+          options: {
+            [ScannerProperty.SonarScannerTruststorePassword]: 'sonar',
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      assertProperties(properties, {
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': SONARCLOUD_URL,
+        'sonar.scanner.apiBaseUrl': SONARCLOUD_API_BASE_URL,
+        'sonar.scanner.internal.isSonarCloud': 'true',
+        'sonar.projectKey': 'foo',
+        'sonar.projectName': 'Foo',
+        'sonar.projectVersion': '1.0-SNAPSHOT',
+        'sonar.sources': 'the-sources',
+        'sonar.userHome': '/tmp/.sonar',
+        'sonar.scanner.truststorePath': truststorePath,
+        'sonar.scanner.truststorePassword': 'sonar',
+      });
     });
   });
 

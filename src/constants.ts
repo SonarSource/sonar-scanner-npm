@@ -36,6 +36,12 @@ export const SONAR_DIR_DEFAULT = '.sonar';
 
 export const SONAR_CACHE_DIR = 'cache';
 
+export const SONAR_SSL_DIR = 'ssl';
+
+export const SONAR_TRUSTSTORE_FILENAME = 'truststore.p12';
+
+export const SONAR_SCANNER_TRUSTSTORE_DEFAULT_PASSWORD = 'changeit';
+
 export const UNARCHIVE_SUFFIX = '_extracted';
 
 export const SONAR_SCANNER_ALIAS = 'SonarScanner Engine';
