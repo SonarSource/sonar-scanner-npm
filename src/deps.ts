@@ -39,6 +39,7 @@ export interface Dependencies {
   // File system operations
   fs: {
     existsSync: typeof fs.existsSync;
+    statSync: typeof fs.statSync;
     readFileSync: typeof fs.readFileSync;
     readFile: typeof fs.readFile;
     mkdirSync: typeof fs.mkdirSync;
@@ -88,6 +89,7 @@ function createDefaultDeps(): Dependencies {
   return {
     fs: {
       existsSync: fs.existsSync,
+      statSync: fs.statSync,
       readFileSync: fs.readFileSync,
       readFile: fs.readFile,
       mkdirSync: fs.mkdirSync,

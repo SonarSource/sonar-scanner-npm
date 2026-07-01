@@ -170,6 +170,21 @@ describe('scan', () => {
       );
     });
 
+    it('should warn when the scanner engine path is ignored', async () => {
+      mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+
+      await scan({
+        serverUrl: 'http://localhost:9000',
+        options: { [ScannerProperty.SonarScannerEngineJarPath]: '/path/to/scanner-engine.jar' },
+      });
+
+      assertLogged(
+        `Property "${ScannerProperty.SonarScannerEngineJarPath}" is set but will be ignored`,
+      );
+      assert.strictEqual(mockFetchScannerEngine.mock.callCount(), 0);
+      assert.strictEqual(mockRunScannerCli.mock.callCount(), 1);
+    });
+
     it('should use local scanner if requested', async () => {
       mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
       mockLocateExecutableFromPath.mock.mockImplementation(() =>

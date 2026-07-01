@@ -75,6 +75,12 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   log(LogLevel.INFO, `JRE provisioning ${supportsJREProvisioning ? 'is' : 'is NOT'} supported`);
 
   if (!supportsJREProvisioning) {
+    if (properties[ScannerProperty.SonarScannerEngineJarPath]) {
+      log(
+        LogLevel.WARN,
+        `Property "${ScannerProperty.SonarScannerEngineJarPath}" is set but will be ignored because JRE provisioning is not supported`,
+      );
+    }
     log(LogLevel.INFO, 'Falling back on using sonar-scanner-cli');
     if (scanOptions.localScannerCli) {
       log(LogLevel.INFO, 'Local scanner is requested, will not download sonar-scanner-cli');

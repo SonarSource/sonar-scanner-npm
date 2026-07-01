@@ -14,6 +14,7 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
+import path from 'node:path';
 import { API_V2_SCANNER_ENGINE_ENDPOINT, SONAR_SCANNER_ALIAS } from './constants.js';
 import { getDeps } from './deps.js';
 import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file.js';
@@ -28,6 +29,11 @@ import {
 } from './types.js';
 
 export async function fetchScannerEngine(properties: ScannerProperties) {
+  const localScannerEnginePath = getLocalScannerEnginePath(properties);
+  if (localScannerEnginePath) {
+    return localScannerEnginePath;
+  }
+
   const { fs, http } = getDeps();
 
   log(LogLevel.DEBUG, `Detecting latest version of ${SONAR_SCANNER_ALIAS}`);
@@ -70,6 +76,48 @@ export async function fetchScannerEngine(properties: ScannerProperties) {
   }
 
   return archivePath;
+}
+
+function getLocalScannerEnginePath(properties: ScannerProperties): string | undefined {
+  const scannerEngineJarPath = properties[ScannerProperty.SonarScannerEngineJarPath];
+  if (scannerEngineJarPath === undefined) {
+    return undefined;
+  }
+
+  const { fs } = getDeps();
+  const absoluteScannerEngineJarPath = path.resolve(scannerEngineJarPath);
+  try {
+    const stat = fs.statSync(absoluteScannerEngineJarPath);
+    if (!stat.isFile()) {
+      throw scannerEngineJarPathDoesNotExist(scannerEngineJarPath);
+    }
+
+    log(LogLevel.INFO, `Using the configured ${SONAR_SCANNER_ALIAS}`, absoluteScannerEngineJarPath);
+    delete properties[ScannerProperty.SonarScannerWasEngineCacheHit];
+    return absoluteScannerEngineJarPath;
+  } catch (error) {
+    if (isNodeError(error) && error.code === 'ENOENT') {
+      throw scannerEngineJarPathDoesNotExist(scannerEngineJarPath);
+    }
+    if (error instanceof ScannerEngineJarPathError) {
+      throw error;
+    }
+    throw new Error(
+      `Failed to access Scanner Engine jar path '${scannerEngineJarPath}': ${error instanceof Error ? error.message : error}. Please check property '${ScannerProperty.SonarScannerEngineJarPath}'.`,
+    );
+  }
+}
+
+class ScannerEngineJarPathError extends Error {}
+
+function scannerEngineJarPathDoesNotExist(scannerEngineJarPath: string): Error {
+  return new ScannerEngineJarPathError(
+    `Scanner Engine jar path '${scannerEngineJarPath}' does not exist. Please check property '${ScannerProperty.SonarScannerEngineJarPath}'.`,
+  );
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error;
 }
 
 async function logOutput(message: string) {

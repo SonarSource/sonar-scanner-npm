@@ -61,6 +61,7 @@ export function fixturePath(fixtureName: string): string {
 export function createMockFsDeps(overrides: Partial<Dependencies['fs']> = {}): Dependencies['fs'] {
   return {
     existsSync: mock.fn(() => false),
+    statSync: mock.fn(() => ({ isFile: () => false })),
     readFileSync: mock.fn(() => Buffer.from('')),
     readFile: mock.fn((path: string, cb: (err: Error | null, data: Buffer) => void) =>
       cb(null, Buffer.from('')),
