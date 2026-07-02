@@ -15,10 +15,9 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 
-// Import version from package.json (located at build/package.json, one level up from build/src/)
-import packageJson from '../package.json';
+import packageJson from '../package.json' with { type: 'json' };
 
-const packageVersion = (packageJson as { version?: string }).version;
+const packageVersion = packageJson.version;
 
 if (!packageVersion) {
   throw new Error('Version not found in package.json. This indicates a build error.');

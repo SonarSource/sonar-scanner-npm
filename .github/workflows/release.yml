@@ -142,7 +142,7 @@ jobs:
           cd build
           # Publish as @sonar/scan (primary package name)
           npm publish --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
-          # Publish as sonarqube-scanner (legacy alias for backwards compatibility)
+          # Publish as sonarqube-scanner (legacy package alias)
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
           npm publish --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
 

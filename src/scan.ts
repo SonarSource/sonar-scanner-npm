@@ -14,14 +14,14 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants';
-import { getDeps } from './deps';
-import { LogLevel, log, setLogLevel } from './logging';
-import { getProperties } from './properties';
-import { initializeAxios } from './request';
-import type { CliArgs, ScanOptions } from './types';
-import { ScannerProperty } from './types';
-import { version } from './version';
+import { SCANNER_CLI_DEFAULT_BIN_NAME } from './constants.js';
+import { getDeps } from './deps.js';
+import { LogLevel, log, setLogLevel } from './logging.js';
+import { getProperties } from './properties.js';
+import { initializeAxios } from './request.js';
+import type { CliArgs, ScanOptions } from './types.js';
+import { ScannerProperty } from './types.js';
+import { version } from './version.js';
 
 export async function scan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   try {

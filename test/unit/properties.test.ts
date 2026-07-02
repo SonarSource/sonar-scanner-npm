@@ -27,11 +27,11 @@ import {
   SONAR_SCANNER_TRUSTSTORE_DEFAULT_PASSWORD,
   SONAR_SSL_DIR,
   SONAR_TRUSTSTORE_FILENAME,
-} from '../../src/constants';
-import { getDeps, setDeps, resetDeps } from '../../src/deps';
-import { getHostProperties, getProperties } from '../../src/properties';
-import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types';
-import { createMockProcessDeps } from './test-helpers';
+} from '../../src/constants.js';
+import { getDeps, setDeps, resetDeps } from '../../src/deps.js';
+import { getHostProperties, getProperties } from '../../src/properties.js';
+import { CacheStatus, type ScannerProperties, ScannerProperty } from '../../src/types.js';
+import { createMockProcessDeps } from './test-helpers.js';
 
 // Environment variables that need to be set on global process.env for proxy-from-env library
 // Note: On Windows, env vars are case-insensitive, so HTTP_PROXY and http_proxy are the same
@@ -43,7 +43,7 @@ let modifiedEnvVars: string[] = [];
 
 class FakeProjectMock {
   static getPathForProject(projectName: string) {
-    return path.join(__dirname, 'fixtures', projectName);
+    return path.join(import.meta.dirname, 'fixtures', projectName);
   }
 
   private projectPath: string = '';

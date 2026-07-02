@@ -15,8 +15,8 @@
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
 
-import { getDeps } from './deps';
-import { LogLevel, log } from './logging';
+import { getDeps } from './deps.js';
+import { LogLevel, log } from './logging.js';
 
 export function getArch(): NodeJS.Architecture {
   const { process } = getDeps();

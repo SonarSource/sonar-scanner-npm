@@ -16,16 +16,16 @@
  */
 import { describe, it, beforeEach, afterEach, mock, type Mock } from 'node:test';
 import assert from 'node:assert';
-import { SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants';
-import { setDeps, resetDeps } from '../../src/deps';
-import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java';
+import { SONARQUBE_JRE_PROVISIONING_MIN_VERSION } from '../../src/constants.js';
+import { setDeps, resetDeps } from '../../src/deps.js';
+import { fetchJRE, fetchServerVersion, serverSupportsJREProvisioning } from '../../src/java.js';
 import {
   type AnalysisJresResponseType,
   CacheStatus,
   type ScannerProperties,
   ScannerProperty,
-} from '../../src/types';
-import { createMockFsDeps, createMockHttpDeps } from './test-helpers';
+} from '../../src/types.js';
+import { createMockFsDeps, createMockHttpDeps } from './test-helpers.js';
 
 // Mock console.log to suppress output
 const mockLog = mock.fn();
