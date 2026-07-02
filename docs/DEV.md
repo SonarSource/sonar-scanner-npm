@@ -53,7 +53,7 @@ Releases are handled by the GitHub Actions workflow (`.github/workflows/release.
    - Publish to Artifactory
    - Publish to npm under two package names:
      - `@sonar/scan` (primary)
-     - `sonarqube-scanner` (legacy alias for backwards compatibility)
+     - `sonarqube-scanner` (legacy package alias)
    - Create a PR in [sonar-update-center-properties](https://github.com/SonarSource/sonar-update-center-properties)
 
 Example release body:

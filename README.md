@@ -52,8 +52,8 @@ npx @sonar/scan
 
 ## JavaScript API
 
-`@sonar/scan` is published as an ES module. Use `import` syntax when calling it from
-JavaScript:
+`@sonar/scan` v5 is published as an ES module. Use `import` syntax when calling it
+from ESM JavaScript:
 
 ```js
 import { scan } from '@sonar/scan';
@@ -75,7 +75,8 @@ await customScanner({
 });
 ```
 
-For CommonJS projects, use dynamic `import()`:
+For CommonJS projects, load `@sonar/scan` with dynamic `import()` instead of
+`require()`:
 
 ```js
 async function run() {
