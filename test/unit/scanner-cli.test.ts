@@ -17,19 +17,19 @@
 import { describe, it, mock, afterEach, type Mock } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
-import type { SpawnFn } from '../../src/deps';
-import type { download } from '../../src/request';
-import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_VERSION } from '../../src/constants';
-import { setDeps, resetDeps } from '../../src/deps';
-import { downloadScannerCli, normalizePlatformName, runScannerCli } from '../../src/scanner-cli';
-import { ScannerProperty } from '../../src/types';
+import type { SpawnFn } from '../../src/deps.js';
+import type { download } from '../../src/request.js';
+import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_VERSION } from '../../src/constants.js';
+import { setDeps, resetDeps } from '../../src/deps.js';
+import { downloadScannerCli, normalizePlatformName, runScannerCli } from '../../src/scanner-cli.js';
+import { ScannerProperty } from '../../src/types.js';
 import {
   createMockChildProcess,
   createMockProcessDeps,
   createMockFsDeps,
   createMockHttpDeps,
   createMockFileDeps,
-} from './test-helpers';
+} from './test-helpers.js';
 
 // Mock console.log to suppress output
 mock.method(console, 'log', () => {});

@@ -23,22 +23,22 @@ import {
   JRE_ALIAS,
   SONARQUBE_JRE_PROVISIONING_MIN_VERSION,
   UNARCHIVE_SUFFIX,
-} from './constants';
-import { getDeps } from './deps';
+} from './constants.js';
+import { getDeps } from './deps.js';
 import {
   extractArchive,
   getCacheDirectories,
   getCacheFileLocation,
   validateChecksum,
-} from './file';
-import { LogLevel, log } from './logging';
+} from './file.js';
+import { LogLevel, log } from './logging.js';
 import {
   type AnalysisJreMetaData,
   type AnalysisJresResponseType,
   CacheStatus,
   type ScannerProperties,
   ScannerProperty,
-} from './types';
+} from './types.js';
 
 export async function fetchServerVersion(properties: ScannerProperties): Promise<SemVer> {
   const { http } = getDeps();

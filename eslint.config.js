@@ -1,7 +1,7 @@
-const { defineConfig, globalIgnores } = require('eslint/config');
+import { defineConfig, globalIgnores } from 'eslint/config';
 
-const tsParser = require('@typescript-eslint/parser');
-const sonarjs = require('eslint-plugin-sonarjs');
+import tsParser from '@typescript-eslint/parser';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 const licenseHeader = `/*
  * sonar-scanner-npm
@@ -20,7 +20,7 @@ const licenseHeader = `/*
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */`;
 
-module.exports = defineConfig([
+export default defineConfig([
   {
     files: ['**/*.ts', '**/*.js'],
     languageOptions: {
@@ -44,7 +44,6 @@ module.exports = defineConfig([
     '**/dist',
     '**/build',
     '**/coverage/**',
-    '**/.nyc_output/**',
     'eslint.config.js',
     '**/fixtures',
     'bin/**',

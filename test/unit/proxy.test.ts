@@ -16,8 +16,8 @@
  */
 import { describe, it, mock, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { getProxyUrl, proxyUrlToJavaOptions } from '../../src/proxy';
-import { type ScannerProperties, ScannerProperty } from '../../src/types';
+import { getProxyUrl, proxyUrlToJavaOptions } from '../../src/proxy.js';
+import { type ScannerProperties, ScannerProperty } from '../../src/types.js';
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();

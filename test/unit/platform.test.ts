@@ -17,9 +17,9 @@
 
 import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { setDeps, resetDeps } from '../../src/deps';
-import * as platform from '../../src/platform';
-import { createMockProcessDeps, createMockFsDeps } from './test-helpers';
+import { setDeps, resetDeps } from '../../src/deps.js';
+import * as platform from '../../src/platform.js';
+import { createMockProcessDeps, createMockFsDeps } from './test-helpers.js';
 
 // Mock logging to suppress output
 const mockLog = mock.fn();

@@ -16,10 +16,10 @@
  */
 import { describe, it, mock, afterEach, type Mock } from 'node:test';
 import assert from 'node:assert';
-import { SCANNER_CLI_DEFAULT_BIN_NAME, WINDOWS_WHERE_EXE_PATH } from '../../src/constants';
-import { setDeps, resetDeps, type ExecAsyncFn } from '../../src/deps';
-import { locateExecutableFromPath } from '../../src/process';
-import { createMockProcessDeps } from './test-helpers';
+import { SCANNER_CLI_DEFAULT_BIN_NAME, WINDOWS_WHERE_EXE_PATH } from '../../src/constants.js';
+import { setDeps, resetDeps, type ExecAsyncFn } from '../../src/deps.js';
+import { locateExecutableFromPath } from '../../src/process.js';
+import { createMockProcessDeps } from './test-helpers.js';
 
 // Mock console.log to suppress output
 mock.method(console, 'log', () => {});

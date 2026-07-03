@@ -14,7 +14,7 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-import { LogLevel } from './logging';
+import { LogLevel } from './logging.js';
 
 export type CacheFileData = { checksum: string; filename: string; alias: string };
 

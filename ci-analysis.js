@@ -14,16 +14,14 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-const path = require('node:path');
-
-// Regular users will call 'require('@sonar/scan')' - but not here: eat your own dog food! :-)
-const scanner = require('./build').scan;
+import path from 'node:path';
+import { scan } from './build/src/index.js';
 
 // We just run an analysis and push it to SonarCloud
 // (No need to pass the server URL and the token, we're using the Travis
 //  Addon for SonarCloud which does this for you.)
 // ---------
-scanner({
+scan({
   options: {
     'sonar.projectKey': 'SonarSource_sonar-scanner-npm',
     'sonar.organization': 'sonarsource',
@@ -32,8 +30,8 @@ scanner({
     'sonar.sources': 'src',
     'sonar.tests': 'test',
     'sonar.host.url': process.env.SONAR_HOST_URL,
-    'sonar.javascript.lcov.reportPaths': path.join(__dirname, 'coverage', 'lcov.info'),
-    'sonar.testExecutionReportPaths': path.join(__dirname, 'test-report.xml'),
+    'sonar.javascript.lcov.reportPaths': path.join(import.meta.dirname, 'coverage', 'lcov.info'),
+    'sonar.testExecutionReportPaths': path.join(import.meta.dirname, 'test-report.xml'),
     'sonar.verbose': 'true',
   },
 }).catch(err => {

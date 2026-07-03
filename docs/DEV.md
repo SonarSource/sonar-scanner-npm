@@ -2,6 +2,9 @@
 
 ## Building
 
+Use Node.js 22.12.0 or later. If you use `mise`, run `mise install` from the repository
+root to install the version configured in `mise.toml`.
+
 ```bash
 npm install
 npm run build
@@ -33,6 +36,9 @@ npm run build
 npm run test-integration
 ```
 
+Unit test coverage is collected with `c8`. The coverage configuration is in `.c8rc.json`;
+it limits reports to `src/**/*.ts` and includes untouched source files.
+
 ## Releasing
 
 Releases are handled by the GitHub Actions workflow (`.github/workflows/release.yml`) when a release is published on GitHub.
@@ -47,7 +53,7 @@ Releases are handled by the GitHub Actions workflow (`.github/workflows/release.
    - Publish to Artifactory
    - Publish to npm under two package names:
      - `@sonar/scan` (primary)
-     - `sonarqube-scanner` (legacy alias for backwards compatibility)
+     - `sonarqube-scanner` (legacy package alias)
    - Create a PR in [sonar-update-center-properties](https://github.com/SonarSource/sonar-update-center-properties)
 
 Example release body:

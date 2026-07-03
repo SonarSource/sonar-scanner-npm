@@ -21,9 +21,9 @@ import https from 'node:https';
 import forge from 'node-forge';
 import * as stream from 'node:stream';
 import { promisify } from 'node:util';
-import { LogLevel, log } from './logging';
-import { getProxyUrl } from './proxy';
-import { type ScannerProperties, ScannerProperty } from './types';
+import { LogLevel, log } from './logging.js';
+import { getProxyUrl } from './proxy.js';
+import { type ScannerProperties, ScannerProperty } from './types.js';
 
 const finished = promisify(stream.finished);
 
@@ -108,7 +108,8 @@ export async function initializeAxios(properties: ScannerProperties) {
   const baseURL = properties[ScannerProperty.SonarScannerApiBaseUrl];
   const agents = await getHttpAgents(properties);
   const timeout =
-    Math.floor(Number.parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) * 1000;
+    Math.floor(Number.parseInt(properties[ScannerProperty.SonarScannerResponseTimeout], 10) || 0) *
+    1000;
 
   _axiosInstances ??= {
     internal: axios.create({

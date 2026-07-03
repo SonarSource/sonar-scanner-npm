@@ -1,5 +1,6 @@
 [data]
 name = "@sonar/scan"
+type = "module"
 main = "src/index.js"
 types = "src/index.d.ts"
 description = "SonarQube/SonarCloud Scanner for the JavaScript world"
@@ -22,4 +23,4 @@ sonar = "bin/sonar-scanner.js"
 sonar-scanner = "bin/sonar-scanner.js"
 
 [data.engines]
-node = ">= 18"
+node = ">=22.12.0"

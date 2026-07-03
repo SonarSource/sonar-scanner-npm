@@ -38,11 +38,11 @@ import {
   SONAR_TRUSTSTORE_FILENAME,
   SONARCLOUD_URL_US,
   SONARCLOUD_API_BASE_URL_US,
-} from './constants';
-import { getDeps } from './deps';
-import { LogLevel, log } from './logging';
-import { getArch, getSupportedOS } from './platform';
-import { version } from './version';
+} from './constants.js';
+import { getDeps } from './deps.js';
+import { LogLevel, log } from './logging.js';
+import { getArch, getSupportedOS } from './platform.js';
+import { version } from './version.js';
 import {
   CacheStatus,
   type CliArgs,
@@ -50,7 +50,7 @@ import {
   type ScanOptions,
   type ScannerProperties,
   ScannerProperty,
-} from './types';
+} from './types.js';
 
 function getDefaultProperties(): ScannerProperties {
   const { process } = getDeps();

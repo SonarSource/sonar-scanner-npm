@@ -18,7 +18,7 @@
 import { EventEmitter } from 'node:events';
 import path from 'node:path';
 import { mock } from 'node:test';
-import type { Dependencies } from '../../src/deps';
+import type { Dependencies } from '../../src/deps.js';
 
 /**
  * Creates a mock child process for testing spawned commands.
@@ -51,7 +51,7 @@ export function createMockChildProcess(options?: { exitCode?: number; autoExit?:
  * Returns a path relative to the fixtures directory.
  */
 export function fixturePath(fixtureName: string): string {
-  return path.join(__dirname, 'fixtures', fixtureName);
+  return path.join(import.meta.dirname, 'fixtures', fixtureName);
 }
 
 /**

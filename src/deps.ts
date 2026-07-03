@@ -18,13 +18,18 @@
 import { exec, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import util from 'node:util';
-import { extractArchive } from './file';
-import { fetchJRE, serverSupportsJREProvisioning } from './java';
-import { locateExecutableFromPath } from './process';
-import { download as defaultDownload, fetch as defaultFetch } from './request';
-import { downloadScannerCli, runScannerCli } from './scanner-cli';
-import { fetchScannerEngine, runScannerEngine } from './scanner-engine';
+import { extractArchive } from './file.js';
+import { fetchJRE, serverSupportsJREProvisioning } from './java.js';
+import { locateExecutableFromPath } from './process.js';
+import { download as defaultDownload, fetch as defaultFetch } from './request.js';
+import { downloadScannerCli, runScannerCli } from './scanner-cli.js';
+import { fetchScannerEngine, runScannerEngine } from './scanner-engine.js';
 const execAsync = util.promisify(exec);
+
+export type ExecAsyncFn = (command: string) => Promise<{ stdout: string; stderr: string }>;
+export type SpawnFn = typeof spawn;
+export type RunScannerCliFn = typeof runScannerCli;
+export type RunScannerEngineFn = typeof runScannerEngine;
 
 /**
  * Centralized dependency container for all injectable dependencies.
@@ -58,9 +63,9 @@ export interface Dependencies {
     download: typeof defaultDownload;
   };
   // Spawning child processes
-  spawn: typeof spawn;
+  spawn: SpawnFn;
   // Executing shell commands
-  execAsync: typeof execAsync;
+  execAsync: ExecAsyncFn;
   // High-level scan orchestration functions
   scan: {
     serverSupportsJREProvisioning: typeof serverSupportsJREProvisioning;

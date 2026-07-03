@@ -19,16 +19,16 @@ import assert from 'node:assert';
 import axios, { type AxiosInstance } from 'axios';
 import fs from 'node:fs';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import path from 'node:path';
 
 // hpagent exposes proxy at runtime but not in types
 interface ProxyAgentWithProxy {
   proxy: URL;
 }
-import path from 'node:path';
-import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants';
-import { LogLevel } from '../../src/logging';
-import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request';
-import { ScannerProperty } from '../../src/types';
+import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants.js';
+import { LogLevel } from '../../src/logging.js';
+import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request.js';
+import { ScannerProperty } from '../../src/types.js';
 
 // Mock console.log to suppress output and capture log calls
 const mockLog = mock.fn();
@@ -78,9 +78,9 @@ describe('request', () => {
 
     describe('with tls options', () => {
       it('should initialize axios with password-protected truststore', async () => {
-        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
+        const truststorePath = path.join(import.meta.dirname, 'fixtures', 'ssl', 'truststore.p12');
         const truststorePass = 'password';
-        const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
+        const certificatePath = path.join(import.meta.dirname, 'fixtures', 'ssl', 'ca.pem');
         const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
 
         const { httpsAgent } = await getHttpAgents({
@@ -95,7 +95,12 @@ describe('request', () => {
       });
 
       it("should not fail if truststore can't be parsed", async () => {
-        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-invalid.p12');
+        const truststorePath = path.join(
+          import.meta.dirname,
+          'fixtures',
+          'ssl',
+          'truststore-invalid.p12',
+        );
         const truststorePass = 'password';
 
         const { proxy, httpsAgent } = await getHttpAgents({
@@ -118,7 +123,12 @@ describe('request', () => {
       });
 
       it('should initialize axios with password-protected empty truststore', async () => {
-        const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore-empty.p12');
+        const truststorePath = path.join(
+          import.meta.dirname,
+          'fixtures',
+          'ssl',
+          'truststore-empty.p12',
+        );
         const truststorePass = 'password';
 
         const { proxy, httpsAgent } = await getHttpAgents({
@@ -133,7 +143,7 @@ describe('request', () => {
       });
 
       it('should initialize axios with password-protected keystore', async () => {
-        const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
+        const keystorePath = path.join(import.meta.dirname, 'fixtures', 'ssl', 'keystore.p12');
         const keystorePass = 'password';
 
         const { proxy, httpsAgent } = await getHttpAgents({
@@ -149,11 +159,11 @@ describe('request', () => {
     });
 
     it('should support combining proxy, truststore and keystore', async () => {
-      const truststorePath = path.join(__dirname, 'fixtures', 'ssl', 'truststore.p12');
+      const truststorePath = path.join(import.meta.dirname, 'fixtures', 'ssl', 'truststore.p12');
       const truststorePass = 'password';
-      const certificatePath = path.join(__dirname, 'fixtures', 'ssl', 'ca.pem');
+      const certificatePath = path.join(import.meta.dirname, 'fixtures', 'ssl', 'ca.pem');
       const certificatePem = fs.readFileSync(certificatePath).toString().replace(/\n/g, '\r\n');
-      const keystorePath = path.join(__dirname, 'fixtures', 'ssl', 'keystore.p12');
+      const keystorePath = path.join(import.meta.dirname, 'fixtures', 'ssl', 'keystore.p12');
       const keystorePass = 'password';
 
       const { httpsAgent, proxy } = await getHttpAgents({
