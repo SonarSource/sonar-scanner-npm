@@ -1,0 +1,50 @@
+name: Test Renovate Auto Merge
+
+on:
+  pull_request:
+    types: [opened]
+  workflow_dispatch:
+
+jobs:
+  approve_and_merge_pr_581:
+    name: Approve and merge Renovate PR #581
+    runs-on: github-ubuntu-latest-s
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+    if: |
+      github.repository == 'SonarSource/sonar-scanner-npm'
+      && (
+        github.event_name == 'workflow_dispatch'
+        || (
+          github.event.pull_request.head.repo.full_name == github.repository
+          && github.event.pull_request.head.ref == 'vdiez/test-renovate-pr-581-automerge'
+        )
+      )
+    steps:
+      - id: secrets
+        uses: SonarSource/vault-action-wrapper@v3
+        with:
+          secrets: |
+            development/github/token/{REPO_OWNER_NAME_DASH}-jira token | GITHUB_TOKEN;
+
+      - name: Inspect target PR
+        env:
+          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+        run: |
+          gh pr view 581 --repo "$GITHUB_REPOSITORY" \
+            --json number,title,state,author,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup
+
+      - name: Approve target PR
+        env:
+          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+        run: |
+          gh pr review 581 --repo "$GITHUB_REPOSITORY" --approve \
+            --body "Test approval from workflow"
+
+      - name: Enable auto-merge on target PR
+        env:
+          GH_TOKEN: ${{ fromJSON(steps.secrets.outputs.vault).GITHUB_TOKEN }}
+        run: |
+          gh pr merge 581 --repo "$GITHUB_REPOSITORY" --auto --squash
