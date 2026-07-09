@@ -147,6 +147,13 @@ describe('scan', () => {
     assertLogged('Version:', 'SNAPSHOT');
   });
 
+  it('should output that the NPM scanner is being used', async () => {
+    mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
+
+    await scan({});
+    assertLogged('Using SonarScanner for NPM (@sonar/scan)');
+  });
+
   it('should output the current platform', async () => {
     mockServerSupportsJREProvisioning.mock.mockImplementation(() => Promise.resolve(false));
 
