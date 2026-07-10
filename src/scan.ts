@@ -68,6 +68,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
   await initializeAxios(properties);
 
   log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
+  log(LogLevel.INFO, 'Using SonarScanner for NPM (@sonar/scan)');
   log(LogLevel.INFO, `Version: ${version}`);
 
   log(LogLevel.DEBUG, 'Check if Server supports JRE provisioning');
