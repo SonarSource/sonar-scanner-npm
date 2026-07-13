@@ -8,6 +8,6 @@
       "project": "**/*.ts"
     }
   },
-  "ignoreDependencies": ["node-reporter-sonarqube"],
-  "ignore": ["build/**/*", "**/fixtures/**/*", "ci-analysis.js"]
+  "ignoreDependencies": ["@sonar/scan", "node-reporter-sonarqube"],
+  "ignoreBinaries": ["java"]
 }
