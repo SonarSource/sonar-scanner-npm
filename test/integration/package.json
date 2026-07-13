@@ -7,11 +7,10 @@
   },
   "dependencies": {
     "axios": "1.18.1",
-    "mkdirp": "3.0.1",
-    "@sonar/scan": "file:../../build/sonar-scan-SNAPSHOT.tgz"
+    "mkdirp": "3.0.1"
   },
   "devDependencies": {
-    "@types/node": "24.13.2",
+    "@types/node": "24.13.3",
     "tsx": "4.23.0"
   }
 }
