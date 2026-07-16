@@ -26,13 +26,17 @@ npm install -g @sonar/scan
 
 ## Getting Started
 
-If you want to run an analysis without having to configure anything in the first place, simply run the `sonar` command. The following
-example assumes that you have installed SonarQube Server locally:
+If you want to run an analysis without having to configure anything in the first place,
+simply run the `sonar-scanner-npm` command. The following example assumes that you have
+installed SonarQube Server locally:
 
 ```
 cd my-project
-sonar
+sonar-scanner-npm
 ```
+
+> **Deprecation notice:** The `sonar` and `sonar-scanner` executable aliases are
+> deprecated and will be removed in v5. Use `sonar-scanner-npm` instead.
 
 or you can use `npx` without installing:
 

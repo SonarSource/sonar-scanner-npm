@@ -17,6 +17,7 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -83,10 +84,16 @@ describe('scanner', { timeout: TIMEOUT_MS }, () => {
 
   it('should run an analysis via CLI', async () => {
     const projectKey = await createProject();
+    for (const executable of ['sonar', 'sonar-scanner', 'sonar-scanner-npm']) {
+      assert.ok(
+        fs.existsSync(path.join(__dirname, 'node_modules', '.bin', executable)),
+        `Expected the ${executable} executable to be installed`,
+      );
+    }
     // Use the locally installed package bin to ensure we test the right version
-    const sonarBin = path.join(__dirname, 'node_modules', '.bin', 'sonar');
+    const sonarScannerNpmBin = path.join(__dirname, 'node_modules', '.bin', 'sonar-scanner-npm');
     execSync(
-      `"${sonarBin}" ` +
+      `"${sonarScannerNpmBin}" ` +
         `-Dsonar.host.url=${SONAR_HOST_URL} ` +
         `-Dsonar.token=${token} ` +
         `-Dsonar.projectKey=${projectKey} ` +
