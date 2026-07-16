@@ -41,7 +41,7 @@
     "knip": "6.25.0",
     "node-reporter-sonarqube": "1.0.3",
     "package-manifest-generator": "1.0.0-beta.4",
-    "prettier": "3.9.4",
+    "prettier": "3.9.5",
     "pretty-quick": "4.2.2",
     "tsx": "4.23.0",
     "typescript": "6.0.3"
