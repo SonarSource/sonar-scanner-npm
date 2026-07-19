@@ -76,7 +76,7 @@ jobs:
           secrets: development/artifactory/token/SonarSource-sonar-scanner-npm-promoter access_token  | promoter_access_token;
 
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
