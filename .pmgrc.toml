@@ -19,8 +19,7 @@ version = "SNAPSHOT"
 url = "https://community.sonarsource.com/tag/scanner"
 
 [data.bin]
-sonar = "bin/sonar-scanner.js"
-sonar-scanner = "bin/sonar-scanner.js"
+sonar-scanner-npm = "bin/sonar-scanner.js"
 
 [data.engines]
 node = ">=22.12.0"
