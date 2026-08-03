@@ -16,7 +16,7 @@
   "license": "LGPL-3.0-only",
   "dependencies": {
     "adm-zip": "0.6.0",
-    "axios": "1.18.1",
+    "axios": "1.19.0",
     "commander": "15.0.0",
     "hpagent": "1.2.0",
     "node-forge": "1.4.0",
