@@ -99,22 +99,31 @@ export async function extractArchive(fromPath: string, toPath: string) {
 async function extractZipArchive(fromPath: string, toPath: string) {
   const destinationPath = path.resolve(toPath);
   const zip = await unzipper.Open.file(fromPath);
+  const checkedPaths = new Set<string>();
 
   for (const entry of zip.files) {
-    const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
+    const entryPath = path.join(destinationPath, entry.path.replaceAll('\\', '/'));
     const relativePath = path.relative(destinationPath, entryPath);
-    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    if (relativePath === '') {
+      continue;
+    }
+    if (
+      relativePath === '..' ||
+      relativePath.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relativePath)
+    ) {
       throw new Error(`Entry "${entry.path}" would extract outside target directory`);
     }
 
     for (
       let currentPath = entryPath;
-      currentPath !== destinationPath;
+      currentPath !== destinationPath && !checkedPaths.has(currentPath);
       currentPath = path.dirname(currentPath)
     ) {
       if (lstatSync(currentPath, { throwIfNoEntry: false })?.isSymbolicLink()) {
         throw new Error(`Entry "${entry.path}" would extract through a symbolic link`);
       }
+      checkedPaths.add(currentPath);
     }
   }
 
@@ -123,7 +132,10 @@ async function extractZipArchive(fromPath: string, toPath: string) {
   // unzipper does not preserve Unix permissions stored in ZIP metadata.
   // Restore them so scanner and JRE launchers remain executable.
   for (const entry of zip.files) {
-    const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
+    const entryPath = path.join(destinationPath, entry.path.replaceAll('\\', '/'));
+    if (entryPath === destinationPath) {
+      continue;
+    }
     const mode = (entry.externalFileAttributes >>> 16) & 0o777;
     if (mode) {
       chmodSync(entryPath, mode);

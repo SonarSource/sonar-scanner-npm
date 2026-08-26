@@ -221,6 +221,29 @@ describe('file', () => {
       },
     );
 
+    it('should reject zip entries with path traversal', async () => {
+      const testDirectory = nodeFs.mkdtempSync(path.join(nodeOs.tmpdir(), 'zip-slip-'));
+      const archivePath = path.join(testDirectory, 'archive.zip');
+      const archive = nodeFs.readFileSync(fixturePath('webserver/executable.zip'));
+
+      for (
+        let offset = archive.indexOf('executable');
+        offset !== -1;
+        offset = archive.indexOf('executable', offset + 1)
+      ) {
+        archive.write('../bad.txt', offset);
+      }
+      nodeFs.writeFileSync(archivePath, archive);
+
+      try {
+        await assert.rejects(extractArchive(archivePath, path.join(testDirectory, 'destination')), {
+          message: /would extract outside target directory/,
+        });
+      } finally {
+        nodeFs.rmSync(testDirectory, { recursive: true, force: true });
+      }
+    });
+
     it('should reject tar.gz entries with path traversal (Zip Slip)', async () => {
       const tarStream = await import('tar-stream');
       const zlib = await import('node:zlib');
