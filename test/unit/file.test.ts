@@ -16,6 +16,8 @@
  */
 import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert';
+import nodeFs from 'node:fs';
+import nodeOs from 'node:os';
 import path from 'node:path';
 import { SONAR_CACHE_DIR } from '../../src/constants.js';
 import { setDeps, resetDeps } from '../../src/deps.js';
@@ -26,7 +28,7 @@ import {
   validateChecksum,
 } from '../../src/file.js';
 import { ScannerProperty } from '../../src/types.js';
-import { createMockFsDeps } from './test-helpers.js';
+import { createMockFsDeps, fixturePath } from './test-helpers.js';
 
 // Mock console.log to suppress output
 mock.method(console, 'log', () => {});
@@ -179,17 +181,45 @@ describe('file', () => {
 
   describe('extractArchive', () => {
     it('should extract a zip archive', async () => {
-      // Since extractArchive uses AdmZip directly (not through deps), we can't easily mock it
-      // But we can test that the function handles different file extensions correctly
-      // by checking that it throws for a non-existent zip file
+      const testDirectory = nodeFs.mkdtempSync(path.join(nodeOs.tmpdir(), 'extract-zip-'));
+      const destinationPath = path.join(testDirectory, 'destination');
+
       try {
-        await extractArchive('/nonexistent/file.zip', '/tmp/extract-test');
-        assert.fail('Expected an error');
-      } catch (e) {
-        // Expected to fail since file doesn't exist - this exercises the zip branch
-        assert.ok(e instanceof Error);
+        await extractArchive(fixturePath('webserver/executable.zip'), destinationPath);
+
+        const scannerPath = path.join(destinationPath, 'executable');
+        assert.strictEqual(nodeFs.readFileSync(scannerPath, 'utf8'), 'echo "hello"\n');
+        if (process.platform !== 'win32') {
+          assert.strictEqual(nodeFs.statSync(scannerPath).mode & 0o777, 0o755);
+        }
+      } finally {
+        nodeFs.rmSync(testDirectory, { recursive: true, force: true });
       }
     });
+
+    it(
+      'should not follow a pre-existing file symlink while extracting zip',
+      { skip: process.platform === 'win32' },
+      async () => {
+        const testDirectory = nodeFs.mkdtempSync(path.join(nodeOs.tmpdir(), 'zip-symlink-'));
+        const destinationPath = path.join(testDirectory, 'destination');
+        const outsidePath = path.join(testDirectory, 'outside.txt');
+        nodeFs.mkdirSync(destinationPath);
+        nodeFs.writeFileSync(outsidePath, 'outside');
+        nodeFs.symlinkSync(outsidePath, path.join(destinationPath, 'executable'));
+
+        try {
+          await assert.rejects(
+            extractArchive(fixturePath('webserver/executable.zip'), destinationPath),
+            { message: /would extract through a symbolic link/ },
+          );
+
+          assert.strictEqual(nodeFs.readFileSync(outsidePath, 'utf8'), 'outside');
+        } finally {
+          nodeFs.rmSync(testDirectory, { recursive: true, force: true });
+        }
+      },
+    );
 
     it('should reject tar.gz entries with path traversal (Zip Slip)', async () => {
       const tarStream = await import('tar-stream');

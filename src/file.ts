@@ -14,10 +14,11 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-import AdmZip from 'adm-zip';
 import crypto from 'node:crypto';
+import { chmodSync, lstatSync } from 'node:fs';
 import path from 'node:path';
 import tarStream from 'tar-stream';
+import unzipper from 'unzipper';
 import zlib from 'node:zlib';
 import { SONAR_CACHE_DIR, UNARCHIVE_SUFFIX } from './constants.js';
 import { getDeps } from './deps.js';
@@ -91,18 +92,36 @@ export async function extractArchive(fromPath: string, toPath: string) {
 
     await extractionPromise;
   } else {
-    const zip = new AdmZip(fromPath);
+    const destinationPath = path.resolve(toPath);
+    const zip = await unzipper.Open.file(fromPath);
 
-    for (const entry of zip.getEntries()) {
-      const canonicalPath = path.normalize(toPath + path.sep + entry.entryName);
+    for (const entry of zip.files) {
+      const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
+      const relativePath = path.relative(destinationPath, entryPath);
+      if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+        throw new Error(`Entry "${entry.path}" would extract outside target directory`);
+      }
 
-      // Prevent Zip Slip vulnerability by ensuring the path is within the target directory
-      if (!canonicalPath.startsWith(toPath)) {
-        throw new Error(`Entry "${entry.entryName}" would extract outside target directory`);
+      for (
+        let currentPath = entryPath;
+        currentPath !== destinationPath;
+        currentPath = path.dirname(currentPath)
+      ) {
+        if (lstatSync(currentPath, { throwIfNoEntry: false })?.isSymbolicLink()) {
+          throw new Error(`Entry "${entry.path}" would extract through a symbolic link`);
+        }
       }
     }
 
-    zip.extractAllTo(toPath, true, true);
+    await zip.extract({ path: destinationPath });
+
+    for (const entry of zip.files) {
+      const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
+      const mode = (entry.externalFileAttributes >>> 16) & 0o777;
+      if (mode) {
+        chmodSync(entryPath, mode);
+      }
+    }
   }
 }
 
