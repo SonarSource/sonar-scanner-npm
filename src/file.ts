@@ -92,35 +92,39 @@ export async function extractArchive(fromPath: string, toPath: string) {
 
     await extractionPromise;
   } else {
-    const destinationPath = path.resolve(toPath);
-    const zip = await unzipper.Open.file(fromPath);
+    await extractZipArchive(fromPath, toPath);
+  }
+}
 
-    for (const entry of zip.files) {
-      const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
-      const relativePath = path.relative(destinationPath, entryPath);
-      if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-        throw new Error(`Entry "${entry.path}" would extract outside target directory`);
-      }
+async function extractZipArchive(fromPath: string, toPath: string) {
+  const destinationPath = path.resolve(toPath);
+  const zip = await unzipper.Open.file(fromPath);
 
-      for (
-        let currentPath = entryPath;
-        currentPath !== destinationPath;
-        currentPath = path.dirname(currentPath)
-      ) {
-        if (lstatSync(currentPath, { throwIfNoEntry: false })?.isSymbolicLink()) {
-          throw new Error(`Entry "${entry.path}" would extract through a symbolic link`);
-        }
-      }
+  for (const entry of zip.files) {
+    const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
+    const relativePath = path.relative(destinationPath, entryPath);
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+      throw new Error(`Entry "${entry.path}" would extract outside target directory`);
     }
 
-    await zip.extract({ path: destinationPath });
-
-    for (const entry of zip.files) {
-      const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
-      const mode = (entry.externalFileAttributes >>> 16) & 0o777;
-      if (mode) {
-        chmodSync(entryPath, mode);
+    for (
+      let currentPath = entryPath;
+      currentPath !== destinationPath;
+      currentPath = path.dirname(currentPath)
+    ) {
+      if (lstatSync(currentPath, { throwIfNoEntry: false })?.isSymbolicLink()) {
+        throw new Error(`Entry "${entry.path}" would extract through a symbolic link`);
       }
+    }
+  }
+
+  await zip.extract({ path: destinationPath });
+
+  for (const entry of zip.files) {
+    const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
+    const mode = (entry.externalFileAttributes >>> 16) & 0o777;
+    if (mode) {
+      chmodSync(entryPath, mode);
     }
   }
 }
