@@ -104,9 +104,6 @@ async function extractZipArchive(fromPath: string, toPath: string) {
   for (const entry of zip.files) {
     const entryPath = path.join(destinationPath, entry.path.replaceAll('\\', '/'));
     const relativePath = path.relative(destinationPath, entryPath);
-    if (relativePath === '') {
-      continue;
-    }
     if (
       relativePath === '..' ||
       relativePath.startsWith(`..${path.sep}`) ||
