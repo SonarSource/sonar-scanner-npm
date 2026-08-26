@@ -120,6 +120,8 @@ async function extractZipArchive(fromPath: string, toPath: string) {
 
   await zip.extract({ path: destinationPath });
 
+  // unzipper does not preserve Unix permissions stored in ZIP metadata.
+  // Restore them so scanner and JRE launchers remain executable.
   for (const entry of zip.files) {
     const entryPath = path.resolve(destinationPath, entry.path.replaceAll('\\', '/'));
     const mode = (entry.externalFileAttributes >>> 16) & 0o777;
