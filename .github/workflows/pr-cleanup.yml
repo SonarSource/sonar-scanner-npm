@@ -11,4 +11,4 @@ jobs:
     name: Cleanup PR Resources
     runs-on: sonar-xs
     steps:
-      - uses: SonarSource/ci-github-actions/pr_cleanup@v1
+      - uses: SonarSource/ci-github-actions/pr_cleanup@2.0.0
