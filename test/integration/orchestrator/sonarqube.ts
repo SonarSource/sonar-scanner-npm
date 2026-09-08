@@ -16,6 +16,7 @@
  */
 
 import * as path from 'node:path';
+import { chmodSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { ChildProcess, spawn, exec } from 'node:child_process';
 import axios from 'axios';
@@ -71,6 +72,9 @@ export async function startAndReady(
  */
 function start(sqPath: string = DEFAULT_FOLDER) {
   const pathToBin = getPathForPlatform(sqPath);
+  if (process.platform !== 'win32') {
+    chmodSync(pathToBin, 0o755);
+  }
   return spawn(`${pathToBin}`, ['console'], {
     stdio: ['inherit', 'pipe', 'inherit'],
     shell: process.platform === 'win32',
