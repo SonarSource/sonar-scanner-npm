@@ -40,6 +40,49 @@ afterEach(() => {
 });
 
 describe('file', () => {
+  describe('cache path validation', () => {
+    const validCacheFileData = {
+      checksum: 'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c',
+      filename: 'file.txt',
+      alias: 'test',
+    };
+    const invalidPathComponents = [
+      '',
+      '.',
+      '..',
+      '../outside',
+      'sub/directory',
+      '..\\outside',
+      'sub\\directory',
+      '/absolute',
+      'C:\\absolute',
+      'C:relative',
+    ];
+    const cachePathFunctions = [getCacheFileLocation, getCacheDirectories];
+    const cachePathComponents = [
+      { property: 'filename', description: 'file name' },
+      { property: 'checksum', description: 'checksum' },
+    ] as const;
+
+    for (const { property, description } of cachePathComponents) {
+      it(`should reject a ${description} that is not a single path component`, async () => {
+        for (const invalidPathComponent of invalidPathComponents) {
+          const cacheFileData = {
+            ...validCacheFileData,
+            [property]: invalidPathComponent,
+          };
+          const expectedError = {
+            message: `The server reported ${JSON.stringify(invalidPathComponent)}, which is not a usable ${description}.`,
+          };
+
+          for (const getCachePath of cachePathFunctions) {
+            await assert.rejects(getCachePath(MOCKED_PROPERTIES, cacheFileData), expectedError);
+          }
+        }
+      });
+    }
+  });
+
   describe('getCacheFileLocation', () => {
     it('should return the file path if the file exists', async () => {
       const checksum = 'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c';
