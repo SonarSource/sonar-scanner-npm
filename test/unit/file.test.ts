@@ -41,7 +41,11 @@ afterEach(() => {
 
 describe('file', () => {
   describe('cache path validation', () => {
-    const checksum = 'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c';
+    const validCacheFileData = {
+      checksum: 'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c',
+      filename: 'file.txt',
+      alias: 'test',
+    };
     const invalidPathComponents = [
       '',
       '.',
@@ -54,48 +58,29 @@ describe('file', () => {
       'C:\\absolute',
       'C:relative',
     ];
+    const cachePathFunctions = [getCacheFileLocation, getCacheDirectories];
+    const cachePathComponents = [
+      { property: 'filename', description: 'file name' },
+      { property: 'checksum', description: 'checksum' },
+    ] as const;
 
-    it('should reject a file name that is not a single path component', async () => {
-      for (const filename of invalidPathComponents) {
-        const expectedError = {
-          message: `The server reported ${JSON.stringify(filename)}, which is not a usable file name.`,
-        };
+    for (const { property, description } of cachePathComponents) {
+      it(`should reject a ${description} that is not a single path component`, async () => {
+        for (const invalidPathComponent of invalidPathComponents) {
+          const cacheFileData = {
+            ...validCacheFileData,
+            [property]: invalidPathComponent,
+          };
+          const expectedError = {
+            message: `The server reported ${JSON.stringify(invalidPathComponent)}, which is not a usable ${description}.`,
+          };
 
-        await assert.rejects(
-          getCacheFileLocation(MOCKED_PROPERTIES, { checksum, filename, alias: 'test' }),
-          expectedError,
-        );
-        await assert.rejects(
-          getCacheDirectories(MOCKED_PROPERTIES, { checksum, filename, alias: 'test' }),
-          expectedError,
-        );
-      }
-    });
-
-    it('should reject a checksum that is not a single path component', async () => {
-      for (const invalidChecksum of invalidPathComponents) {
-        const expectedError = {
-          message: `The server reported ${JSON.stringify(invalidChecksum)}, which is not a usable checksum.`,
-        };
-
-        await assert.rejects(
-          getCacheFileLocation(MOCKED_PROPERTIES, {
-            checksum: invalidChecksum,
-            filename: 'file.txt',
-            alias: 'test',
-          }),
-          expectedError,
-        );
-        await assert.rejects(
-          getCacheDirectories(MOCKED_PROPERTIES, {
-            checksum: invalidChecksum,
-            filename: 'file.txt',
-            alias: 'test',
-          }),
-          expectedError,
-        );
-      }
-    });
+          for (const getCachePath of cachePathFunctions) {
+            await assert.rejects(getCachePath(MOCKED_PROPERTIES, cacheFileData), expectedError);
+          }
+        }
+      });
+    }
   });
 
   describe('getCacheFileLocation', () => {
