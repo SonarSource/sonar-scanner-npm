@@ -26,8 +26,10 @@ import { type CacheFileData, type ScannerProperties, ScannerProperty } from './t
 
 export async function getCacheFileLocation(
   properties: ScannerProperties,
-  { checksum, filename, alias }: CacheFileData,
+  cacheFileData: CacheFileData,
 ) {
+  validateCacheFileData(cacheFileData);
+  const { checksum, filename, alias } = cacheFileData;
   const { fs } = getDeps();
   const filePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   if (fs.existsSync(filePath)) {
@@ -137,8 +139,10 @@ export async function validateChecksum(filePath: string, expectedChecksum: strin
 
 export async function getCacheDirectories(
   properties: ScannerProperties,
-  { checksum, filename }: CacheFileData,
+  cacheFileData: CacheFileData,
 ) {
+  validateCacheFileData(cacheFileData);
+  const { checksum, filename } = cacheFileData;
   const { fs } = getDeps();
   const archivePath = path.join(getParentCacheDirectory(properties), checksum, filename);
   const unarchivePath = path.join(
@@ -159,4 +163,24 @@ export async function getCacheDirectories(
 
 function getParentCacheDirectory(properties: ScannerProperties) {
   return path.join(properties[ScannerProperty.SonarUserHome], SONAR_CACHE_DIR);
+}
+
+function validateCacheFileData({ checksum, filename }: CacheFileData) {
+  validateCachePathComponent(filename, 'file name');
+  validateCachePathComponent(checksum, 'checksum');
+}
+
+function validateCachePathComponent(value: string, description: string) {
+  const isSinglePathComponent =
+    value !== '' &&
+    value !== '.' &&
+    value !== '..' &&
+    path.posix.basename(value) === value &&
+    path.win32.basename(value) === value;
+
+  if (!isSinglePathComponent) {
+    throw new Error(
+      `The server reported ${JSON.stringify(value)}, which is not a usable ${description}.`,
+    );
+  }
 }

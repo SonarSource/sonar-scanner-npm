@@ -40,6 +40,64 @@ afterEach(() => {
 });
 
 describe('file', () => {
+  describe('cache path validation', () => {
+    const checksum = 'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c';
+    const invalidPathComponents = [
+      '',
+      '.',
+      '..',
+      '../outside',
+      'sub/directory',
+      '..\\outside',
+      'sub\\directory',
+      '/absolute',
+      'C:\\absolute',
+      'C:relative',
+    ];
+
+    it('should reject a file name that is not a single path component', async () => {
+      for (const filename of invalidPathComponents) {
+        const expectedError = {
+          message: `The server reported ${JSON.stringify(filename)}, which is not a usable file name.`,
+        };
+
+        await assert.rejects(
+          getCacheFileLocation(MOCKED_PROPERTIES, { checksum, filename, alias: 'test' }),
+          expectedError,
+        );
+        await assert.rejects(
+          getCacheDirectories(MOCKED_PROPERTIES, { checksum, filename, alias: 'test' }),
+          expectedError,
+        );
+      }
+    });
+
+    it('should reject a checksum that is not a single path component', async () => {
+      for (const invalidChecksum of invalidPathComponents) {
+        const expectedError = {
+          message: `The server reported ${JSON.stringify(invalidChecksum)}, which is not a usable checksum.`,
+        };
+
+        await assert.rejects(
+          getCacheFileLocation(MOCKED_PROPERTIES, {
+            checksum: invalidChecksum,
+            filename: 'file.txt',
+            alias: 'test',
+          }),
+          expectedError,
+        );
+        await assert.rejects(
+          getCacheDirectories(MOCKED_PROPERTIES, {
+            checksum: invalidChecksum,
+            filename: 'file.txt',
+            alias: 'test',
+          }),
+          expectedError,
+        );
+      }
+    });
+  });
+
   describe('getCacheFileLocation', () => {
     it('should return the file path if the file exists', async () => {
       const checksum = 'e0ac3601005dfa1864f5392aabaf7d898b1b5bab854f1acb4491bcd806b76b0c';
