@@ -32,6 +32,7 @@ import {
   validateChecksum,
 } from './file.js';
 import { LogLevel, log } from './logging.js';
+import { redactUrl } from './secrets.js';
 import {
   type AnalysisJreMetaData,
   type AnalysisJresResponseType,
@@ -68,7 +69,7 @@ export async function fetchServerVersion(properties: ScannerProperties): Promise
       // Inform the user of the host url that has failed, most
       log(
         LogLevel.ERROR,
-        `Verify that ${properties[ScannerProperty.SonarHostUrl]} is a valid SonarQube server`,
+        `Verify that ${redactUrl(properties[ScannerProperty.SonarHostUrl])} is a valid SonarQube server`,
       );
       throw error;
     }

@@ -16,6 +16,7 @@
  */
 import { URL } from 'node:url';
 import { LogLevel, log } from './logging.js';
+import { redactUrl } from './secrets.js';
 import { type ScannerProperties, ScannerProperty } from './types.js';
 
 export function getProxyUrl(properties: ScannerProperties): URL | undefined {
@@ -27,7 +28,7 @@ export function getProxyUrl(properties: ScannerProperties): URL | undefined {
     const proxyPassword = properties[ScannerProperty.SonarScannerProxyPassword] ?? '';
     // SCANNPM-47 We assume the proxy is HTTP. HTTPS proxies are not supported by the scanner yet (CONNECT over TLS)
     const proxyUrl = new URL(`http://${proxyUser}:${proxyPassword}@${proxyHost}:${proxyPort}`);
-    log(LogLevel.DEBUG, `Detecting proxy: ${proxyUrl}`);
+    log(LogLevel.DEBUG, `Detecting proxy: ${redactUrl(proxyUrl)}`);
     return proxyUrl;
   } else if (
     properties[ScannerProperty.SonarScannerProxyPort] ||

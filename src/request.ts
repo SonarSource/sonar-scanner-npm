@@ -23,6 +23,7 @@ import * as stream from 'node:stream';
 import { promisify } from 'node:util';
 import { LogLevel, log } from './logging.js';
 import { getProxyUrl } from './proxy.js';
+import { redactUrl } from './secrets.js';
 import { type ScannerProperties, ScannerProperty } from './types.js';
 
 const finished = promisify(stream.finished);
@@ -131,14 +132,14 @@ export function fetch<T = unknown>(config: AxiosRequestConfig) {
   }
   // Use external instance for absolute URLs
   if (!config.url?.startsWith('/')) {
-    log(LogLevel.DEBUG, `Not using axios instance for ${config.url}`);
+    log(LogLevel.DEBUG, `Not using axios instance for ${redactUrl(config.url ?? '')}`);
     return _axiosInstances.external.request<T>(config);
   }
   return _axiosInstances.internal.request<T>(config);
 }
 
 export async function download(url: string, destPath: string, overrides?: AxiosRequestConfig) {
-  log(LogLevel.DEBUG, `Downloading ${url} to ${destPath}`);
+  log(LogLevel.DEBUG, `Downloading ${redactUrl(url)} to ${destPath}`);
 
   const response = await fetch<NodeJS.ReadStream>({
     url,

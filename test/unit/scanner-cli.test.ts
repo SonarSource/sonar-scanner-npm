@@ -21,7 +21,9 @@ import type { SpawnFn } from '../../src/deps.js';
 import type { download } from '../../src/request.js';
 import { SCANNER_CLI_INSTALL_PATH, SCANNER_CLI_VERSION } from '../../src/constants.js';
 import { setDeps, resetDeps } from '../../src/deps.js';
+import { LogLevel, setLogLevel } from '../../src/logging.js';
 import { downloadScannerCli, normalizePlatformName, runScannerCli } from '../../src/scanner-cli.js';
+import { REDACTED_VALUE } from '../../src/secrets.js';
 import { ScannerProperty } from '../../src/types.js';
 import {
   createMockChildProcess,
@@ -31,8 +33,9 @@ import {
   createMockFileDeps,
 } from './test-helpers.js';
 
-// Mock console.log to suppress output
-mock.method(console, 'log', () => {});
+// Mock console.log to suppress output and capture log calls
+const mockLog = mock.fn();
+mock.method(console, 'log', mockLog);
 
 const MOCK_PROPERTIES = {
   [ScannerProperty.SonarToken]: 'token',
@@ -50,6 +53,8 @@ const MOCK_PROPERTIES_NO_ARCH = {
 };
 
 afterEach(() => {
+  mockLog.mock.resetCalls();
+  setLogLevel(LogLevel.INFO);
   resetDeps();
 });
 
@@ -220,6 +225,7 @@ describe('scanner-cli', () => {
     });
 
     it('should persist username and password for scanner-cli download when a mirror is used', async () => {
+      setLogLevel(LogLevel.DEBUG);
       const mockDownload = mock.fn(() => Promise.resolve());
       const mockExtractArchive = mock.fn(() => Promise.resolve());
 
@@ -250,6 +256,9 @@ describe('scanner-cli', () => {
       assert.deepStrictEqual(mockDownloadTyped.mock.calls[0].arguments[2], {
         headers: { Authorization: 'Basic bXlVc2VyOm15UGFzc3dvcmQ=' },
       });
+      const output = JSON.stringify(mockLog.mock.calls.map(call => call.arguments));
+      assert.ok(!output.includes('myPassword'));
+      assert.ok(output.includes(REDACTED_VALUE));
     });
   });
 

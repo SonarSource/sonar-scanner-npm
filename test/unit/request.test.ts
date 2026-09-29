@@ -14,7 +14,7 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-import { describe, it, beforeEach, mock } from 'node:test';
+import { describe, it, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert';
 import axios, { type AxiosInstance } from 'axios';
 import fs from 'node:fs';
@@ -26,8 +26,9 @@ interface ProxyAgentWithProxy {
   proxy: URL;
 }
 import { SONARCLOUD_API_BASE_URL, SONARCLOUD_URL } from '../../src/constants.js';
-import { LogLevel } from '../../src/logging.js';
+import { LogLevel, setLogLevel } from '../../src/logging.js';
 import { fetch, getHttpAgents, initializeAxios, resetAxios } from '../../src/request.js';
+import { REDACTED_VALUE } from '../../src/secrets.js';
 import { ScannerProperty } from '../../src/types.js';
 
 // Mock console.log to suppress output and capture log calls
@@ -42,6 +43,10 @@ beforeEach(() => {
   mockedRequest.mock.resetCalls();
   mockLog.mock.resetCalls();
   resetAxios();
+});
+
+afterEach(() => {
+  setLogLevel(LogLevel.INFO);
 });
 
 describe('request', () => {
@@ -274,6 +279,26 @@ describe('request', () => {
       await fetch({ url: '/issues/search' });
       assert.strictEqual(mockedRequestInternal.mock.callCount(), 2);
       assert.strictEqual(mockedRequestExternal.mock.callCount(), 2);
+    });
+
+    it('should redact credentials when logging an external URL', async () => {
+      const mockedRequestExternal = mock.fn();
+      axiosCreateMock.mock.mockImplementation(
+        () => ({ request: mockedRequestExternal }) as any as AxiosInstance,
+      );
+      await initializeAxios({
+        [ScannerProperty.SonarHostUrl]: SONARCLOUD_URL,
+      });
+      setLogLevel(LogLevel.DEBUG);
+
+      const url = 'https://user:request-test-password@mirror.example/file.zip';
+      await fetch({ url });
+      setLogLevel(LogLevel.INFO);
+
+      const output = JSON.stringify(mockLog.mock.calls.map(call => call.arguments));
+      assert.ok(!output.includes('request-test-password'));
+      assert.ok(output.includes(REDACTED_VALUE));
+      assert.strictEqual(mockedRequestExternal.mock.calls[0].arguments[0].url, url);
     });
 
     it('should call axios request if axios is initialized', async () => {

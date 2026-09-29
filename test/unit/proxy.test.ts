@@ -14,9 +14,11 @@
  * You should have received a copy of the Sonar Source-Available License
  * along with this program; if not, see https://sonarsource.com/license/ssal/
  */
-import { describe, it, mock, beforeEach } from 'node:test';
+import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
+import { LogLevel, setLogLevel } from '../../src/logging.js';
 import { getProxyUrl, proxyUrlToJavaOptions } from '../../src/proxy.js';
+import { REDACTED_VALUE } from '../../src/secrets.js';
 import { type ScannerProperties, ScannerProperty } from '../../src/types.js';
 
 // Mock console.log to suppress output and capture log calls
@@ -25,6 +27,10 @@ mock.method(console, 'log', mockLog);
 
 beforeEach(() => {
   mockLog.mock.resetCalls();
+});
+
+afterEach(() => {
+  setLogLevel(LogLevel.INFO);
 });
 
 describe('proxy', () => {
@@ -80,6 +86,7 @@ describe('proxy', () => {
     });
 
     it('should detect proxy with host, port and authentication', () => {
+      setLogLevel(LogLevel.DEBUG);
       const properties: ScannerProperties = {
         [ScannerProperty.SonarHostUrl]: 'http://sq.some-company.com',
         [ScannerProperty.SonarScannerProxyHost]: 'some-proxy.io',
@@ -92,6 +99,9 @@ describe('proxy', () => {
         getProxyUrl(properties)?.toString(),
         'http://user:password@some-proxy.io:4234/',
       );
+      const output = JSON.stringify(mockLog.mock.calls.map(call => call.arguments));
+      assert.ok(!output.includes('password'));
+      assert.ok(output.includes(REDACTED_VALUE));
     });
   });
 

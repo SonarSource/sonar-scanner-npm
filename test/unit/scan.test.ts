@@ -27,6 +27,7 @@ import scanWithCallback, { customScanner } from '../../src/index.js';
 import { scan } from '../../src/scan.js';
 import { ScannerProperty } from '../../src/types.js';
 import { getLogLevel, setLogLevel, LogLevel } from '../../src/logging.js';
+import { REDACTED_VALUE } from '../../src/secrets.js';
 import { createMockProcessDeps } from './test-helpers.js';
 
 // Mock console.log to suppress output and capture log calls
@@ -113,6 +114,55 @@ describe('scan', () => {
   it('should set the log level to DEBUG when verbose mode is enabled', async () => {
     await scan({ options: { 'sonar.verbose': 'true' } });
     assert.strictEqual(getLogLevel(), LogLevel.DEBUG);
+  });
+
+  it('should redact sensitive properties from debug output without changing scanner input', async () => {
+    const token = 'sqp_scan_test_token';
+    const proxyPassword = 'scan-test-proxy-password';
+    const keystorePassword = 'scan-test-keystore-password';
+    const truststorePassword = 'scan-test-truststore-password';
+    const customSecret = 'scan-test-custom-secret';
+    const hostPassword = 'scan-test-host-password';
+    const javaOptionsPassword = 'scan-test-java-options-password';
+
+    await scan({
+      serverUrl: `https://user:${hostPassword}@sonarqube.example`,
+      token,
+      verbose: true,
+      options: {
+        [ScannerProperty.SonarScannerProxyPassword]: proxyPassword,
+        [ScannerProperty.SonarScannerKeystorePassword]: keystorePassword,
+        [ScannerProperty.SonarScannerTruststorePassword]: truststorePassword,
+        [ScannerProperty.SonarScannerJavaOptions]: `-Xmx512m -Djavax.net.ssl.keyStorePassword=${javaOptionsPassword}`,
+        'sonar.custom.secret': customSecret,
+      },
+    });
+
+    const output = JSON.stringify(mockLog.mock.calls.map(call => call.arguments));
+    for (const secret of [
+      token,
+      proxyPassword,
+      keystorePassword,
+      truststorePassword,
+      customSecret,
+      hostPassword,
+      javaOptionsPassword,
+    ]) {
+      assert.ok(!output.includes(secret), `Expected ${secret} to be redacted`);
+    }
+    assert.ok(output.includes(REDACTED_VALUE));
+
+    const scannerProperties = (mockRunScannerCli as Mock<RunScannerCliFn>).mock.calls[0]
+      .arguments[1];
+    assert.strictEqual(scannerProperties[ScannerProperty.SonarToken], token);
+    assert.strictEqual(scannerProperties[ScannerProperty.SonarScannerProxyPassword], proxyPassword);
+    assert.strictEqual(
+      scannerProperties[ScannerProperty.SonarHostUrl],
+      `https://user:${hostPassword}@sonarqube.example`,
+    );
+    assert.ok(
+      scannerProperties[ScannerProperty.SonarScannerJavaOptions].includes(javaOptionsPassword),
+    );
   });
 
   it('should set the log level to the value provided by the user', async () => {
