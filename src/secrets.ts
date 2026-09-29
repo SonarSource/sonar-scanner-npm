@@ -30,30 +30,32 @@ export function redactUrl(value: string | URL): string {
   const urlValue = value.toString();
   try {
     const url = value instanceof URL ? value : new URL(value);
-    if (!url.password) {
+    if (!url.username && !url.password) {
       return urlValue;
     }
 
     const href = url.href;
     const authorityStart = href.indexOf('//') + 2;
     const userInfoEnd = href.indexOf('@', authorityStart);
-    const passwordStart = href.indexOf(':', authorityStart);
-    return `${href.slice(0, passwordStart + 1)}${REDACTED_VALUE}${href.slice(userInfoEnd)}`;
+    return `${href.slice(0, authorityStart)}${REDACTED_VALUE}${href.slice(userInfoEnd)}`;
   } catch {
     return urlValue;
   }
 }
 
+function redactPropertyValue(key: string, value: string): string {
+  if (isSensitiveProperty(key)) {
+    return REDACTED_VALUE;
+  }
+  if (key === ScannerProperty.SonarScannerJavaOptions) {
+    return redactArguments(value.split(' ')).join(' ');
+  }
+  return redactUrl(value);
+}
+
 export function redactProperties(properties: ScannerProperties): ScannerProperties {
   return Object.fromEntries(
-    Object.entries(properties).map(([key, value]) => [
-      key,
-      isSensitiveProperty(key)
-        ? REDACTED_VALUE
-        : key === ScannerProperty.SonarScannerJavaOptions
-          ? redactArguments(value.split(' ')).join(' ')
-          : redactUrl(value),
-    ]),
+    Object.entries(properties).map(([key, value]) => [key, redactPropertyValue(key, value)]),
   );
 }
 

@@ -62,6 +62,7 @@ describe('secrets', () => {
         '-Dhttps.proxyPassword=argument-proxy-password',
         '-Dsonar.custom.secret=argument-custom-secret',
         '-Ddownload.url=https://user:url-password@mirror.example/file.zip',
+        '-Dupload.url=https://sqp_username_token@mirror.example/file.zip',
         '-Dsonar.projectKey=visible-project-key',
         '-jar',
         '/scanner-engine.jar',
@@ -71,11 +72,23 @@ describe('secrets', () => {
         `-Dsonar.login=${REDACTED_VALUE}`,
         `-Dhttps.proxyPassword=${REDACTED_VALUE}`,
         `-Dsonar.custom.secret=${REDACTED_VALUE}`,
-        `-Ddownload.url=https://user:${REDACTED_VALUE}@mirror.example/file.zip`,
+        `-Ddownload.url=https://${REDACTED_VALUE}@mirror.example/file.zip`,
+        `-Dupload.url=https://${REDACTED_VALUE}@mirror.example/file.zip`,
         '-Dsonar.projectKey=visible-project-key',
         '-jar',
         '/scanner-engine.jar',
       ],
+    );
+  });
+
+  it('should redact username-only and username-password URL credentials', () => {
+    assert.strictEqual(
+      redactUrl('https://sqp_username_token@mirror.example/file.zip'),
+      `https://${REDACTED_VALUE}@mirror.example/file.zip`,
+    );
+    assert.strictEqual(
+      redactUrl(new URL('https://user:url-password@mirror.example/file.zip')),
+      `https://${REDACTED_VALUE}@mirror.example/file.zip`,
     );
   });
 
