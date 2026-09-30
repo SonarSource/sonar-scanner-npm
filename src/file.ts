@@ -58,7 +58,7 @@ export async function extractArchive(fromPath: string, toPath: string) {
     const extract = tarStream.extract();
 
     const extractionPromise = new Promise((resolve, reject) => {
-      extract.on('entry', async (header, stream, next) => {
+      extract.on('entry', (header, stream, next) => {
         const canonicalPath = path.normalize(toPath + path.sep + header.name);
 
         // Prevent Zip Slip vulnerability by ensuring the path is within the target directory
@@ -137,10 +137,18 @@ export async function validateChecksum(filePath: string, expectedChecksum: strin
   }
 }
 
-export async function getCacheDirectories(
+export function getCacheDirectories(
   properties: ScannerProperties,
   cacheFileData: CacheFileData,
-) {
+): Promise<{ archivePath: string; unarchivePath: string }> {
+  try {
+    return Promise.resolve(createCacheDirectories(properties, cacheFileData));
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
+function createCacheDirectories(properties: ScannerProperties, cacheFileData: CacheFileData) {
   validateCacheFileData(cacheFileData);
   const { checksum, filename } = cacheFileData;
   const { fs } = getDeps();

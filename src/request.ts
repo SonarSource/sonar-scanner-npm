@@ -36,7 +36,7 @@ let _axiosInstances: {
   external: AxiosInstance;
 } | null = null;
 
-async function extractTruststoreCerts(p12Base64: string, password: string = ''): Promise<string[]> {
+function extractTruststoreCerts(p12Base64: string, password: string = ''): string[] {
   // P12/PFX file -> DER -> ASN.1 -> PKCS12
   const der = forge.util.decode64(p12Base64);
   const asn1 = forge.asn1.fromDer(der);
@@ -70,7 +70,7 @@ export async function getHttpAgents(
     log(LogLevel.DEBUG, `Using truststore at ${truststorePath}`);
     const p12Base64 = await fs.promises.readFile(truststorePath, { encoding: 'base64' });
     try {
-      const certs = await extractTruststoreCerts(
+      const certs = extractTruststoreCerts(
         p12Base64,
         properties[ScannerProperty.SonarScannerTruststorePassword],
       );

@@ -120,7 +120,7 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error;
 }
 
-async function logOutput(message: string) {
+function logOutput(message: string) {
   try {
     // Try and assume the log comes from the scanner engine
     const parsed = JSON.parse(message) as ScannerLogEntry;
