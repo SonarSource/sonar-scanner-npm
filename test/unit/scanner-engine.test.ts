@@ -19,7 +19,9 @@ import { describe, it, beforeEach, afterEach, mock, type Mock } from 'node:test'
 import assert from 'node:assert';
 import path from 'node:path';
 import { setDeps, resetDeps, type Dependencies } from '../../src/deps.js';
+import { LogLevel, setLogLevel } from '../../src/logging.js';
 import { fetchScannerEngine, runScannerEngine } from '../../src/scanner-engine.js';
+import { REDACTED_VALUE } from '../../src/secrets.js';
 import {
   type AnalysisEngineResponseType,
   type ScannerProperties,
@@ -50,6 +52,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setLogLevel(LogLevel.INFO);
   resetDeps();
 });
 
@@ -310,6 +313,46 @@ describe('scanner-engine', () => {
       });
     });
 
+    it('should redact sensitive properties from debug output without changing engine input', async () => {
+      const token = 'sqp_engine_test_token';
+      const proxyPassword = 'engine-test-proxy-password';
+      let writtenData: string | undefined;
+      const mockChildProcess = createMockChildProcess();
+      mockChildProcess.stdin.write = mock.fn((data: string) => {
+        writtenData = data;
+        return true;
+      }) as any;
+
+      setDeps({
+        fs: createMockFsDeps(),
+        spawn: mock.fn(() => mockChildProcess) as any,
+      });
+      setLogLevel(LogLevel.DEBUG);
+
+      const promise = runScannerEngine(
+        '/java',
+        '/scanner-engine.jar',
+        {},
+        {
+          [ScannerProperty.SonarHostUrl]: 'https://sonarqube.example',
+          [ScannerProperty.SonarToken]: token,
+          [ScannerProperty.SonarScannerProxyHost]: 'proxy.example',
+          [ScannerProperty.SonarScannerProxyPassword]: proxyPassword,
+        },
+      );
+
+      setTimeout(() => mockChildProcess.emit('exit', 0), 10);
+      await promise;
+      setLogLevel(LogLevel.INFO);
+
+      const output = JSON.stringify(mockLog.mock.calls.map(call => call.arguments));
+      assert.ok(!output.includes(token));
+      assert.ok(!output.includes(proxyPassword));
+      assert.ok(output.includes(REDACTED_VALUE));
+      assert.ok(writtenData?.includes(token));
+      assert.ok(writtenData?.includes(proxyPassword));
+    });
+
     it('should reject when child process exits with code 1', async () => {
       const mockChildProcess = createMockChildProcess({ exitCode: 1 });
 
@@ -430,6 +473,7 @@ describe('scanner-engine', () => {
       });
 
       const dumpFilePath = '/tmp/dump.json';
+      const proxyPassword = 'dump-test-proxy-password';
 
       await runScannerEngine(
         '/some/path/to/java',
@@ -437,6 +481,8 @@ describe('scanner-engine', () => {
         {},
         {
           ...MOCKED_PROPERTIES,
+          [ScannerProperty.SonarScannerProxyHost]: 'proxy.example',
+          [ScannerProperty.SonarScannerProxyPassword]: proxyPassword,
           [ScannerProperty.SonarScannerInternalDumpToFile]: dumpFilePath,
         },
       );
@@ -447,6 +493,11 @@ describe('scanner-engine', () => {
         (mockWriteFile as Mock<Dependencies['fs']['writeFile']>).mock.calls[0].arguments[0],
         dumpFilePath,
       );
+      const dumpedData = (mockWriteFile as Mock<Dependencies['fs']['writeFile']>).mock.calls[0]
+        .arguments[1];
+      assert.ok(!dumpedData.includes(MOCKED_PROPERTIES[ScannerProperty.SonarToken]));
+      assert.ok(!dumpedData.includes(proxyPassword));
+      assert.ok(dumpedData.includes(REDACTED_VALUE));
 
       // Verify spawn was NOT called (should exit early)
       assert.strictEqual(commandHistory.length, 0);

@@ -19,6 +19,7 @@ import { getDeps } from './deps.js';
 import { LogLevel, log, setLogLevel } from './logging.js';
 import { getProperties } from './properties.js';
 import { initializeAxios } from './request.js';
+import { redactProperties, redactUrl } from './secrets.js';
 import type { CliArgs, ScanOptions } from './types.js';
 import { ScannerProperty } from './types.js';
 import { version } from './version.js';
@@ -57,7 +58,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
     log(LogLevel.DEBUG, `Overriding the log level to ${properties[ScannerProperty.SonarLogLevel]}`);
   }
 
-  log(LogLevel.DEBUG, 'Properties:', properties);
+  log(LogLevel.DEBUG, 'Properties:', redactProperties(properties));
   log(
     LogLevel.INFO,
     'Platform:',
@@ -67,7 +68,7 @@ async function runScan(scanOptions: ScanOptions, cliArgs?: CliArgs) {
 
   await initializeAxios(properties);
 
-  log(LogLevel.INFO, `Server URL: ${properties[ScannerProperty.SonarHostUrl]}`);
+  log(LogLevel.INFO, `Server URL: ${redactUrl(properties[ScannerProperty.SonarHostUrl])}`);
   log(LogLevel.INFO, 'Using SonarScanner for NPM (@sonar/scan)');
   log(LogLevel.INFO, `Version: ${version}`);
 

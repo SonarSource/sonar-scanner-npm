@@ -20,6 +20,7 @@ import { getDeps } from './deps.js';
 import { getCacheDirectories, getCacheFileLocation, validateChecksum } from './file.js';
 import { LogLevel, log, logWithPrefix } from './logging.js';
 import { proxyUrlToJavaOptions } from './proxy.js';
+import { redactArguments, redactProperties } from './secrets.js';
 import {
   type AnalysisEngineResponseType,
   type ScanOptions,
@@ -142,16 +143,18 @@ export function runScannerEngine(
   properties: ScannerProperties,
 ) {
   const { fs, spawn } = getDeps();
-
   log(LogLevel.DEBUG, `Running the ${SONAR_SCANNER_ALIAS}`);
 
   // The scanner engine expects a JSON object of properties attached to a key name "scannerProperties"
-  const propertiesJSON = JSON.stringify({
-    scannerProperties: Object.entries(properties).map(([key, value]) => ({
-      key,
-      value,
-    })),
-  });
+  const propertiesToJSON = (propertiesToSerialize: ScannerProperties) =>
+    JSON.stringify({
+      scannerProperties: Object.entries(propertiesToSerialize).map(([key, value]) => ({
+        key,
+        value,
+      })),
+    });
+  const propertiesJSON = propertiesToJSON(properties);
+  const redactedPropertiesJSON = propertiesToJSON(redactProperties(properties));
 
   // Run the scanner-engine
   const args = [
@@ -163,24 +166,25 @@ export function runScannerEngine(
     '-jar',
     scannerEnginePath,
   ];
+  const redactedArgs = redactArguments(args);
 
   // If debugging with dumpToFile, write the properties to a file and exit
   const dumpToFile = properties[ScannerProperty.SonarScannerInternalDumpToFile];
   if (dumpToFile) {
     const data = {
-      propertiesJSON,
+      propertiesJSON: redactedPropertiesJSON,
       javaBinPath,
       scannerEnginePath,
-      args,
+      args: redactedArgs,
     };
     log(LogLevel.INFO, 'Dumping data to file and exiting');
     return fs.writeFile(dumpToFile, JSON.stringify(data, null, 2));
   }
 
-  log(LogLevel.DEBUG, `Running ${SONAR_SCANNER_ALIAS}`, javaBinPath, ...args);
+  log(LogLevel.DEBUG, `Running ${SONAR_SCANNER_ALIAS}`, javaBinPath, ...redactedArgs);
   const child = spawn(javaBinPath, args);
 
-  log(LogLevel.DEBUG, `Writing properties to ${SONAR_SCANNER_ALIAS}`, propertiesJSON);
+  log(LogLevel.DEBUG, `Writing properties to ${SONAR_SCANNER_ALIAS}`, redactedPropertiesJSON);
   child.stdin.write(propertiesJSON);
   child.stdin.end();
 

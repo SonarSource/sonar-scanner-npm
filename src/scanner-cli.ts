@@ -28,6 +28,7 @@ import { getDeps } from './deps.js';
 import { LogLevel, log } from './logging.js';
 import { isLinux, isMac, isWindows } from './platform.js';
 import { proxyUrlToJavaOptions } from './proxy.js';
+import { redactUrl } from './secrets.js';
 import { type ScanOptions, type ScannerProperties, ScannerProperty } from './types.js';
 
 export function normalizePlatformName(): 'windows' | 'linux' | 'macosx' {
@@ -103,7 +104,7 @@ export async function downloadScannerCli(properties: ScannerProperties): Promise
 
   // Download SonarScanner CLI
   log(LogLevel.INFO, 'Downloading SonarScanner CLI');
-  log(LogLevel.DEBUG, `Downloading from ${scannerCliUrl.href}`);
+  log(LogLevel.DEBUG, `Downloading from ${redactUrl(scannerCliUrl)}`);
   await http.download(scannerCliUrl.href, archivePath, overrides);
 
   log(LogLevel.INFO, `Extracting SonarScanner CLI archive`);
