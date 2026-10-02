@@ -13,7 +13,7 @@
 
 # SonarScanner for npm
 
-`@sonar/scan` runs SonarQube analysis for JavaScript and TypeScript projects without requiring a separate scanner or Java runtime.
+`@sonar/scan` runs SonarQube analysis for JavaScript and TypeScript projects without requiring you to install a separate scanner or Java runtime.
 
 Install [`@sonar/scan` from npm](https://www.npmjs.com/package/@sonar/scan), or learn more about [SonarQube Server](https://www.sonarsource.com/products/sonarqube/server/) and [SonarQube Cloud](https://www.sonarsource.com/products/sonarqube/cloud/).
 
