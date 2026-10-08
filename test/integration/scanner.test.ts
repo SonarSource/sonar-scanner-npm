@@ -21,10 +21,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { scan } from '@sonar/scan';
 import {
   getLatestSonarQube,
   createProject,
+  createQualityProfile,
+  assignQualityProfile,
   generateToken,
   startAndReady,
   stop,
@@ -37,6 +40,9 @@ const __dirname = path.dirname(__filename);
 
 const TIMEOUT_MS = 500_000;
 const SONAR_HOST_URL = 'http://localhost:9000';
+const QUALITY_PROFILE_NAME = `scanner-integration-${randomUUID()}`;
+const LANGUAGE = 'js';
+const EXPECTED_RULE = 'javascript:S3504';
 
 function getSourcesPath() {
   return path.join(__dirname.replace(/\\+/g, '/'), '/fixtures/fake_project_for_integration/src');
@@ -45,8 +51,11 @@ function getSourcesPath() {
 async function assertAnalysisSucceeded(projectKey: string) {
   await waitForAnalysisFinished(TIMEOUT_MS);
   const issues = await getIssues(projectKey);
-  // The fake project has one intentional issue
-  assert.ok(issues.length > 0, 'Expected at least one issue to be detected');
+  // The fake project's var declaration triggers the rule enabled in our profile.
+  assert.ok(
+    issues.some((issue: { rule: string }) => issue.rule === EXPECTED_RULE),
+    `Expected an issue for ${EXPECTED_RULE} to be detected`,
+  );
 }
 
 describe('scanner', { timeout: TIMEOUT_MS }, () => {
@@ -56,6 +65,7 @@ describe('scanner', { timeout: TIMEOUT_MS }, () => {
   before(async () => {
     sqPath = await getLatestSonarQube();
     await startAndReady(sqPath, TIMEOUT_MS);
+    await createQualityProfile(QUALITY_PROFILE_NAME, LANGUAGE, EXPECTED_RULE);
     try {
       token = await generateToken();
     } catch (error) {
@@ -69,6 +79,7 @@ describe('scanner', { timeout: TIMEOUT_MS }, () => {
 
   it('should run an analysis via API', async () => {
     const projectKey = await createProject();
+    await assignQualityProfile(projectKey, QUALITY_PROFILE_NAME, LANGUAGE);
     await scan({
       serverUrl: SONAR_HOST_URL,
       token,
@@ -84,6 +95,7 @@ describe('scanner', { timeout: TIMEOUT_MS }, () => {
 
   it('should run an analysis via CLI', async () => {
     const projectKey = await createProject();
+    await assignQualityProfile(projectKey, QUALITY_PROFILE_NAME, LANGUAGE);
     const packageBinDir = path.join(__dirname, 'node_modules', '.bin');
     for (const removedExecutable of ['sonar', 'sonar-scanner']) {
       assert.ok(
