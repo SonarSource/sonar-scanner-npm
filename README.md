@@ -1,12 +1,23 @@
-# NPM module to run SonarQube Server and Cloud analyses
-
-`@sonar/scan` makes it very easy to trigger SonarQube [Server](https://www.sonarqube.org)
-and [Cloud](https://sonarcloud.io) analyses on a JavaScript code base, without needing
-to install any specific tool or (Java) runtime.
-
-This module is analyzed on SonarQube Cloud.
+<!-- Sonar Marketing hosts these approved brand assets on its Kentico Kontent CDN (assets-eu-01.kc-usercontent.com). Shared URLs are intentional; consult Marketing before replacing them. -->
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://assets-eu-01.kc-usercontent.com/ef593040-b591-0198-9506-ed88b30bc023/a23fc7ba-23f0-489a-829d-ed88c0748521/Sonar_Logo_Dark%20Backgrounds.svg">
+    <img src="https://assets-eu-01.kc-usercontent.com/ef593040-b591-0198-9506-ed88b30bc023/82c13eba-d95c-4bb8-8007-7ce77c14e043/Sonar_Logo_Light%20Backgrounds.svg" alt="Sonar logo" width="400">
+  </picture>
+</p>
 
 [![Build](https://github.com/SonarSource/sonar-scanner-npm/actions/workflows/build.yml/badge.svg)](https://github.com/SonarSource/sonar-scanner-npm/actions/workflows/build.yml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=alert_status)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=sqale_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Reliability](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=reliability_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Security](https://sonarcloud.io/api/project_badges/measure?project=SonarSource_sonar-scanner-npm&metric=security_rating)](https://sonarcloud.io/project/overview?id=SonarSource_sonar-scanner-npm) [![Releases](https://img.shields.io/github/release/SonarSource/sonar-scanner-npm.svg)](https://github.com/SonarSource/sonar-scanner-npm/releases) [![npm version](https://badge.fury.io/js/@sonar%2Fscan.svg)](https://badge.fury.io/js/@sonar%2Fscan)
+
+<!-- sonar-marketing:start -->
+<!-- Marketing maintains this section. For wording changes, consult the relevant Product Marketing Manager (PMM). Repository CODEOWNERS review accuracy and merge changes. -->
+
+# SonarScanner for npm
+
+`@sonar/scan` runs SonarQube analysis for JavaScript and TypeScript projects without requiring you to install a separate scanner or Java runtime.
+
+Install [`@sonar/scan` from npm](https://www.npmjs.com/package/@sonar/scan), or learn more about [SonarQube Server](https://www.sonarsource.com/products/sonarqube/server/) and [SonarQube Cloud](https://www.sonarsource.com/products/sonarqube/cloud/).
+
+<!-- sonar-marketing:end -->
 
 This is the documentation for v5. If you are using v4, refer to
 [the v4 documentation](https://github.com/SonarSource/sonar-scanner-npm/tree/4.3.8). If
