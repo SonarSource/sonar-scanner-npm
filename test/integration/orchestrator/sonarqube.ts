@@ -229,6 +229,41 @@ export async function createProject(): Promise<string> {
   return response.data.project.key;
 }
 
+export async function createQualityProfile(
+  name: string,
+  language: string,
+  rule: string,
+): Promise<void> {
+  const response = await instance.post(
+    '/api/qualityprofiles/create',
+    {},
+    {
+      params: { name, language },
+    },
+  );
+  await instance.post(
+    '/api/qualityprofiles/activate_rule',
+    {},
+    {
+      params: { key: response.data.profile.key, rule },
+    },
+  );
+}
+
+export async function assignQualityProfile(
+  project: string,
+  qualityProfile: string,
+  language: string,
+): Promise<void> {
+  await instance.post(
+    '/api/qualityprofiles/add_project',
+    {},
+    {
+      params: { project, qualityProfile, language },
+    },
+  );
+}
+
 export async function waitForAnalysisFinished(
   maxWaitMs: number = DEFAULT_MAX_WAIT_MS,
 ): Promise<void> {
