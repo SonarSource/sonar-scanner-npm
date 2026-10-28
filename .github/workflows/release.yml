@@ -84,6 +84,7 @@ jobs:
         if: ${{ !inputs.dry_run }}
         run: |
           npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
+          npm config set registry https://repox.jfrog.io/artifactory/api/npm/npm/
 
       - name: Build the package
         if: ${{ !inputs.dry_run }}
@@ -141,10 +142,10 @@ jobs:
         run: |
           cd build
           # Publish as @sonar/scan (primary package name)
-          npm publish --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
+          npm publish --registry=https://registry.npmjs.org/ --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
           # Publish as sonarqube-scanner (legacy package alias)
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
-          npm publish --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
+          npm publish --registry=https://registry.npmjs.org/ --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
 
     outputs:
       description: ${{ steps.description.outputs.description }}
@@ -154,7 +155,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: github-ubuntu-latest-s
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
@@ -212,7 +213,7 @@ jobs:
     needs: [publish, update-center]
     permissions:
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: github-ubuntu-latest-s
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
