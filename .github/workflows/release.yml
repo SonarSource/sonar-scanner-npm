@@ -84,10 +84,11 @@ jobs:
         if: ${{ !inputs.dry_run }}
         run: |
           npm config set //repox.jfrog.io/artifactory/api/npm/:_authToken=${{ fromJSON(steps.secrets.outputs.vault).promoter_access_token }}
-          npm config set registry https://repox.jfrog.io/artifactory/api/npm/npm/
 
       - name: Build the package
         if: ${{ !inputs.dry_run }}
+        env:
+          NPM_CONFIG_REGISTRY: https://repox.jfrog.io/artifactory/api/npm/npm/
         run: |
           npm ci
           npm run license
@@ -142,10 +143,10 @@ jobs:
         run: |
           cd build
           # Publish as @sonar/scan (primary package name)
-          npm publish --registry=https://registry.npmjs.org/ --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
+          npm publish --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
           # Publish as sonarqube-scanner (legacy package alias)
           echo $(jq '.name = "sonarqube-scanner"' package.json) > package.json
-          npm publish --registry=https://registry.npmjs.org/ --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
+          npm publish --provenance --tag=${{ steps.npm-tag.outputs.tag }} --access=public
 
     outputs:
       description: ${{ steps.description.outputs.description }}
