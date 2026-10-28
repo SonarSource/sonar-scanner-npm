@@ -78,7 +78,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       - name: Setup the registries
         if: ${{ !inputs.dry_run }}
@@ -87,6 +87,8 @@ jobs:
 
       - name: Build the package
         if: ${{ !inputs.dry_run }}
+        env:
+          NPM_CONFIG_REGISTRY: https://repox.jfrog.io/artifactory/api/npm/npm/
         run: |
           npm ci
           npm run license
@@ -154,7 +156,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: github-ubuntu-latest-s
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
@@ -212,7 +214,7 @@ jobs:
     needs: [publish, update-center]
     permissions:
       id-token: write
-    runs-on: ubuntu-latest
+    runs-on: github-ubuntu-latest-s
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
     steps:
