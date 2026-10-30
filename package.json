@@ -19,12 +19,15 @@
     "axios": "1.20.0",
     "commander": "15.0.0",
     "hpagent": "1.2.0",
-    "node-forge": "1.4.0",
+    "node-forge": "1.4.1",
     "properties-file": "5.0.7",
     "proxy-from-env": "2.1.0",
     "semver": "7.8.5",
     "slugify": "1.6.9",
     "tar-stream": "3.2.2"
+  },
+  "overrides": {
+    "glob": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "26.6.5",
