@@ -24,11 +24,15 @@ import {
   ENV_VAR_PREFIX,
   NPM_CONFIG_ENV_VAR_PREFIX,
   REGIONS,
+  REGION_AU,
   REGION_US,
   SCANNER_BOOTSTRAPPER_NAME,
   SCANNER_DEPRECATED_PROPERTIES,
   SONARCLOUD_API_BASE_URL,
+  SONARCLOUD_API_BASE_URL_AU,
+  SONARCLOUD_AU_URL_REGEX,
   SONARCLOUD_URL,
+  SONARCLOUD_URL_AU,
   SONARCLOUD_URL_REGEX,
   SONARCLOUD_US_URL_REGEX,
   SONAR_DIR_DEFAULT,
@@ -391,26 +395,13 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
 
   if (!sonarHostUrl || sonarCloudSpecified) {
     const region = (properties[ScannerProperty.SonarRegion] ?? '').toLowerCase();
-    if (isSonarCloudUS(sonarHostUrl) || region === REGION_US) {
-      return {
-        [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
-        [ScannerProperty.SonarHostUrl]:
-          properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? SONARCLOUD_URL_US,
-        [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? SONARCLOUD_API_BASE_URL_US,
-      };
-    } else if (isSonarCloudEU(sonarHostUrl) || region === '') {
-      return {
-        [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
-        [ScannerProperty.SonarHostUrl]:
-          properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? SONARCLOUD_URL,
-        [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? SONARCLOUD_API_BASE_URL,
-      };
-    } else {
-      const regionsPrint = REGIONS.map(r => `"${r}"`);
-      throw new Error(
-        `Unsupported region '${region}'. List of supported regions: ${regionsPrint}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
-      );
-    }
+    const sonarCloudRegion = findSonarCloudRegion(sonarHostUrl, region);
+    return {
+      [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'true',
+      [ScannerProperty.SonarHostUrl]:
+        properties[ScannerProperty.SonarScannerSonarCloudUrl] ?? sonarCloudRegion.hostUrl,
+      [ScannerProperty.SonarScannerApiBaseUrl]: sonarApiBaseUrl ?? sonarCloudRegion.apiBaseUrl,
+    };
   } else {
     return {
       [ScannerProperty.SonarScannerInternalIsSonarCloud]: 'false',
@@ -420,20 +411,73 @@ export function getHostProperties(properties: ScannerProperties): ScannerPropert
   }
 }
 
+interface SonarCloudRegion {
+  region: string;
+  hostUrl: string;
+  apiBaseUrl: string;
+  hostUrlRegex: RegExp;
+}
+
+// The EU region is identified by an empty region code, as it is the default one.
+const SONARCLOUD_REGIONS: SonarCloudRegion[] = [
+  {
+    region: REGION_US,
+    hostUrl: SONARCLOUD_URL_US,
+    apiBaseUrl: SONARCLOUD_API_BASE_URL_US,
+    hostUrlRegex: SONARCLOUD_US_URL_REGEX,
+  },
+  {
+    region: REGION_AU,
+    hostUrl: SONARCLOUD_URL_AU,
+    apiBaseUrl: SONARCLOUD_API_BASE_URL_AU,
+    hostUrlRegex: SONARCLOUD_AU_URL_REGEX,
+  },
+  {
+    region: '',
+    hostUrl: SONARCLOUD_URL,
+    apiBaseUrl: SONARCLOUD_API_BASE_URL,
+    hostUrlRegex: SONARCLOUD_URL_REGEX,
+  },
+];
+
+function findSonarCloudRegion(sonarHostUrl: string, region: string): SonarCloudRegion {
+  const regionFromProperty = findSonarCloudRegionByCode(region);
+  const regionFromHostUrl = SONARCLOUD_REGIONS.find(candidate =>
+    matchesSonarCloudHostUrl(candidate, sonarHostUrl),
+  );
+  if (!regionFromHostUrl) {
+    return regionFromProperty;
+  }
+  if (region !== '' && regionFromHostUrl !== regionFromProperty) {
+    throw new Error(
+      `Inconsistent values for properties '${ScannerProperty.SonarRegion}' and '${ScannerProperty.SonarHostUrl}'. Please only specify one of the two properties.`,
+    );
+  }
+  return regionFromHostUrl;
+}
+
+function findSonarCloudRegionByCode(region: string): SonarCloudRegion {
+  const sonarCloudRegion = SONARCLOUD_REGIONS.find(candidate => candidate.region === region);
+  if (!sonarCloudRegion) {
+    const regionsPrint = REGIONS.map(r => `"${r}"`);
+    throw new Error(
+      `Unsupported region '${region}'. List of supported regions: ${regionsPrint}. Please check the '${ScannerProperty.SonarRegion}' property or the 'SONAR_REGION' environment variable.`,
+    );
+  }
+  return sonarCloudRegion;
+}
+
 function isSonarCloud(properties: ScannerProperties, sonarHostUrl: string) {
   return (
     properties[ScannerProperty.SonarScannerSonarCloudUrl] === sonarHostUrl ||
-    isSonarCloudEU(sonarHostUrl) ||
-    isSonarCloudUS(sonarHostUrl)
+    SONARCLOUD_REGIONS.some(sonarCloudRegion =>
+      matchesSonarCloudHostUrl(sonarCloudRegion, sonarHostUrl),
+    )
   );
 }
 
-function isSonarCloudEU(sonarHostUrl: string) {
-  return SONARCLOUD_URL_REGEX.exec(sonarHostUrl ?? '');
-}
-
-function isSonarCloudUS(sonarHostUrl: string) {
-  return SONARCLOUD_US_URL_REGEX.exec(sonarHostUrl ?? '');
+function matchesSonarCloudHostUrl(sonarCloudRegion: SonarCloudRegion, sonarHostUrl: string) {
+  return sonarCloudRegion.hostUrlRegex.test(sonarHostUrl ?? '');
 }
 
 function getHttpProxyEnvProperties(serverUrl: string): ScannerProperties {

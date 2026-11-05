@@ -19,6 +19,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import {
   DEFAULT_SONAR_EXCLUSIONS,
+  REGION_AU,
   REGION_US,
   REGIONS,
   SCANNER_BOOTSTRAPPER_NAME,
@@ -1141,6 +1142,100 @@ describe('getProperties', () => {
         'sonar.region': 'us',
       });
     });
+
+    it('should set the depending properties correctly when "sonar.region" is set to "au"', () => {
+      projectHandler.reset('whatever');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          options: {
+            [ScannerProperty.SonarRegion]: REGION_AU,
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      assertProperties(properties, {
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'https://sonarqube.au',
+        'sonar.scanner.apiBaseUrl': 'https://api.sonarqube.au',
+        'sonar.scanner.internal.isSonarCloud': 'true',
+        'sonar.region': 'au',
+      });
+    });
+
+    it('should set the depending properties correctly when "sonar.host.url" and "sonar.region" are set to the AU region', () => {
+      projectHandler.reset('whatever');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          options: {
+            [ScannerProperty.SonarRegion]: REGION_AU,
+            [ScannerProperty.SonarHostUrl]: 'https://sonarqube.au',
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      assertProperties(properties, {
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'https://sonarqube.au',
+        'sonar.scanner.apiBaseUrl': 'https://api.sonarqube.au',
+        'sonar.scanner.internal.isSonarCloud': 'true',
+        'sonar.region': 'au',
+      });
+    });
+
+    it('should detect the AU region when only "sonar.host.url" is set to the AU host', () => {
+      projectHandler.reset('whatever');
+      projectHandler.setEnvironmentVariables({});
+
+      const properties = getProperties(
+        {
+          options: {
+            [ScannerProperty.SonarHostUrl]: 'https://sonarqube.au',
+          },
+        },
+        projectHandler.getStartTime(),
+      );
+
+      assertProperties(properties, {
+        ...projectHandler.getExpectedProperties(),
+        'sonar.host.url': 'https://sonarqube.au',
+        'sonar.scanner.apiBaseUrl': 'https://api.sonarqube.au',
+        'sonar.scanner.internal.isSonarCloud': 'true',
+      });
+    });
+
+    for (const [hostUrl, region] of [
+      ['https://sonarqube.au', REGION_US],
+      ['https://sonarqube.us', REGION_AU],
+      ['https://sonarcloud.io', REGION_US],
+      ['https://sonarcloud.io', REGION_AU],
+    ]) {
+      it(`should throw an exception if "sonar.host.url" is "${hostUrl}" and "sonar.region" is "${region}"`, () => {
+        projectHandler.reset('whatever');
+        projectHandler.setEnvironmentVariables({});
+
+        assert.throws(
+          () =>
+            getProperties(
+              {
+                options: {
+                  [ScannerProperty.SonarHostUrl]: hostUrl,
+                  [ScannerProperty.SonarRegion]: region,
+                },
+              },
+              projectHandler.getStartTime(),
+            ),
+          {
+            message: `Inconsistent values for properties '${ScannerProperty.SonarRegion}' and '${ScannerProperty.SonarHostUrl}'. Please only specify one of the two properties.`,
+          },
+        );
+      });
+    }
 
     it('should throw an exception if "sonar.region" is set to an unsupported value', () => {
       projectHandler.reset('whatever');
