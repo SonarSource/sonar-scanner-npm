@@ -20,15 +20,19 @@ export const SCANNER_BOOTSTRAPPER_NAME = 'ScannerNpm';
 
 export const SONARCLOUD_URL = 'https://sonarcloud.io';
 export const SONARCLOUD_URL_US = 'https://sonarqube.us';
+export const SONARCLOUD_URL_AU = 'https://sonarqube.au';
 
 export const SONARCLOUD_API_BASE_URL = 'https://api.sonarcloud.io';
 export const SONARCLOUD_API_BASE_URL_US = 'https://api.sonarqube.us';
+export const SONARCLOUD_API_BASE_URL_AU = 'https://api.sonarqube.au';
 
 export const SONARCLOUD_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarcloud\.io)/;
 export const SONARCLOUD_US_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarqube\.us)/;
+export const SONARCLOUD_AU_URL_REGEX = /^(https?:\/\/)?(www\.)?(sonarqube\.au)/;
 
 export const REGION_US = 'us';
-export const REGIONS = [REGION_US];
+export const REGION_AU = 'au';
+export const REGIONS = [REGION_US, REGION_AU];
 
 export const SONARQUBE_JRE_PROVISIONING_MIN_VERSION = '10.6';
 
