@@ -67,6 +67,9 @@ jobs:
           - platform_name: SonarQube.us
             vault_path: development/kv/data/sonarqube-us
             host_url: https://sonarqube.us
+          - platform_name: SonarQube.au
+            vault_path: development/kv/data/sonarcloud
+            host_url: https://sonarqube.au
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
