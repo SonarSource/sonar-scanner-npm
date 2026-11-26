@@ -35,5 +35,5 @@ scan({
     'sonar.verbose': 'true',
   },
 }).catch(err => {
-  process.exitCode = err.status;
+  process.exitCode = err.status ?? 1;
 });
